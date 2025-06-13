@@ -2,7 +2,23 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### 1. Environment Setup
+
+First, copy the environment template and configure your secrets:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and add your actual client secrets:
+
+```env
+MIS_GQL_STAGE_CLIENT_SECRET=your_actual_client_secret_here
+```
+
+⚠️ **Important**: Never commit `.env.local` to the repository. It's already in `.gitignore`.
+
+### 2. Run the Development Server
 
 ```bash
 npm run dev

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ENVIRONMENTS, getEnvironmentConfig, getEnvironmentNames, EnvironmentConfig } from '@/lib/environments';
+import { safeStringify } from '@/lib/utils';
 
 export default function SettingsPage() {
+  const [selectedEnvKey, setSelectedEnvKey] = useState('mis-gql-stage');
+  const [currentConfig, setCurrentConfig] = useState<EnvironmentConfig | null>(null);
   const [settings, setSettings] = useState({
-    environment: 'development',
-    oktaClientId: '',
-    apiEndpoint: 'https://api.dev.example.com/graphql',
-    enableAuth: true,
+    environment: 'mis-gql-stage',
     requestTimeout: 30,
     maxRetries: 3,
     enableLogging: true,
@@ -15,25 +16,72 @@ export default function SettingsPage() {
   });
 
   const [saved, setSaved] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<{
+    status: string;
+    error?: string;
+    data?: Record<string, unknown>;
+  } | null>(null);
+  const [checkingHealth, setCheckingHealth] = useState(false);
+
+  useEffect(() => {
+    const config = getEnvironmentConfig(selectedEnvKey);
+    setCurrentConfig(config);
+    setSettings(prev => ({ ...prev, environment: selectedEnvKey }));
+  }, [selectedEnvKey]);
 
   const handleSave = () => {
-    // Simulate saving
+    // Save to localStorage or your preferred storage
+    localStorage.setItem('tap-settings', JSON.stringify(settings));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   const handleReset = () => {
     setSettings({
-      environment: 'development',
-      oktaClientId: '',
-      apiEndpoint: 'https://api.dev.example.com/graphql',
-      enableAuth: true,
+      environment: 'mis-gql-stage',
       requestTimeout: 30,
       maxRetries: 3,
       enableLogging: true,
       logLevel: 'info'
     });
+    setSelectedEnvKey('mis-gql-stage');
   };
+
+  const checkHealth = async () => {
+    if (!currentConfig) return;
+    
+    setCheckingHealth(true);
+    try {
+      const response = await fetch('/api/health/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          health_url: currentConfig.health_url
+        }),
+      });
+
+      const healthData = await response.json();
+
+      if (response.ok && healthData.success) {
+        setHealthStatus({ status: 'UP', data: healthData.data });
+      } else {
+        setHealthStatus({ 
+          status: 'DOWN', 
+          error: healthData.error || `HTTP ${healthData.status}: ${healthData.statusText}` 
+        });
+      }
+    } catch (error) {
+      setHealthStatus({ 
+        status: 'DOWN', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+    setCheckingHealth(false);
+  };
+
+  const environmentOptions = getEnvironmentNames();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,80 +107,117 @@ export default function SettingsPage() {
 
         <div className="space-y-8">
           
-          {/* Environment Configuration */}
+          {/* Environment Selection */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Environment Configuration</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Environment Selection</h2>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Environment
+                  Target Environment
                 </label>
                 <select
-                  value={settings.environment}
-                  onChange={(e) => setSettings({...settings, environment: e.target.value})}
+                  value={selectedEnvKey}
+                  onChange={(e) => setSelectedEnvKey(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="development">Development</option>
-                  <option value="staging">Staging</option>
-                  <option value="production">Production</option>
+                  {environmentOptions.map(env => (
+                    <option key={env.key} value={env.key}>{env.name}</option>
+                  ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">Select your target environment</p>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  API Endpoint
-                </label>
-                <input
-                  type="url"
-                  value={settings.apiEndpoint}
-                  onChange={(e) => setSettings({...settings, apiEndpoint: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://api.example.com/graphql"
-                />
-                <p className="text-xs text-gray-500 mt-1">Base URL for API requests</p>
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={checkHealth}
+                  disabled={checkingHealth || !currentConfig}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {checkingHealth ? 'Checking...' : 'Check Health'}
+                </button>
               </div>
             </div>
+
+            {/* Health Status */}
+            {healthStatus && (
+              <div className={`mt-4 p-4 rounded-lg ${
+                healthStatus.status === 'UP' 
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-red-50 border border-red-200'
+              }`}>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${
+                    healthStatus.status === 'UP' ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
+                  <span className={`font-medium ${
+                    healthStatus.status === 'UP' ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {healthStatus.status === 'UP' ? 'Service is healthy' : 'Service is down'}
+                  </span>
+                </div>
+                {healthStatus.error && (
+                  <p className="text-red-700 mt-2 text-sm">{healthStatus.error}</p>
+                )}
+                {healthStatus.data !== undefined && (
+                  <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+                    {safeStringify(healthStatus.data)}
+                  </pre>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Authentication Settings */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Authentication Settings</h2>
-            
-            <div className="space-y-6">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="enableAuth"
-                  checked={settings.enableAuth}
-                  onChange={(e) => setSettings({...settings, enableAuth: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="enableAuth" className="ml-2 block text-sm text-gray-900">
-                  Enable Okta Authentication
-                </label>
-              </div>
+          {/* Current Environment Configuration Display */}
+          {currentConfig && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Current Environment Configuration</h2>
               
-              {settings.enableAuth && (
-                <div className="grid md:grid-cols-1 gap-6 ml-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Okta Client ID
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.oktaClientId}
-                      onChange={(e) => setSettings({...settings, oktaClientId: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter your Okta Client ID"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Your application's Okta Client ID</p>
-                  </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">GraphQL Endpoint</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded break-all">
+                    {currentConfig.graph_url}
+                  </p>
                 </div>
-              )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Health Check URL</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded break-all">
+                    {currentConfig.health_url}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">OAuth Token URL</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded break-all">
+                    {currentConfig.access_token_url}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Client ID</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded">
+                    {currentConfig.client_id || 'Not configured'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Scope</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded">
+                    {currentConfig.scope}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Client Secret</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded">
+                    {currentConfig.client_secret ? '••••••••••••••••' : 'Not configured'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Request Settings */}
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -210,46 +295,34 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Environment Presets */}
+          {/* Environment Quick Switch */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Environment Presets</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Environment Switch</h2>
             
             <div className="grid md:grid-cols-3 gap-4">
-              <button
-                onClick={() => setSettings({...settings, 
-                  environment: 'development',
-                  apiEndpoint: 'https://api.dev.example.com/graphql',
-                  requestTimeout: 30
-                })}
-                className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 text-left"
-              >
-                <h3 className="font-medium text-gray-900">Development</h3>
-                <p className="text-sm text-gray-600 mt-1">Default dev environment settings</p>
-              </button>
-              
-              <button
-                onClick={() => setSettings({...settings, 
-                  environment: 'staging',
-                  apiEndpoint: 'https://api.staging.example.com/graphql',
-                  requestTimeout: 45
-                })}
-                className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 text-left"
-              >
-                <h3 className="font-medium text-gray-900">Staging</h3>
-                <p className="text-sm text-gray-600 mt-1">Pre-production testing environment</p>
-              </button>
-              
-              <button
-                onClick={() => setSettings({...settings, 
-                  environment: 'production',
-                  apiEndpoint: 'https://api.example.com/graphql',
-                  requestTimeout: 60
-                })}
-                className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 text-left"
-              >
-                <h3 className="font-medium text-gray-900">Production</h3>
-                <p className="text-sm text-gray-600 mt-1">Live production environment</p>
-              </button>
+              {environmentOptions.map((env) => (
+                <button
+                  key={env.key}
+                  onClick={() => setSelectedEnvKey(env.key)}
+                  className={`p-4 border rounded-lg text-left transition-colors ${
+                    selectedEnvKey === env.key
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <h3 className="font-medium text-gray-900">{env.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {ENVIRONMENTS[env.key].domain}
+                  </p>
+                  {selectedEnvKey === env.key && (
+                    <div className="mt-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Active
+                      </span>
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 

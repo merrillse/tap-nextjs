@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getEnvironmentConfig } from '@/lib/environments';
+import { ApiClient } from '@/lib/api-client';
 
 interface MissionaryData {
   latinFirstName: string;
@@ -42,7 +44,7 @@ interface MissionaryData {
 const sampleMissionaryData: MissionaryData = {
   latinFirstName: "John",
   latinLastName: "Smith",
-  missionaryNumber: "163385",
+  missionaryNumber: "916793",
   emailAddress: "john.smith@example.com",
   mobilePhone: "+1-555-0123",
   birthDate: "1995-03-15",
@@ -87,10 +89,23 @@ const sampleMissionaryData: MissionaryData = {
 };
 
 export default function MissionaryPage() {
-  const [missionaryNumber, setMissionaryNumber] = useState('163385');
+  const [missionaryNumber, setMissionaryNumber] = useState('916793');
   const [loading, setLoading] = useState(false);
-  const [missionaryData, setMissionaryData] = useState<MissionaryData | null>(sampleMissionaryData);
+  const [missionaryData, setMissionaryData] = useState<MissionaryData | null>(null);
   const [showQuery, setShowQuery] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+
+  // Initialize API client with default environment
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('tap-settings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : { environment: 'mis-gql-stage' };
+    
+    const config = getEnvironmentConfig(settings.environment);
+    if (config) {
+      setApiClient(new ApiClient(config));
+    }
+  }, []);
 
   const graphqlQuery = `query Missionary($missionaryNumber: ID = "${missionaryNumber}") {
   missionary(missionaryId: $missionaryNumber) {
@@ -134,11 +149,34 @@ export default function MissionaryPage() {
 }`;
 
   const handleSearch = async () => {
+    if (!apiClient) {
+      setError('API client not initialized. Please check your settings.');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setMissionaryData(sampleMissionaryData);
-    setLoading(false);
+    setError(null);
+    setMissionaryData(null);
+    
+    try {
+      const result = await apiClient.executeGraphQLQuery(graphqlQuery, {
+        missionaryNumber: missionaryNumber
+      });
+      
+      if (result.data && typeof result.data === 'object' && 'missionary' in result.data) {
+        setMissionaryData((result.data as { missionary: MissionaryData }).missionary);
+      } else {
+        setError('No missionary found with that number.');
+      }
+    } catch (err) {
+      console.error('API Error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching data.');
+      
+      // Show sample data in case of API error for demonstration
+      setMissionaryData(sampleMissionaryData);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -194,6 +232,20 @@ export default function MissionaryPage() {
             </div>
           )}
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="h-5 w-5 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-red-800 font-medium">Error</span>
+            </div>
+            <p className="text-red-700 mt-1">{error}</p>
+            <p className="text-red-600 mt-2 text-sm">Showing sample data for demonstration purposes.</p>
+          </div>
+        )}
 
         {/* Results Section */}
         {missionaryData && (

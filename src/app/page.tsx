@@ -98,7 +98,7 @@ export default function HomePage() {
       title: "Search Missionary by ID",
       description: "Quickly lookup a missionary using their missionary number",
       action: "Search",
-      href: "/missionary?id=163385",
+      href: "/missionary?id=916793",
       variant: "primary" as const
     },
     {
@@ -189,8 +189,8 @@ export default function HomePage() {
               <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
               <h3 className="text-lg font-semibold text-gray-900">Environment</h3>
             </div>
-            <p className="text-gray-600 mt-2">Development</p>
-            <p className="text-sm text-gray-500 mt-1">Switch in settings</p>
+            <p className="text-gray-600 mt-2">MIS GraphQL Staging</p>
+            <p className="text-sm text-gray-500 mt-1">mis-gql-stage.aws.churchofjesuschrist.org</p>
           </div>
         </div>
       </div>

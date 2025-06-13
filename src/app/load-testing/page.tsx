@@ -4,7 +4,24 @@ import { useState } from 'react';
 
 export default function LoadTestingPage() {
   const [isRunning, setIsRunning] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<{
+    totalRequests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    averageResponseTime: number;
+    minResponseTime: number;
+    maxResponseTime: number;
+    requestsPerSecond: number;
+    errorRate: number;
+    throughput: number;
+    testDuration: number;
+    timestamps: Array<{
+      time: number;
+      responseTime: number;
+      rps: number;
+      errors: number;
+    }>;
+  } | null>(null);
   const [testConfig, setTestConfig] = useState({
     concurrentUsers: 10,
     duration: 60,
@@ -225,7 +242,7 @@ export default function LoadTestingPage() {
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Over Time</h3>
                   <div className="h-64 flex items-end space-x-2">
-                    {testResults.timestamps.map((point: any, index: number) => (
+                    {testResults.timestamps.map((point, index: number) => (
                       <div key={index} className="flex-1 flex flex-col items-center">
                         <div
                           className="w-full bg-blue-500 rounded-t"

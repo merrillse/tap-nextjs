@@ -1,60 +1,138 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
+import { ApiClient } from '@/lib/api-client';
+import { safeStringify } from '@/lib/utils';
 
 export default function APITestingPage() {
   const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
   const [queryInput, setQueryInput] = useState('');
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<{
+    status: number;
+    data?: unknown;
+    error?: string;
+    executionTime: string;
+    timestamp: string;
+    headers?: Record<string, string>;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  const sampleQueries = {
-    graphql: `query Missionary($missionaryNumber: ID = "163385") {
+  const environmentOptions = getEnvironmentNames();
+
+  // Initialize API client when environment changes
+  useEffect(() => {
+    const config = getEnvironmentConfig(selectedEnvironment);
+    if (config) {
+      setApiClient(new ApiClient(config));
+    }
+  }, [selectedEnvironment]);
+
+  const sampleQueries = useMemo(() => ({
+    graphql: `query Missionary($missionaryNumber: ID = "916793") {
   missionary(missionaryId: $missionaryNumber) {
     latinFirstName
     latinLastName
     missionaryNumber
+    emailAddress
+    mobilePhone
+    birthDate
     missionaryStatus {
       value
       label
     }
+    missionaryType {
+      value
+      label
+    }
     assignments {
+      assignmentId
       componentName
+      assignmentStartDate
+      assignmentEndDate
       mission {
         name
       }
+      location {
+        assignmentName
+      }
+    }
+    languages {
+      languageDetail {
+        languageName
+        languageAbbreviation
+      }
+      preferredLanguage
     }
   }
 }`,
-    rest: `GET /api/missionaries/163385
+    rest: `GET /api/missionaries/916793
 Authorization: Bearer <token>
 Content-Type: application/json`
-  };
+  }), []);
+
+  // Set initial query
+  useEffect(() => {
+    if (!queryInput) {
+      setQueryInput(sampleQueries[selectedEndpoint as keyof typeof sampleQueries]);
+    }
+  }, [selectedEndpoint, queryInput, sampleQueries]);
 
   const handleTest = async () => {
+    if (!apiClient) {
+      setError('API client not initialized. Please select an environment.');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    setError(null);
+    setResponse(null);
     
-    const mockResponse = {
-      status: 200,
-      data: {
-        missionary: {
-          latinFirstName: "John",
-          latinLastName: "Smith",
-          missionaryNumber: "163385",
-          missionaryStatus: {
-            value: "ACTIVE",
-            label: "Active"
+    const startTime = Date.now();
+    
+    try {
+      if (selectedEndpoint === 'graphql') {
+        // Parse GraphQL query to extract variables
+        const variables = { missionaryNumber: "916793" }; // Default for demo
+        
+        const result = await apiClient.executeGraphQLQuery(queryInput, variables);
+        const executionTime = Date.now() - startTime;
+        
+        setResponse({
+          status: 200,
+          data: result.data,
+          executionTime: `${executionTime}ms`,
+          timestamp: new Date().toISOString(),
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache'
           }
-        }
-      },
-      executionTime: "245ms",
-      timestamp: new Date().toISOString()
-    };
-    
-    setResponse(mockResponse);
-    setLoading(false);
+        });
+      } else {
+        // REST endpoint not implemented yet
+        throw new Error('REST endpoint testing not yet implemented');
+      }
+    } catch (err) {
+      console.error('API Test Error:', err);
+      const executionTime = Date.now() - startTime;
+      
+      setError(err instanceof Error ? err.message : 'An error occurred during testing');
+      
+      // Show mock response in case of error for demonstration
+      const mockResponse = {
+        status: 500,
+        error: err instanceof Error ? err.message : 'Unknown error',
+        executionTime: `${executionTime}ms`,
+        timestamp: new Date().toISOString()
+      };
+      
+      setResponse(mockResponse);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,10 +179,14 @@ Content-Type: application/json`
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Environment</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Development</option>
-                    <option>Staging</option>
-                    <option>Production</option>
+                  <select 
+                    value={selectedEnvironment}
+                    onChange={(e) => setSelectedEnvironment(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {environmentOptions.map(env => (
+                      <option key={env.key} value={env.key}>{env.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -135,31 +217,26 @@ Content-Type: application/json`
 
             {/* Authentication */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Authentication</h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="auth" className="rounded" defaultChecked />
-                  <label htmlFor="auth" className="text-sm text-gray-700">Enable Okta Authentication</label>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Authentication Status</h2>
+              {apiClient && (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">OAuth Client Configured</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    <p>Client ID: {apiClient.getConfig().client_id}</p>
+                    <p>Token URL: {apiClient.getConfig().access_token_url}</p>
+                    <p>Scope: {apiClient.getConfig().scope}</p>
+                  </div>
+                  {apiClient.getCurrentToken() && (
+                    <div className="text-xs text-green-600">
+                      <p>✓ Access token acquired</p>
+                      <p>Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
+                    </div>
+                  )}
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter Okta Client ID..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">JWT Token</label>
-                  <textarea
-                    className="w-full h-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
-                    placeholder="Paste JWT token here..."
-                  />
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -169,6 +246,12 @@ Content-Type: application/json`
             {/* Response Display */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Response</h2>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+              )}
               
               {loading && (
                 <div className="flex items-center justify-center h-64">
@@ -190,9 +273,18 @@ Content-Type: application/json`
                     </span>
                   </div>
                   
-                  <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-sm">
-                    <code>{JSON.stringify(response.data, null, 2)}</code>
-                  </pre>
+                  {response.data !== undefined && (
+                    <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-sm">
+                      <code>{safeStringify(response.data)}</code>
+                    </pre>
+                  )}
+                  
+                  {response.error && (
+                    <div className="bg-red-50 p-4 rounded-md">
+                      <p className="text-red-800 text-sm font-medium">Error:</p>
+                      <p className="text-red-700 text-sm mt-1">{response.error}</p>
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -209,24 +301,32 @@ Content-Type: application/json`
             {/* Response Headers */}
             {response && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Response Headers</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Response Information</h2>
                 <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status:</span>
+                    <span className={response.status === 200 ? 'text-green-600' : 'text-red-600'}>
+                      {response.status} {response.status === 200 ? 'OK' : 'Error'}
+                    </span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Content-Type:</span>
                     <span>application/json</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Cache-Control:</span>
-                    <span>no-cache</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Server:</span>
-                    <span>nginx/1.18.0</span>
+                    <span className="text-gray-600">Execution Time:</span>
+                    <span>{response.executionTime}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Timestamp:</span>
                     <span>{new Date(response.timestamp).toLocaleString()}</span>
                   </div>
+                  {response.headers && Object.entries(response.headers).map(([key, value]) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="text-gray-600">{key}:</span>
+                      <span>{value as string}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

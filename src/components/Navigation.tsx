@@ -12,6 +12,7 @@ export default function Navigation() {
     { name: 'API Testing', href: '/api-testing', icon: '🔧' },
     { name: 'Load Testing', href: '/load-testing', icon: '⚡' },
     { name: 'Settings', href: '/settings', icon: '⚙️' },
+    { name: 'Debug', href: '/debug', icon: '🐛' },
   ];
 
   return (
