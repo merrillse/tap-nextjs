@@ -22,6 +22,10 @@ export class QueryLibrary {
    * Get all saved queries
    */
   static getQueries(): SavedQuery[] {
+    if (typeof window === 'undefined') {
+      return []; // Return empty array on server-side
+    }
+    
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -35,6 +39,10 @@ export class QueryLibrary {
    * Save a new query or update existing one
    */
   static saveQuery(query: Omit<SavedQuery, 'id' | 'createdAt' | 'updatedAt'>): SavedQuery {
+    if (typeof window === 'undefined') {
+      throw new Error('Cannot save queries on server-side');
+    }
+    
     const queries = this.getQueries();
     const now = new Date().toISOString();
     

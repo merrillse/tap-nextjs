@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit } from '@mui/icons-material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -10,6 +10,7 @@ import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { graphql } from 'cm6-graphql';
+import { formatGraphQLQuery } from '@/lib/graphql-formatter';
 
 interface CodeEditorProps {
   value: string;
@@ -39,6 +40,18 @@ export function CodeEditor({
       await navigator.clipboard.writeText(value);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleFormat = async () => {
+    if (language !== 'graphql' || !onChange) return;
+    
+    try {
+      const formatted = formatGraphQLQuery(value);
+      onChange(formatted);
+    } catch (err) {
+      console.error('Failed to format GraphQL:', err);
+      // Could show a toast notification here
     }
   };
 
@@ -174,6 +187,13 @@ export function CodeEditor({
           {label || `${language.toUpperCase()} ${readOnly ? 'Response' : 'Editor'}`}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {language === 'graphql' && !readOnly && onChange && (
+            <Tooltip title="Format GraphQL">
+              <IconButton size="small" onClick={handleFormat}>
+                <AutoFixHigh fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Copy to clipboard">
             <IconButton size="small" onClick={handleCopy}>
               <ContentCopy fontSize="small" />

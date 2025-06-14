@@ -9,6 +9,7 @@ export default function DocumentationPage() {
     { id: 'overview', title: 'Overview', icon: '📖' },
     { id: 'environments', title: 'Environments', icon: '🌐' },
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
+    { id: 'api-testing', title: 'API Testing Tools', icon: '🧪' },
     { id: 'schema-browser', title: 'MGQL Schema Browser', icon: '🔍' },
     { id: 'schemas', title: 'Schema Containers', icon: '📋' },
     { id: 'clients', title: 'Authorized Clients', icon: '👥' },
@@ -158,6 +159,163 @@ export default function DocumentationPage() {
                         <code className="text-sm font-mono text-gray-700">mis:health:read</code>
                         <p className="text-sm text-gray-600">Health and medical data (requires approval)</p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'api-testing' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">🧪 API Testing Tools</h2>
+                  
+                  <p className="text-gray-600 mb-6">
+                    The TAP platform provides a comprehensive suite of tools for testing and working with GraphQL APIs. 
+                    These tools help developers explore, test, and debug GraphQL queries with professional-grade features.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🎲 Random Query Generator</h3>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Automatically generates valid GraphQL queries using schema introspection. Perfect for API exploration and testing.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>Smart Generation:</strong> Creates realistic queries with proper variables and arguments</li>
+                      <li><strong>Schema-Aware:</strong> Uses introspected schema to ensure validity</li>
+                      <li><strong>Configurable Depth:</strong> Controls query complexity to prevent overwhelming results</li>
+                      <li><strong>Variable Creation:</strong> Automatically generates variables with appropriate default values</li>
+                    </ul>
+                    <div className="mt-4 p-3 bg-white rounded border">
+                      <p className="text-sm font-medium text-gray-900">Example Generated Query:</p>
+                      <pre className="text-xs text-gray-600 mt-2 overflow-x-auto">
+{`query GetMissionary($missionary_id: ID = "916793") {
+  missionary(missionaryId: $missionary_id) {
+    latinFirstName
+    latinLastName
+    assignments {
+      mission {
+        name
+      }
+    }
+  }
+}`}
+                      </pre>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">⚡ GraphQL Query Formatter</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Professional-grade GraphQL query formatting using the official GraphQL library. 
+                      Transform messy, hand-written queries into clean, readable code with a single click.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>One-Click Formatting:</strong> Instant query beautification with the ⚡ format button</li>
+                      <li><strong>Standard Compliant:</strong> Uses GraphQL's official AST-based formatting</li>
+                      <li><strong>Syntax Validation:</strong> Validates query structure before formatting</li>
+                      <li><strong>Error Safe:</strong> Preserves original query if syntax errors are found</li>
+                      <li><strong>Professional Output:</strong> Consistent indentation, spacing, and line breaks</li>
+                    </ul>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-3 bg-red-50 rounded border border-red-200">
+                        <p className="text-sm font-medium text-red-900 mb-2">Before Formatting:</p>
+                        <pre className="text-xs text-red-700 overflow-x-auto">
+{`query{missionary(missionaryId:"123"){
+latinFirstName,latinLastName,
+assignments{mission{name}}}}`}
+                        </pre>
+                      </div>
+                      <div className="p-3 bg-green-50 rounded border border-green-200">
+                        <p className="text-sm font-medium text-green-900 mb-2">After Formatting:</p>
+                        <pre className="text-xs text-green-700 overflow-x-auto">
+{`query {
+  missionary(missionaryId: "123") {
+    latinFirstName
+    latinLastName
+    assignments {
+      mission {
+        name
+      }
+    }
+  }
+}`}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-white rounded border">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">🎯 Perfect for:</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• <strong>Copy-Paste Cleanup:</strong> Fix messy queries from external sources</li>
+                        <li>• <strong>Demo Preparation:</strong> Create professional-looking queries for presentations</li>
+                        <li>• <strong>Code Reviews:</strong> Ensure consistent formatting standards</li>
+                        <li>• <strong>Development:</strong> Quick cleanup during testing and debugging</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">📚 Query Library</h3>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Save, organize, and reuse GraphQL queries with a comprehensive library system. 
+                      Build a collection of queries for testing, demos, and development workflows.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>Smart Storage:</strong> Automatically extracts variables and metadata</li>
+                      <li><strong>Environment Tracking:</strong> Associates queries with specific environments</li>
+                      <li><strong>Search & Filter:</strong> Find queries by name, description, or content</li>
+                      <li><strong>Instant Execution:</strong> Load and run queries with one click</li>
+                      <li><strong>Export/Import:</strong> Share query collections with team members</li>
+                      <li><strong>Tags & Organization:</strong> Categorize queries for easy management</li>
+                    </ul>
+                    
+                    <div className="mt-4 p-3 bg-white rounded border">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">🎪 Key Features:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div className="p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-gray-900">💾 Save Queries</p>
+                          <p className="text-gray-600">Name, description, tags</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-gray-900">📚 Browse Library</p>
+                          <p className="text-gray-600">Search and filter queries</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-gray-900">▶️ Instant Run</p>
+                          <p className="text-gray-600">Execute with one click</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🔧 Getting Started</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <ol className="list-decimal list-inside space-y-3 text-gray-700">
+                      <li>
+                        <strong>Navigate to API Testing:</strong> Go to <code className="bg-white px-2 py-1 rounded text-sm">/api-testing</code>
+                      </li>
+                      <li>
+                        <strong>Select Environment:</strong> Choose your target environment (e.g., mis-gql-stage)
+                      </li>
+                      <li>
+                        <strong>Generate or Write Query:</strong> Use 🎲 Random Query or write your own
+                      </li>
+                      <li>
+                        <strong>Format Query:</strong> Click ⚡ format button for clean formatting
+                      </li>
+                      <li>
+                        <strong>Save for Later:</strong> Use 💾 Save to add to your query library
+                      </li>
+                      <li>
+                        <strong>Execute:</strong> Click "Test API" to run the query
+                      </li>
+                    </ol>
+                    
+                    <div className="mt-4 p-3 bg-blue-100 rounded">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Pro Tip:</strong> Use the Query Library to build a collection of demo queries for presentations, 
+                        test cases for regression testing, and examples for documentation.
+                      </p>
                     </div>
                   </div>
                 </div>
