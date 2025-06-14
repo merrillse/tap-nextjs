@@ -155,7 +155,11 @@ export function SaveQueryDialog({
           
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Environment: <Chip label={environment} size="small" />
+              Environment: <Chip 
+                label={environment} 
+                size="small"
+                onClick={(e) => e.stopPropagation()}
+              />
             </Typography>
           </Box>
         </Box>
@@ -283,8 +287,17 @@ export function QueryLibraryDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* Statistics */}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip icon={<FolderIcon />} label={`${stats.totalQueries} queries`} size="small" />
-            <Chip label={`${stats.environments.length} environments`} size="small" />
+            <Chip 
+              icon={<FolderIcon />} 
+              label={`${stats.totalQueries} queries`} 
+              size="small"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <Chip 
+              label={`${stats.environments.length} environments`} 
+              size="small"
+              onClick={(e) => e.stopPropagation()}
+            />
           </Box>
 
           {/* Search and Tabs */}
@@ -346,7 +359,12 @@ export function QueryLibraryDialog({
                               {query.name}
                             </Typography>
                             {query.environment !== currentEnvironment && (
-                              <Chip label={query.environment} size="small" color="secondary" />
+                              <Chip 
+                                label={query.environment} 
+                                size="small" 
+                                color="secondary"
+                                onClick={(e) => e.stopPropagation()}
+                              />
                             )}
                           </Box>
                         }
@@ -359,7 +377,13 @@ export function QueryLibraryDialog({
                             )}
                             <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
                               {query.tags?.map(tag => (
-                                <Chip key={tag} label={tag} size="small" variant="outlined" />
+                                <Chip 
+                                  key={tag} 
+                                  label={tag} 
+                                  size="small" 
+                                  variant="outlined"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
                               ))}
                             </Box>
                             <Typography variant="caption" color="text.secondary" component="div">
@@ -367,6 +391,7 @@ export function QueryLibraryDialog({
                             </Typography>
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: 'div' }}
                       />
                       <ListItemSecondaryAction>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>

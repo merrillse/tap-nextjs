@@ -9,13 +9,278 @@ import { useState, useEffect, useMemo } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
-import { EditorView } from '@codemirror/view';
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
+import { EditorState, StateField, StateEffect, Range } from '@codemirror/state';
+import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { graphql } from 'cm6-graphql';
 import { buildSchema, buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { formatGraphQLQuery } from '@/lib/graphql-formatter';
+
+// Emacs-style incremental search implementation
+interface SearchState {
+  active: boolean;
+  query: string;
+  originalPosition: number;
+  currentMatch: number;
+  matches: Range<Decoration>[];
+}
+
+// Effects for managing search state
+const setSearchQuery = StateEffect.define<string>();
+const toggleSearch = StateEffect.define<boolean>();
+const exitSearch = StateEffect.define<boolean>();
+
+// State field for incremental search
+const searchState = StateField.define<SearchState>({
+  create() {
+    return {
+      active: false,
+      query: '',
+      originalPosition: 0,
+      currentMatch: -1,
+      matches: []
+    };
+  },
+  update(state, tr) {
+    let newState = { ...state };
+    
+    for (let effect of tr.effects) {
+      if (effect.is(setSearchQuery)) {
+        newState.query = effect.value;
+        newState.matches = findMatches(tr.state.doc.toString(), effect.value);
+        // Move to first match if query is not empty
+        if (effect.value && newState.matches.length > 0) {
+          newState.currentMatch = 0;
+        } else {
+          newState.currentMatch = -1;
+        }
+      } else if (effect.is(toggleSearch)) {
+        if (!newState.active) {
+          newState.active = true;
+          newState.originalPosition = tr.state.selection.main.head;
+          newState.query = '';
+          newState.matches = [];
+          newState.currentMatch = -1;
+        }
+      } else if (effect.is(exitSearch)) {
+        newState.active = false;
+        newState.query = '';
+        newState.matches = [];
+        newState.currentMatch = -1;
+      }
+    }
+    
+    return newState;
+  }
+});
+
+// Helper function to find all matches
+function findMatches(text: string, query: string): Range<Decoration>[] {
+  if (!query) return [];
+  
+  const matches: Range<Decoration>[] = [];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let index = 0;
+  
+  while ((index = lowerText.indexOf(lowerQuery, index)) !== -1) {
+    matches.push(Decoration.mark({
+      class: 'cm-search-match'
+    }).range(index, index + query.length));
+    index += 1;
+  }
+  
+  return matches;
+}
+
+// Search input widget
+class SearchWidget extends WidgetType {
+  constructor(private query: string, private active: boolean) {
+    super();
+  }
+  
+  toDOM() {
+    const div = document.createElement('div');
+    div.className = 'cm-search-widget';
+    div.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    `;
+    div.textContent = `I-search: ${this.query}`;
+    return div;
+  }
+  
+  eq(widget: SearchWidget) {
+    return widget.query === this.query && widget.active === this.active;
+  }
+}
+
+// View plugin for search decorations and widget
+const searchPlugin = ViewPlugin.fromClass(class {
+  decorations: DecorationSet;
+  
+  constructor(view: EditorView) {
+    this.decorations = this.buildDecorations(view);
+  }
+  
+  update(update: ViewUpdate) {
+    this.decorations = this.buildDecorations(update.view);
+  }
+  
+  buildDecorations(view: EditorView): DecorationSet {
+    const search = view.state.field(searchState);
+    const decorations: Range<Decoration>[] = [];
+    
+    // Add search widget at position 0 (always first)
+    if (search.active) {
+      decorations.push(Decoration.widget({
+        widget: new SearchWidget(search.query, search.active),
+        side: 1
+      }).range(0));
+    }
+    
+    // Add match highlights, but use different class for current match
+    search.matches.forEach((match, index) => {
+      if (index === search.currentMatch) {
+        // Current match gets special highlighting
+        decorations.push(Decoration.mark({
+          class: 'cm-search-current-match'
+        }).range(match.from, match.to));
+      } else {
+        // Regular match highlighting
+        decorations.push(match);
+      }
+    });
+    
+    return Decoration.set(decorations);
+  }
+}, {
+  decorations: v => v.decorations
+});
+
+// Keymap for Emacs-style incremental search
+const emacsSearchKeymap = keymap.of([
+  {
+    key: 'Ctrl-s',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (!search.active) {
+        view.dispatch({ effects: toggleSearch.of(true) });
+        return true;
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Ctrl-g',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Return to original position
+        view.dispatch({
+          effects: exitSearch.of(true),
+          selection: { anchor: search.originalPosition, head: search.originalPosition },
+          scrollIntoView: true
+        });
+        return true;
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Ctrl-n',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        view.dispatch({ effects: exitSearch.of(true) });
+        // Let the default Ctrl-n behavior continue (move down)
+        return false;
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Ctrl-p',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        view.dispatch({ effects: exitSearch.of(true) });
+        // Let the default Ctrl-p behavior continue (move up)
+        return false;
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Escape',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        view.dispatch({ effects: exitSearch.of(true) });
+        return true;
+      }
+      return false;
+    }
+  }
+]);
+
+// Custom input handler for incremental search
+const searchInputHandler = EditorView.domEventHandlers({
+  keydown(event, view) {
+    const search = view.state.field(searchState);
+    
+    if (search.active) {
+      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        // Add character to search and move cursor to first match
+        const newQuery = search.query + event.key;
+        const newMatches = findMatches(view.state.doc.toString(), newQuery);
+        
+        const transaction: any = { effects: setSearchQuery.of(newQuery) };
+        
+        // If we have matches, move cursor to the first one
+        if (newMatches.length > 0) {
+          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transaction.scrollIntoView = true;
+        }
+        
+        view.dispatch(transaction);
+        event.preventDefault();
+        return true;
+      } else if (event.key === 'Backspace') {
+        // Remove character from search and move cursor to first match
+        const newQuery = search.query.slice(0, -1);
+        const newMatches = findMatches(view.state.doc.toString(), newQuery);
+        
+        const transaction: any = { effects: setSearchQuery.of(newQuery) };
+        
+        // If we have matches, move cursor to the first one
+        if (newMatches.length > 0) {
+          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transaction.scrollIntoView = true;
+        }
+        
+        view.dispatch(transaction);
+        event.preventDefault();
+        return true;
+      }
+    }
+    
+    return false;
+  }
+});
 
 interface EnhancedGraphQLEditorProps {
   value: string;
@@ -94,12 +359,18 @@ export function EnhancedGraphQLEditor({
   ]);
 
   const extensions = [
+    // Emacs-style incremental search
+    searchState,
+    searchPlugin,
+    emacsSearchKeymap,
+    searchInputHandler,
     // GraphQL language support with optional schema
     graphql(builtSchema || undefined),
     syntaxHighlighting(graphQLHighlight),
     EditorView.theme({
       '&': {
         fontSize: '14px',
+        position: 'relative',
       },
       '.cm-content': {
         padding: '16px',
@@ -131,6 +402,21 @@ export function EnhancedGraphQLEditor({
       },
       '.cm-tooltip-autocomplete ul li[aria-selected]': {
         backgroundColor: isDark ? '#374151' : '#f3f4f6',
+      },
+      // Emacs-style search styling
+      '.cm-search-match': {
+        backgroundColor: isDark ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.3)',
+        border: isDark ? '1px solid rgba(255, 255, 0, 0.5)' : '1px solid rgba(255, 215, 0, 0.5)',
+      },
+      '.cm-search-current-match': {
+        backgroundColor: isDark ? 'rgba(255, 165, 0, 0.6)' : 'rgba(255, 140, 0, 0.6)',
+        border: isDark ? '2px solid rgba(255, 165, 0, 0.8)' : '2px solid rgba(255, 140, 0, 0.8)',
+        borderRadius: '2px',
+      },
+      '.cm-search-widget': {
+        backgroundColor: isDark ? '#2d2d2d !important' : '#f8f9fa !important',
+        color: isDark ? '#ffffff !important' : '#333333 !important',
+        border: isDark ? '1px solid #555555 !important' : '1px solid #cccccc !important',
       },
     })
   ];

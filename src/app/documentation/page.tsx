@@ -366,7 +366,92 @@ assignments{mission{name}}}}`}
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">�🔧 Getting Started</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🔍 Emacs-Style Incremental Search</h3>
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Navigate through your GraphQL queries with powerful Emacs-style incremental search. 
+                      Search as you type with real-time highlighting and instant cursor positioning.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>Real-time Highlighting:</strong> All matches are highlighted as you type</li>
+                      <li><strong>Current Match Emphasis:</strong> The current match is highlighted differently</li>
+                      <li><strong>Instant Cursor Movement:</strong> Cursor jumps to the first match immediately</li>
+                      <li><strong>Search Widget:</strong> Shows "I-search: [your query]" indicator</li>
+                      <li><strong>Case-insensitive:</strong> Search works regardless of case</li>
+                      <li><strong>Backspace Support:</strong> Refine your search by removing characters</li>
+                    </ul>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-white rounded border">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">⌨️ Exact Keybindings</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Start incremental search:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+S</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Cancel (return to start):</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+G</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Exit (stay at match):</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+N / Ctrl+P</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Alternative exit:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Escape</code>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded border">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">🎨 Visual Experience</h4>
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-2 bg-yellow-300 border border-yellow-500 rounded"></div>
+                            <span>All matches highlighted in yellow</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-2 bg-orange-400 border-2 border-orange-600 rounded"></div>
+                            <span>Current match emphasized in orange</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-2 bg-gray-300 border border-gray-500 rounded"></div>
+                            <span>Search widget shows current query</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-blue-500">→</span>
+                            <span>Smooth cursor movement to matches</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-white rounded border">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">🚀 How to Use</h4>
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+                        <li><strong>Start Search:</strong> Press <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+S</code> while in the GraphQL editor</li>
+                        <li><strong>Type Query:</strong> Start typing - matches appear instantly with highlighting</li>
+                        <li><strong>Navigate:</strong> Use <code className="bg-gray-100 px-1 rounded text-xs">Backspace</code> to refine your search</li>
+                        <li><strong>Exit Options:</strong>
+                          <ul className="ml-4 mt-1 list-disc list-inside">
+                            <li><code className="bg-gray-100 px-1 rounded text-xs">Ctrl+G</code>: Return to original cursor position</li>
+                            <li><code className="bg-gray-100 px-1 rounded text-xs">Ctrl+N</code>/<code className="bg-gray-100 px-1 rounded text-xs">Ctrl+P</code>: Stay at current match and continue editing</li>
+                            <li><code className="bg-gray-100 px-1 rounded text-xs">Escape</code>: Exit search</li>
+                          </ul>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Pro Tip:</strong> This provides the exact Emacs-style incremental search experience! 
+                        The search is blazingly fast, visually clear, and behaves exactly like Emacs users expect. 
+                        Perfect for efficiently navigating through large GraphQL queries.
+                      </p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🔧 Getting Started</h3>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                     <ol className="list-decimal list-inside space-y-3 text-gray-700">
                       <li>
