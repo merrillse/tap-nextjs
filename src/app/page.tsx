@@ -123,7 +123,7 @@ export default function HomePage() {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            {/* Large Interconnected Nodes Icon */}
+            {/* Large Interconnected Nodes Icon with Data Flow Animation */}
             <div className="flex justify-center mb-8">
               <div className="relative w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl">
                 <svg className="w-12 h-12 text-white" viewBox="0 0 28 28" fill="none">
@@ -138,19 +138,73 @@ export default function HomePage() {
                     <line x1="8" y1="8" x2="8" y2="20" />
                     <line x1="20" y1="8" x2="20" y2="20" />
                   </g>
-                  {/* Network Nodes */}
+                  
+                  {/* Network Nodes with Sequential Highlighting Animation */}
                   <g fill="currentColor">
-                    <circle cx="8" cy="8" r="2.5" />
-                    <circle cx="20" cy="8" r="2.5" />
-                    <circle cx="8" cy="20" r="2.5" />
-                    <circle cx="20" cy="20" r="2.5" />
-                    <circle cx="14" cy="14" r="3.5" />
+                    {/* Top-left node */}
+                    <circle cx="8" cy="8" r="2.5">
+                      <animate attributeName="opacity" values="1;0.3;1;1;1" dur="4s" repeatCount="indefinite" begin="0s" />
+                    </circle>
+                    {/* Top-right node */}
+                    <circle cx="20" cy="8" r="2.5">
+                      <animate attributeName="opacity" values="1;1;0.3;1;1" dur="4s" repeatCount="indefinite" begin="0.5s" />
+                    </circle>
+                    {/* Center hub node */}
+                    <circle cx="14" cy="14" r="3.5">
+                      <animate attributeName="opacity" values="1;1;1;0.3;1" dur="4s" repeatCount="indefinite" begin="1s" />
+                    </circle>
+                    {/* Bottom-left node */}
+                    <circle cx="8" cy="20" r="2.5">
+                      <animate attributeName="opacity" values="1;1;1;1;0.3" dur="4s" repeatCount="indefinite" begin="1.5s" />
+                    </circle>
+                    {/* Bottom-right node */}
+                    <circle cx="20" cy="20" r="2.5">
+                      <animate attributeName="opacity" values="0.3;1;1;1;1" dur="4s" repeatCount="indefinite" begin="2s" />
+                    </circle>
                   </g>
-                  {/* Animated pulse effect on central node */}
-                  <circle cx="14" cy="14" r="3.5" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.6">
-                    <animate attributeName="r" values="3.5;5.5;3.5" dur="3s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite" />
-                  </circle>
+                  
+                  {/* Data Flow Pulses along connections */}
+                  <g fill="currentColor" opacity="0.8">
+                    {/* Pulse from top-left to center */}
+                    <circle cx="8" cy="8" r="1">
+                      <animateMotion dur="4s" repeatCount="indefinite" begin="0s">
+                        <mpath href="#path1"/>
+                      </animateMotion>
+                      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0s" />
+                    </circle>
+                    
+                    {/* Pulse from top-right to center */}
+                    <circle cx="20" cy="8" r="1">
+                      <animateMotion dur="4s" repeatCount="indefinite" begin="0.5s">
+                        <mpath href="#path2"/>
+                      </animateMotion>
+                      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0.5s" />
+                    </circle>
+                    
+                    {/* Pulse from center to bottom-left */}
+                    <circle cx="14" cy="14" r="1">
+                      <animateMotion dur="4s" repeatCount="indefinite" begin="1s">
+                        <mpath href="#path3"/>
+                      </animateMotion>
+                      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="1s" />
+                    </circle>
+                    
+                    {/* Pulse from center to bottom-right */}
+                    <circle cx="14" cy="14" r="1">
+                      <animateMotion dur="4s" repeatCount="indefinite" begin="1.5s">
+                        <mpath href="#path4"/>
+                      </animateMotion>
+                      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="1.5s" />
+                    </circle>
+                  </g>
+                  
+                  {/* Hidden paths for animation */}
+                  <defs>
+                    <path id="path1" d="M8,8 L14,14" />
+                    <path id="path2" d="M20,8 L14,14" />
+                    <path id="path3" d="M14,14 L8,20" />
+                    <path id="path4" d="M14,14 L20,20" />
+                  </defs>
                 </svg>
                 {/* Enhanced glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-2xl blur-md opacity-60 -z-10"></div>

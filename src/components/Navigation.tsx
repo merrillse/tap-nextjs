@@ -236,39 +236,11 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
               <div className="text-sm text-gray-500">
                 Missionary Graph Service Team (0oak0jqakvevwjWrp357)
               </div>
-              {/* Sexy Interconnected Nodes Team Logo */}
-              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
-                {/* Interconnected Network Pattern */}
-                <svg className="w-7 h-7 text-white" viewBox="0 0 28 28" fill="none">
-                  {/* Connection Lines */}
-                  <g stroke="currentColor" strokeWidth="1" opacity="0.8">
-                    <line x1="8" y1="8" x2="14" y2="14" />
-                    <line x1="20" y1="8" x2="14" y2="14" />
-                    <line x1="8" y1="8" x2="20" y2="8" />
-                    <line x1="8" y1="20" x2="14" y2="14" />
-                    <line x1="20" y1="20" x2="14" y2="14" />
-                    <line x1="8" y1="20" x2="20" y2="20" />
-                    <line x1="8" y1="8" x2="8" y2="20" />
-                    <line x1="20" y1="8" x2="20" y2="20" />
-                  </g>
-                  {/* Network Nodes */}
-                  <g fill="currentColor">
-                    {/* Corner nodes */}
-                    <circle cx="8" cy="8" r="2.5" />
-                    <circle cx="20" cy="8" r="2.5" />
-                    <circle cx="8" cy="20" r="2.5" />
-                    <circle cx="20" cy="20" r="2.5" />
-                    {/* Central hub node */}
-                    <circle cx="14" cy="14" r="3" />
-                  </g>
-                  {/* Subtle pulse effect on central node */}
-                  <circle cx="14" cy="14" r="3" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.4">
-                    <animate attributeName="r" values="3;4.5;3" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
-                  </circle>
+              {/* Professional Team Icon */}
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shadow-sm border border-gray-200">
+                <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12.75c1.63 0 3.07.39 4.24.9 1.08.47 1.76 1.56 1.76 2.73V18H6v-1.61c0-1.18.68-2.26 1.76-2.73 1.17-.52 2.61-.91 4.24-.91zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm1.13 1.1c-.37-.06-.74-.1-1.13-.1-.99 0-1.93.21-2.78.58A2.01 2.01 0 0 0 0 16.43V18h4.5v-1.61c0-.83.23-1.61.63-2.29zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85A6.95 6.95 0 0 0 20 14c-.39 0-.76.04-1.13.1.4.68.63 1.46.63 2.29V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z"/>
                 </svg>
-                {/* Subtle glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-lg blur-sm opacity-50 -z-10"></div>
               </div>
             </div>
           </div>
