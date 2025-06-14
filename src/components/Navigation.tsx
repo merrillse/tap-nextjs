@@ -34,6 +34,7 @@ export default function Navigation() {
       items: [
         { name: 'Missionary Search', href: '/missionary', icon: '👤', description: 'Search missionary records' },
         { name: 'Missionaries Search', href: '/missionaries', icon: '👥', description: 'Search multiple missionaries' },
+        { name: 'Missionaries Connection', href: '/missionaries-connection', icon: '🔗', description: 'Paginated missionary retrieval with GraphQL Relay' },
       ]
     },
     {
