@@ -41,7 +41,7 @@ export default function Navigation() {
       icon: '🧪',
       items: [
         { name: 'API Testing', href: '/api-testing', icon: '🔧', description: 'Test GraphQL & REST APIs' },
-        { name: 'Schema Browser', href: '/schema-browser', icon: '🔍', description: 'Explore GraphQL schema structure' },
+        { name: 'MGQL Schema Browser', href: '/schema-browser', icon: '🔍', description: 'Explore MGQL schema structure' },
         { name: 'Load Testing', href: '/load-testing', icon: '⚡', description: 'Performance testing' },
         { name: 'Debug Tools', href: '/debug', icon: '🐛', description: 'OAuth & API debugging' },
       ]

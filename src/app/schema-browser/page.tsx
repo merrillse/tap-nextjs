@@ -32,7 +32,8 @@ import {
   List as ListIcon,
   Category,
   Settings,
-  Refresh
+  Refresh,
+  Close
 } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
@@ -477,7 +478,7 @@ export default function SchemaBrowserPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
-          GraphQL Schema Browser
+          MGQL Schema Browser
         </Typography>
         <Typography variant="body1" color="text.secondary" gutterBottom>
           Explore the MIS GraphQL schema structure, types, fields, and relationships
@@ -536,39 +537,50 @@ export default function SchemaBrowserPage() {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' }, gap: 3 }}>
           {/* Left Panel - Type List */}
           <Paper sx={{ p: 2, height: 'calc(100vh - 300px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Search and Filter */}
-            <Box sx={{ mb: 2 }}>
-              <TextField
-                fullWidth
-                placeholder="Search types and fields..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
-              
-              <FormControl fullWidth>
-                <InputLabel>Type Kind</InputLabel>
-                <Select
-                  value={selectedKind}
-                  label="Type Kind"
-                  onChange={(e) => setSelectedKind(e.target.value)}
-                >
-                  <MenuItem value="all">All Types ({Object.values(typeKindCounts).reduce((a, b) => a + b, 0)})</MenuItem>
-                  {Object.entries(typeKindCounts).map(([kind, count]) => (
-                    <MenuItem key={kind} value={kind}>
-                      {kind} ({count})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+            {/* Search and Filter */}              <Box sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search types and fields..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search />
+                      </InputAdornment>
+                    ),
+                    endAdornment: searchTerm && (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setSearchTerm('')}
+                          edge="end"
+                          aria-label="clear search"
+                        >
+                          <Close />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ mb: 2 }}
+                />
+                
+                <FormControl fullWidth>
+                  <InputLabel>Type Kind</InputLabel>
+                  <Select
+                    value={selectedKind}
+                    label="Type Kind"
+                    onChange={(e) => setSelectedKind(e.target.value)}
+                  >
+                    <MenuItem value="all">All Types ({Object.values(typeKindCounts).reduce((a, b) => a + b, 0)})</MenuItem>
+                    {Object.entries(typeKindCounts).map(([kind, count]) => (
+                      <MenuItem key={kind} value={kind}>
+                        {kind} ({count})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
 
             {/* Type List */}
             <Box sx={{ flex: 1, overflow: 'auto' }}>
