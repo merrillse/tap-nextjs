@@ -376,7 +376,11 @@ assignments{mission{name}}}}`}
                       <li><strong>Real-time Highlighting:</strong> All matches are highlighted as you type</li>
                       <li><strong>Current Match Emphasis:</strong> The current match is highlighted differently</li>
                       <li><strong>Instant Cursor Movement:</strong> Cursor jumps to the first match immediately</li>
-                      <li><strong>Search Widget:</strong> Shows "I-search: [your query]" indicator</li>
+                      <li><strong>Bidirectional Search:</strong> Use Ctrl+S for forward, Ctrl+R for reverse search</li>
+                      <li><strong>Match Navigation:</strong> Use Ctrl+S/Ctrl+R repeatedly to cycle through matches</li>
+                      <li><strong>Match Counter:</strong> See your position with "I-search: query (2/5)" display</li>
+                      <li><strong>Wraparound Search:</strong> Automatically loops from last match back to first</li>
+                      <li><strong>Search Widget:</strong> Shows current query and match position</li>
                       <li><strong>Case-insensitive:</strong> Search works regardless of case</li>
                       <li><strong>Backspace Support:</strong> Refine your search by removing characters</li>
                     </ul>
@@ -388,6 +392,18 @@ assignments{mission{name}}}}`}
                           <div className="flex justify-between">
                             <span className="text-gray-600">Start incremental search:</span>
                             <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+S</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Start reverse search:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+R</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Next match (while searching):</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+S</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Previous match (while searching):</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+R</code>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Cancel (return to start):</span>
@@ -416,7 +432,7 @@ assignments{mission{name}}}}`}
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-4 h-2 bg-gray-300 border border-gray-500 rounded"></div>
-                            <span>Search widget shows current query</span>
+                            <span>Search widget shows query + match counter (e.g., "2/5")</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <span className="text-blue-500">→</span>
@@ -429,9 +445,10 @@ assignments{mission{name}}}}`}
                     <div className="mt-4 p-4 bg-white rounded border">
                       <h4 className="text-sm font-medium text-gray-900 mb-3">🚀 How to Use</h4>
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
-                        <li><strong>Start Search:</strong> Press <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+S</code> while in the GraphQL editor</li>
-                        <li><strong>Type Query:</strong> Start typing - matches appear instantly with highlighting</li>
-                        <li><strong>Navigate:</strong> Use <code className="bg-gray-100 px-1 rounded text-xs">Backspace</code> to refine your search</li>
+                        <li><strong>Start Search:</strong> Press <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+S</code> (forward) or <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+R</code> (reverse) in the GraphQL editor</li>
+                        <li><strong>Type Query:</strong> Start typing - matches appear instantly with highlighting and counter</li>
+                        <li><strong>Navigate Matches:</strong> Use <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+S</code> (next) or <code className="bg-gray-100 px-1 rounded text-xs">Ctrl+R</code> (previous) to move between matches</li>
+                        <li><strong>Refine Search:</strong> Use <code className="bg-gray-100 px-1 rounded text-xs">Backspace</code> to modify your search query</li>
                         <li><strong>Exit Options:</strong>
                           <ul className="ml-4 mt-1 list-disc list-inside">
                             <li><code className="bg-gray-100 px-1 rounded text-xs">Ctrl+G</code>: Return to original cursor position</li>
@@ -444,8 +461,9 @@ assignments{mission{name}}}}`}
 
                     <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                       <p className="text-sm text-blue-800">
-                        💡 <strong>Pro Tip:</strong> This provides the exact Emacs-style incremental search experience! 
-                        The search is blazingly fast, visually clear, and behaves exactly like Emacs users expect. 
+                        💡 <strong>Pro Tip:</strong> This provides the full Emacs-style incremental search experience with bidirectional navigation! 
+                        The search is blazingly fast, shows real-time match counts (e.g., "2/5"), and behaves exactly like Emacs users expect. 
+                        Use <code className="bg-blue-100 px-1 rounded text-xs">Ctrl+S</code>/<code className="bg-blue-100 px-1 rounded text-xs">Ctrl+R</code> to move forward/backward through matches.
                         Perfect for efficiently navigating through large GraphQL queries.
                       </p>
                     </div>

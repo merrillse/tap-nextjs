@@ -32,6 +32,7 @@ interface SearchState {
 const setSearchQuery = StateEffect.define<string>();
 const toggleSearch = StateEffect.define<boolean>();
 const exitSearch = StateEffect.define<boolean>();
+const setCurrentMatch = StateEffect.define<number>();
 
 // State field for incremental search
 const searchState = StateField.define<SearchState>({
@@ -70,6 +71,8 @@ const searchState = StateField.define<SearchState>({
         newState.query = '';
         newState.matches = [];
         newState.currentMatch = -1;
+      } else if (effect.is(setCurrentMatch)) {
+        newState.currentMatch = effect.value;
       }
     }
     
@@ -98,7 +101,12 @@ function findMatches(text: string, query: string): Range<Decoration>[] {
 
 // Search input widget
 class SearchWidget extends WidgetType {
-  constructor(private query: string, private active: boolean) {
+  constructor(
+    private query: string, 
+    private active: boolean, 
+    private currentMatch: number = -1,
+    private totalMatches: number = 0
+  ) {
     super();
   }
   
@@ -119,12 +127,23 @@ class SearchWidget extends WidgetType {
       z-index: 100;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     `;
-    div.textContent = `I-search: ${this.query}`;
+    
+    let text = `I-search: ${this.query}`;
+    if (this.totalMatches > 0) {
+      text += ` (${this.currentMatch + 1}/${this.totalMatches})`;
+    } else if (this.query && this.totalMatches === 0) {
+      text += ' (no matches)';
+    }
+    
+    div.textContent = text;
     return div;
   }
   
   eq(widget: SearchWidget) {
-    return widget.query === this.query && widget.active === this.active;
+    return widget.query === this.query && 
+           widget.active === this.active &&
+           widget.currentMatch === this.currentMatch &&
+           widget.totalMatches === this.totalMatches;
   }
 }
 
@@ -147,7 +166,7 @@ const searchPlugin = ViewPlugin.fromClass(class {
     // Add search widget at position 0 (always first)
     if (search.active) {
       decorations.push(Decoration.widget({
-        widget: new SearchWidget(search.query, search.active),
+        widget: new SearchWidget(search.query, search.active, search.currentMatch, search.matches.length),
         side: 1
       }).range(0));
     }
@@ -178,10 +197,49 @@ const emacsSearchKeymap = keymap.of([
     run(view) {
       const search = view.state.field(searchState);
       if (!search.active) {
+        // Start search mode
         view.dispatch({ effects: toggleSearch.of(true) });
         return true;
+      } else {
+        // Already in search mode - advance to next match
+        if (search.matches.length > 0) {
+          const nextMatch = (search.currentMatch + 1) % search.matches.length;
+          const match = search.matches[nextMatch];
+          
+          view.dispatch({
+            effects: setCurrentMatch.of(nextMatch),
+            selection: { anchor: match.from, head: match.from },
+            scrollIntoView: true
+          });
+        }
+        return true;
       }
-      return false;
+    }
+  },
+  {
+    key: 'Ctrl-r',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (!search.active) {
+        // Start reverse search mode
+        view.dispatch({ effects: toggleSearch.of(true) });
+        return true;
+      } else {
+        // Already in search mode - go to previous match (reverse direction)
+        if (search.matches.length > 0) {
+          const prevMatch = search.currentMatch <= 0 
+            ? search.matches.length - 1 
+            : search.currentMatch - 1;
+          const match = search.matches[prevMatch];
+          
+          view.dispatch({
+            effects: setCurrentMatch.of(prevMatch),
+            selection: { anchor: match.from, head: match.from },
+            scrollIntoView: true
+          });
+        }
+        return true;
+      }
     }
   },
   {
