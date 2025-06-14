@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntax Highlighting Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .demo-box {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        
+        /* GraphQL Syntax Highlighting */
+        .graphql .keyword { color: #d73a49; font-weight: bold; } /* query, mutation, etc. */
+        .graphql .type { color: #6f42c1; font-weight: bold; } /* Type names like Missionary */
+        .graphql .field { color: #005cc5; } /* Field names like latinFirstName */
+        .graphql .string { color: #032f62; } /* String literals */
+        .graphql .variable { color: #e36209; } /* Variables like $missionaryNumber */
+        .graphql .comment { color: #6a737d; font-style: italic; } /* Comments */
+        .graphql .punctuation { color: #24292e; } /* Brackets, colons, etc. */
+        
+        /* JSON Syntax Highlighting */
+        .json .key { color: #005cc5; font-weight: 500; } /* JSON keys */
+        .json .string-value { color: #032f62; } /* String values */
+        .json .number { color: #005cc5; } /* Number values */
+        .json .boolean { color: #005cc5; } /* Boolean values */
+        .json .null { color: #6a737d; } /* null values */
+        .json .punctuation { color: #24292e; } /* Brackets, commas, etc. */
+        
+        .feature-list {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .feature-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .feature-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Enhanced Syntax Highlighting Demo</h1>
+    <p>Here's what the enhanced syntax highlighting looks like in your API Testing page:</p>
+    
+    <div class="demo-container">
+        <div class="demo-box">
+            <div class="demo-title">GraphQL Query Editor</div>
+            <div class="code-block graphql">
+<span class="keyword">query</span> <span class="type">Missionary</span>(<span class="variable">$missionaryNumber</span>: <span class="type">ID</span> = <span class="string">"916793"</span>) {<br>
+&nbsp;&nbsp;<span class="field">missionary</span>(<span class="field">missionaryId</span>: <span class="variable">$missionaryNumber</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">latinFirstName</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">latinLastName</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">missionaryNumber</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">emailAddress</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">missionaryStatus</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">value</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">label</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">assignments</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">assignmentId</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">componentName</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">mission</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">name</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+        </div>
+        
+        <div class="demo-box">
+            <div class="demo-title">JSON Response Viewer</div>
+            <div class="code-block json">
+{<br>
+&nbsp;&nbsp;<span class="key">"data"</span><span class="punctuation">:</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"missionary"</span><span class="punctuation">:</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"latinFirstName"</span><span class="punctuation">:</span> <span class="string-value">"John"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"latinLastName"</span><span class="punctuation">:</span> <span class="string-value">"Smith"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"missionaryNumber"</span><span class="punctuation">:</span> <span class="string-value">"916793"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"emailAddress"</span><span class="punctuation">:</span> <span class="string-value">"john.smith@example.com"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"missionaryStatus"</span><span class="punctuation">:</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"value"</span><span class="punctuation">:</span> <span class="string-value">"ACTIVE"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"label"</span><span class="punctuation">:</span> <span class="string-value">"Active"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"assignments"</span><span class="punctuation">:</span> [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"assignmentId"</span><span class="punctuation">:</span> <span class="number">12345</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"componentName"</span><span class="punctuation">:</span> <span class="string-value">"Mission Field"</span><span class="punctuation">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"mission"</span><span class="punctuation">:</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"name"</span><span class="punctuation">:</span> <span class="string-value">"Brazil São Paulo Mission"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+        </div>
+    </div>
+    
+    <div class="feature-list">
+        <h3>Enhanced Syntax Highlighting Features</h3>
+        <ul>
+            <li><strong>GraphQL Keywords:</strong> Red highlighting for query, mutation, subscription, fragment</li>
+            <li><strong>GraphQL Types:</strong> Purple highlighting for type names (Missionary, ID, String, etc.)</li>
+            <li><strong>GraphQL Fields:</strong> Blue highlighting for field names and arguments</li>
+            <li><strong>GraphQL Variables:</strong> Orange highlighting for variables like $missionaryNumber</li>
+            <li><strong>GraphQL Strings:</strong> Dark blue highlighting for string literals</li>
+            <li><strong>JSON Keys:</strong> Blue highlighting for object property names</li>
+            <li><strong>JSON String Values:</strong> Dark blue highlighting for string values</li>
+            <li><strong>JSON Numbers:</strong> Blue highlighting for numeric values</li>
+            <li><strong>JSON Booleans/Null:</strong> Appropriate color coding for special values</li>
+            <li><strong>Smart Indentation:</strong> Proper formatting and indentation for readability</li>
+            <li><strong>Copy to Clipboard:</strong> One-click copying of code or responses</li>
+            <li><strong>Fullscreen Mode:</strong> Expand editors for better visibility</li>
+            <li><strong>Dark/Light Theme:</strong> Automatic theme switching based on system preferences</li>
+        </ul>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+        <h3 style="margin-top: 0; color: #1565c0;">How it Works</h3>
+        <p>The enhanced syntax highlighting uses <strong>CodeMirror 6</strong> with custom highlight styles that:</p>
+        <ul>
+            <li>Parse GraphQL syntax to identify keywords, types, fields, and variables</li>
+            <li>Parse JSON to distinguish between keys, values, and data types</li>
+            <li>Apply consistent color coding that matches popular code editors</li>
+            <li>Support both light and dark themes automatically</li>
+            <li>Provide interactive features like line numbers, bracket matching, and selection highlights</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
-import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button, Paper } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button, Paper, Alert, Chip } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { GraphQLEditor, JSONViewer } from '@/components/CodeEditor';
 
 export default function APITestingPage() {
   const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
@@ -212,27 +213,27 @@ Content-Type: application/json`
             </div>
 
             {/* Query Input */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
                   {selectedEndpoint === 'graphql' ? 'GraphQL Query' : 'REST Request'}
-                </h2>
-                <button
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="success"
                   onClick={handleTest}
                   disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                  sx={{ minWidth: 120 }}
                 >
                   {loading ? 'Testing...' : 'Test API'}
-                </button>
-              </div>
-              
-              <textarea
+                </Button>
+              </Box>
+              <GraphQLEditor
                 value={queryInput}
-                onChange={(e) => setQueryInput(e.target.value)}
-                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                placeholder={`Enter your ${selectedEndpoint.toUpperCase()} ${selectedEndpoint === 'graphql' ? 'query' : 'request'} here...`}
+                onChange={setQueryInput}
+                placeholder="Enter your GraphQL query here..."
               />
-            </div>
+            </Box>
 
             {/* Authentication */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -293,9 +294,10 @@ Content-Type: application/json`
                   </div>
                   
                   {response.data !== undefined && (
-                    <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-sm">
-                      <code>{safeStringify(response.data)}</code>
-                    </pre>
+                    <JSONViewer
+                      value={safeStringify(response.data)}
+                      label="API Response"
+                    />
                   )}
                   
                   {response.error && (
