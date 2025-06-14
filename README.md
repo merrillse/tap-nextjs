@@ -134,6 +134,52 @@ To set up a new authorized client:
 - **Token Caching**: OAuth tokens cached server-side to reduce Okta requests
 - **Environment Isolation**: Separate credentials for each environment
 
+### OAuth Client Identity Architecture
+
+This application operates using a **single primary OAuth client identity** while providing the ability to **proxy requests as other authorized clients** for testing purposes.
+
+#### Primary OAuth Client
+- **Client Name**: Missionary Graph Service Team
+- **Client ID**: `0oak0jqakvevwjWrp357`
+- **Purpose**: This is the application's primary identity for authentication with MIS GraphQL
+- **Visibility**: Displayed in the application header for transparency and security confidence
+- **Scope**: Authorized for comprehensive testing across all MIS GraphQL schema containers
+
+#### Proxy Client Architecture
+The application supports testing on behalf of other authorized clients through the **proxy-client mechanism**:
+
+1. **Authentication**: Always performed using the primary client (`0oak0jqakvevwjWrp357`)
+2. **Authorization**: The primary client is authorized to act on behalf of other clients
+3. **Request Proxying**: GraphQL requests include a `proxy-client` header with the target client ID
+4. **Security**: Other clients' secrets are NEVER used - only their client IDs for proxying
+5. **Testing**: Allows comprehensive testing of how different clients would interact with the API
+
+```http
+# Example proxied request
+POST /graphql
+Authorization: Bearer {token_from_primary_client}
+proxy-client: 0oak9876543210example
+Content-Type: application/json
+
+{
+  "query": "query { missionary(missionaryId: \"123\") { name } }"
+}
+```
+
+#### Benefits of This Architecture
+- **Security**: Only one set of client credentials needs to be managed securely
+- **Flexibility**: Can test API behavior from multiple client perspectives
+- **Compliance**: Follows principle of least privilege while enabling comprehensive testing
+- **Transparency**: Clear identification of the actual authenticating client in the UI
+- **Auditability**: All requests trace back to the primary client for security auditing
+
+#### Client ID Display
+The primary client ID is prominently displayed in the application header to provide:
+- **Security Confidence**: Users can verify which OAuth client is being used
+- **Transparency**: Clear identification of the authenticating entity
+- **Debugging Aid**: Easy reference for troubleshooting authentication issues
+- **Compliance**: Visible audit trail of client identity
+
 ### Application Features
 
 - **Environment Switching**: Dynamic environment selection with visual indicator

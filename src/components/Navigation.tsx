@@ -82,9 +82,14 @@ export default function Navigation() {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">TAP</span>
               </div>
-              <span className="text-xl font-semibold text-gray-900">
-                Testing & API Platform
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-semibold text-gray-900">
+                  Testing & API Platform
+                </span>
+                <span className="text-xs text-gray-400 -mt-1 font-mono">
+                  OAuth: Missionary Graph Service Team - 0oak0jqakvevwjWrp357
+                </span>
+              </div>
             </Link>
           </div>
 
