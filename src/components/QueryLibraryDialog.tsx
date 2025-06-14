@@ -154,7 +154,7 @@ export function SaveQueryDialog({
           />
           
           <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography variant="body2" color="text.secondary" gutterBottom component="div">
               Environment: <Chip 
                 label={environment} 
                 size="small"
