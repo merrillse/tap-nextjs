@@ -5,6 +5,8 @@ import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
 import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } from '@/lib/random-query-generator';
+import { type SavedQuery } from '@/lib/query-library';
+import { SaveQueryDialog, QueryLibraryDialog } from '@/components/QueryLibraryDialog';
 import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { GraphQLEditor, JSONViewer } from '@/components/CodeEditor';
@@ -26,6 +28,9 @@ export default function APITestingPage() {
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
   const [generatingQuery, setGeneratingQuery] = useState(false);
   const [schema, setSchema] = useState<IntrospectionResult | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLibraryDialog, setShowLibraryDialog] = useState(false);
+  const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
 
   const handleEnvironmentChange = (event: SelectChangeEvent) => {
     setSelectedEnvironment(event.target.value);
@@ -188,6 +193,53 @@ Content-Type: application/json`
     }
   };
 
+  const handleSaveQuery = () => {
+    if (!queryInput.trim()) {
+      setError('No query to save');
+      return;
+    }
+    setEditingQuery(null);
+    setShowSaveDialog(true);
+  };
+
+  const handleQuerySaved = (savedQuery: SavedQuery) => {
+    // Query saved successfully, could show a toast notification here
+    console.log('Query saved:', savedQuery.name);
+  };
+
+  const handleSelectQuery = (query: SavedQuery) => {
+    setQueryInput(query.query);
+    setShowLibraryDialog(false);
+    
+    // If query is for a different environment, optionally switch
+    if (query.environment !== selectedEnvironment) {
+      const switchEnv = confirm(
+        `This query was saved for environment "${query.environment}". 
+        Would you like to switch to that environment?`
+      );
+      if (switchEnv) {
+        setSelectedEnvironment(query.environment);
+      }
+    }
+  };
+
+  const handleRunSavedQuery = async (query: SavedQuery) => {
+    // Load the query and run it immediately
+    setQueryInput(query.query);
+    setShowLibraryDialog(false);
+    
+    // Switch environment if needed
+    if (query.environment !== selectedEnvironment) {
+      setSelectedEnvironment(query.environment);
+      // Wait a moment for the environment to switch and API client to update
+      setTimeout(() => {
+        handleTest();
+      }, 100);
+    } else {
+      handleTest();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -256,23 +308,46 @@ Content-Type: application/json`
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {selectedEndpoint === 'graphql' && (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={handleGenerateRandomQuery}
-                      disabled={generatingQuery || loading}
-                      size="small"
-                      startIcon={
-                        generatingQuery ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        ) : (
-                          <span>🎲</span>
-                        )
-                      }
-                      sx={{ minWidth: 140 }}
-                    >
-                      {generatingQuery ? 'Generating...' : 'Random Query'}
-                    </Button>
+                    <>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => setShowLibraryDialog(true)}
+                        size="small"
+                        startIcon={<span>📚</span>}
+                        sx={{ minWidth: 120 }}
+                      >
+                        Library
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleSaveQuery}
+                        disabled={!queryInput.trim()}
+                        size="small"
+                        startIcon={<span>💾</span>}
+                        sx={{ minWidth: 100 }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleGenerateRandomQuery}
+                        disabled={generatingQuery || loading}
+                        size="small"
+                        startIcon={
+                          generatingQuery ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          ) : (
+                            <span>🎲</span>
+                          )
+                        }
+                        sx={{ minWidth: 140 }}
+                      >
+                        {generatingQuery ? 'Generating...' : 'Random Query'}
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="contained"
@@ -411,6 +486,24 @@ Content-Type: application/json`
           </div>
         </div>
       </div>
+
+      {/* Query Library Dialogs */}
+      <SaveQueryDialog
+        open={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleQuerySaved}
+        queryString={queryInput}
+        environment={selectedEnvironment}
+        editingQuery={editingQuery}
+      />
+
+      <QueryLibraryDialog
+        open={showLibraryDialog}
+        onClose={() => setShowLibraryDialog(false)}
+        onSelectQuery={handleSelectQuery}
+        onRunQuery={handleRunSavedQuery}
+        currentEnvironment={selectedEnvironment}
+      />
     </div>
   );
 }
