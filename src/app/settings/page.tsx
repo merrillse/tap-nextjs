@@ -372,18 +372,21 @@ export default function SettingsPage() {
                             variant="outlined"
                           />
                         )}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props}>
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                {option.name}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
-                                {option.clientId}
-                              </Typography>
+                        renderOption={(props, option) => {
+                          const { key, ...otherProps } = props;
+                          return (
+                            <Box component="li" key={key} {...otherProps}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                  {option.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+                                  {option.clientId}
+                                </Typography>
+                              </Box>
                             </Box>
-                          </Box>
-                        )}
+                          );
+                        }}
                       />
                       <Typography variant="caption" sx={{ mt: 0.5, color: 'text.secondary' }}>
                         Select which client to proxy API requests as. This sets the proxy-client header.
