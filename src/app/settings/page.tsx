@@ -29,9 +29,31 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, environment: selectedEnvKey }));
   }, [selectedEnvKey]);
 
+  // Load saved environment on component mount
+  useEffect(() => {
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    const savedSettings = localStorage.getItem('tap-settings');
+    
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setSettings(parsed);
+        setSelectedEnvKey(parsed.environment || savedEnv);
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+        setSelectedEnvKey(savedEnv);
+      }
+    } else {
+      setSelectedEnvKey(savedEnv);
+    }
+  }, []);
+
   const handleSave = () => {
     // Save to localStorage or your preferred storage
     localStorage.setItem('tap-settings', JSON.stringify(settings));
+    localStorage.setItem('selectedEnvironment', selectedEnvKey);
+    // Dispatch custom event to update indicator
+    window.dispatchEvent(new Event('environmentChanged'));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -212,7 +234,10 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Client Secret</label>
                   <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 p-2 rounded">
-                    {currentConfig.client_secret ? '••••••••••••••••' : 'Not configured'}
+                    🔒 Configured server-side
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Client secrets are managed securely via environment variables
                   </p>
                 </div>
               </div>

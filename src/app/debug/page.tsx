@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getEnvironmentConfig } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 
@@ -14,12 +14,18 @@ interface TestResult {
 export default function DebugPage() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
+  const [currentEnvironment, setCurrentEnvironment] = useState('mis-gql-stage');
+
+  useEffect(() => {
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    setCurrentEnvironment(savedEnv);
+  }, []);
 
   const runTests = async () => {
     setTesting(true);
     setTestResults([]);
     
-    const config = getEnvironmentConfig('mis-gql-stage');
+    const config = getEnvironmentConfig(currentEnvironment);
     if (!config) {
       setTestResults([{ test: 'Config', status: 'FAIL', message: 'No config found' }]);
       setTesting(false);
@@ -203,7 +209,7 @@ export default function DebugPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">OAuth Debug Tool</h1>
           <p className="mt-2 text-gray-600">
-            Comprehensive OAuth authentication debugging for MIS GraphQL Staging
+            Comprehensive OAuth authentication debugging for {getEnvironmentConfig(currentEnvironment)?.name}
           </p>
         </div>
 
@@ -213,25 +219,25 @@ export default function DebugPage() {
             <div>
               <strong>OAuth Endpoint:</strong><br />
               <code className="text-xs bg-gray-100 p-1 rounded">
-                {getEnvironmentConfig('mis-gql-stage')?.access_token_url}
+                {getEnvironmentConfig(currentEnvironment)?.access_token_url}
               </code>
             </div>
             <div>
               <strong>GraphQL Endpoint:</strong><br />
               <code className="text-xs bg-gray-100 p-1 rounded">
-                {getEnvironmentConfig('mis-gql-stage')?.graph_url}
+                {getEnvironmentConfig(currentEnvironment)?.graph_url}
               </code>
             </div>
             <div>
               <strong>Client ID:</strong><br />
               <code className="text-xs bg-gray-100 p-1 rounded">
-                {getEnvironmentConfig('mis-gql-stage')?.client_id.substring(0, 8)}...
+                {getEnvironmentConfig(currentEnvironment)?.client_id.substring(0, 8)}...
               </code>
             </div>
             <div>
               <strong>Scope:</strong><br />
               <code className="text-xs bg-gray-100 p-1 rounded">
-                {getEnvironmentConfig('mis-gql-stage')?.scope}
+                {getEnvironmentConfig(currentEnvironment)?.scope}
               </code>
             </div>
           </div>

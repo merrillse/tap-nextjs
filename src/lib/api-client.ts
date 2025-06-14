@@ -10,10 +10,12 @@ export interface AuthToken {
 
 export class ApiClient {
   private config: EnvironmentConfig;
+  private environmentKey: string;
   private token: AuthToken | null = null;
 
-  constructor(config: EnvironmentConfig) {
+  constructor(config: EnvironmentConfig, environmentKey: string = '') {
     this.config = config;
+    this.environmentKey = environmentKey;
   }
 
   private async getAccessToken(): Promise<string> {
@@ -52,6 +54,7 @@ export class ApiClient {
         client_secret: this.config.client_secret,
         scope: this.config.scope,
         method: method,
+        environment: this.environmentKey,
       }),
     });
 

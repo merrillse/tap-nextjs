@@ -13,6 +13,19 @@ export interface EnvironmentConfig {
 }
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
+  'mis-gql-dev': {
+    name: 'MIS GraphQL Development',
+    scheme: 'https',
+    domain: 'mis-gql-dev.aws.churchofjesuschrist.org',
+    path: 'graphql',
+    base_url: 'https://mis-gql-dev.aws.churchofjesuschrist.org',
+    graph_url: 'https://mis-gql-dev.aws.churchofjesuschrist.org/graphql',
+    health_url: 'https://mis-gql-dev.aws.churchofjesuschrist.org/actuator/health',
+    access_token_url: 'https://dev-73389086.okta.com/oauth2/default/v1/token',
+    client_id: '0oa5uce4xpm2l7K8G5d7',
+    client_secret: '', // Managed server-side via environment variables
+    scope: 'mis:mgql.nonProd'
+  },
   'mis-gql-stage': {
     name: 'MIS GraphQL Staging',
     scheme: 'https',
@@ -23,34 +36,21 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     health_url: 'https://mis-gql-stage.aws.churchofjesuschrist.org/actuator/health',
     access_token_url: 'https://id.churchofjesuschrist.org/oauth2/auskwf3oaqYZwid57357/v1/token',
     client_id: '0oak0jqakvevwjWrp357',
-    client_secret: process.env.MIS_GQL_STAGE_CLIENT_SECRET || '',
+    client_secret: '', // Managed server-side via environment variables
     scope: 'client_token'
   },
-  'development': {
-    name: 'Development',
+  'mis-gql-prod': {
+    name: 'MIS GraphQL Production',
     scheme: 'https',
-    domain: 'api.dev.example.com',
+    domain: 'mis-gql-prod.aws.churchofjesuschrist.org',
     path: 'graphql',
-    base_url: 'https://api.dev.example.com',
-    graph_url: 'https://api.dev.example.com/graphql',
-    health_url: 'https://api.dev.example.com/health',
-    access_token_url: 'https://dev-auth.example.com/oauth2/token',
-    client_id: '',
-    client_secret: '',
-    scope: 'api:read'
-  },
-  'production': {
-    name: 'Production',
-    scheme: 'https',
-    domain: 'api.example.com',
-    path: 'graphql',
-    base_url: 'https://api.example.com',
-    graph_url: 'https://api.example.com/graphql',
-    health_url: 'https://api.example.com/health',
-    access_token_url: 'https://auth.example.com/oauth2/token',
-    client_id: '',
-    client_secret: '',
-    scope: 'api:read'
+    base_url: 'https://mis-gql-prod.aws.churchofjesuschrist.org',
+    graph_url: 'https://mis-gql-prod.aws.churchofjesuschrist.org/graphql',
+    health_url: 'https://mis-gql-prod.aws.churchofjesuschrist.org/actuator/health',
+    access_token_url: 'https://id.churchofjesuschrist.org/oauth2/auskwf3oaqYZwid57357/v1/token',
+    client_id: '0oak0jqakvevwjWrp357',
+    client_secret: '', // Managed server-side via environment variables
+    scope: 'client_token'
   }
 };
 

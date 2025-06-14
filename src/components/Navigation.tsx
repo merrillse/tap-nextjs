@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import EnvironmentIndicator from './EnvironmentIndicator';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,10 +43,12 @@ export default function Navigation() {
                 <span>{item.name}</span>
               </Link>
             ))}
+            <EnvironmentIndicator />
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile menu button and environment indicator */}
+          <div className="md:hidden flex items-center space-x-3">
+            <EnvironmentIndicator />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"

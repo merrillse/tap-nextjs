@@ -23,12 +23,22 @@ export default function APITestingPage() {
 
   const environmentOptions = getEnvironmentNames();
 
+  // Load saved environment on component mount
+  useEffect(() => {
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    setSelectedEnvironment(savedEnv);
+  }, []);
+
   // Initialize API client when environment changes
   useEffect(() => {
     const config = getEnvironmentConfig(selectedEnvironment);
     if (config) {
-      setApiClient(new ApiClient(config));
+      setApiClient(new ApiClient(config, selectedEnvironment));
     }
+    // Save selected environment
+    localStorage.setItem('selectedEnvironment', selectedEnvironment);
+    // Dispatch custom event to update indicator
+    window.dispatchEvent(new Event('environmentChanged'));
   }, [selectedEnvironment]);
 
   const sampleQueries = useMemo(() => ({

@@ -8,12 +8,59 @@ export async function POST(request: NextRequest) {
       client_id, 
       client_secret, 
       scope,
-      method = 'basic' // 'basic' or 'form'
+      method = 'basic', // 'basic' or 'form'
+      environment = ''
     } = body;
 
-    if (!access_token_url || !client_id || !client_secret || !scope) {
+    if (!access_token_url || !client_id || !scope) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
+        { status: 400 }
+      );
+    }
+
+    // Use environment variable for known client configurations
+    let actualClientSecret = client_secret;
+    if (client_id === '0oak0jqakvevwjWrp357') {
+      // MIS GraphQL staging and production environments
+      if (environment === 'mis-gql-stage') {
+        actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
+        if (!actualClientSecret) {
+          return NextResponse.json(
+            { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables' },
+            { status: 400 }
+          );
+        }
+      } else if (environment === 'mis-gql-prod') {
+        actualClientSecret = process.env.MIS_GQL_PROD_CLIENT_SECRET;
+        if (!actualClientSecret) {
+          return NextResponse.json(
+            { error: 'Missing required parameters', details: 'MIS GraphQL production client secret not configured in environment variables' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Default to staging for backward compatibility
+        actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
+        if (!actualClientSecret) {
+          return NextResponse.json(
+            { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables (default)' },
+            { status: 400 }
+          );
+        }
+      }
+    } else if (client_id === '0oa5uce4xpm2l7K8G5d7') {
+      // MIS GraphQL development environment
+      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+      if (!actualClientSecret) {
+        return NextResponse.json(
+          { error: 'Missing required parameters', details: 'MIS GraphQL development client secret not configured in environment variables' },
+          { status: 400 }
+        );
+      }
+    } else if (!actualClientSecret) {
+      return NextResponse.json(
+        { error: 'Missing required parameters', details: 'Client secret required for unknown client configurations' },
         { status: 400 }
       );
     }
@@ -22,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     if (method === 'basic') {
       // Basic Auth method - Church of Jesus Christ standard
-      const credentials = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+      const credentials = Buffer.from(`${client_id}:${actualClientSecret}`).toString('base64');
       
       tokenResponse = await fetch(access_token_url, {
         method: 'POST',
@@ -53,7 +100,7 @@ export async function POST(request: NextRequest) {
         body: new URLSearchParams({
           grant_type: 'client_credentials',
           client_id: client_id,
-          client_secret: client_secret,
+          client_secret: actualClientSecret,
           scope: scope,
         }),
       });
@@ -71,7 +118,7 @@ export async function POST(request: NextRequest) {
         body: new URLSearchParams({
           grant_type: 'client_credentials',
           client_id: client_id,
-          client_secret: client_secret,
+          client_secret: actualClientSecret,
           scope: scope,
           client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         }),
