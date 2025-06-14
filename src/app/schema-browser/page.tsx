@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Container,
@@ -373,6 +373,10 @@ export default function SchemaBrowserPage() {
   const [selectedKind, setSelectedKind] = useState('all');
   const [selectedType, setSelectedType] = useState<GraphQLType | null>(null);
 
+  // Refs for scrolling
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+
   const environmentOptions = getEnvironmentNames();
 
   // Initialize API client when environment changes
@@ -428,6 +432,27 @@ export default function SchemaBrowserPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiClient]);
+
+  // Handle scrolling when selected type changes
+  useEffect(() => {
+    if (selectedType) {
+      // Scroll right panel to top
+      if (rightPanelRef.current) {
+        rightPanelRef.current.scrollTop = 0;
+      }
+
+      // Scroll left panel to show selected type
+      if (leftPanelRef.current) {
+        const selectedElement = leftPanelRef.current.querySelector(`[data-type-name="${selectedType.name}"]`);
+        if (selectedElement) {
+          selectedElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }
+    }
+  }, [selectedType]);
 
   // Filter and search logic
   const filteredTypes = useMemo(() => {
@@ -583,11 +608,12 @@ export default function SchemaBrowserPage() {
               </Box>
 
             {/* Type List */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Box ref={leftPanelRef} sx={{ flex: 1, overflow: 'auto' }}>
               <List dense>
                 {filteredTypes.map((type) => (
                   <ListItemButton
                     key={type.name}
+                    data-type-name={type.name}
                     selected={selectedType?.name === type.name}
                     onClick={() => setSelectedType(type)}
                     sx={{
@@ -623,7 +649,7 @@ export default function SchemaBrowserPage() {
           </Paper>
 
           {/* Right Panel - Type Details */}
-          <Paper sx={{ p: 3, height: 'calc(100vh - 300px)', overflow: 'auto' }}>
+          <Paper ref={rightPanelRef} sx={{ p: 3, height: 'calc(100vh - 300px)', overflow: 'auto' }}>
             {selectedType ? (
               <TypeDetailView 
                 type={selectedType} 
