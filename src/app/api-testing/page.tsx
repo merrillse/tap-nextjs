@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
-import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button, Paper, Alert, Chip } from '@mui/material';
+import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } from '@/lib/random-query-generator';
+import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { GraphQLEditor, JSONViewer } from '@/components/CodeEditor';
 
@@ -23,6 +24,8 @@ export default function APITestingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+  const [generatingQuery, setGeneratingQuery] = useState(false);
+  const [schema, setSchema] = useState<IntrospectionResult | null>(null);
 
   const handleEnvironmentChange = (event: SelectChangeEvent) => {
     setSelectedEnvironment(event.target.value);
@@ -152,6 +155,39 @@ Content-Type: application/json`
     }
   };
 
+  const handleGenerateRandomQuery = async () => {
+    if (!apiClient) {
+      setError('API client not initialized. Please select an environment.');
+      return;
+    }
+
+    setGeneratingQuery(true);
+    setError(null);
+    
+    try {
+      // First, get the schema if we don't have it
+      let currentSchema = schema;
+      if (!currentSchema) {
+        console.log('Fetching schema...');
+        const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
+        currentSchema = schemaResult as IntrospectionResult;
+        setSchema(currentSchema);
+      }
+
+      // Generate random query
+      const generator = new RandomQueryGenerator(currentSchema);
+      const randomQuery = generator.generateRandomQuery();
+      
+      setQueryInput(randomQuery);
+      
+    } catch (err) {
+      console.error('Random query generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate random query');
+    } finally {
+      setGeneratingQuery(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -218,15 +254,36 @@ Content-Type: application/json`
                 <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
                   {selectedEndpoint === 'graphql' ? 'GraphQL Query' : 'REST Request'}
                 </Typography>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleTest}
-                  disabled={loading}
-                  sx={{ minWidth: 120 }}
-                >
-                  {loading ? 'Testing...' : 'Test API'}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {selectedEndpoint === 'graphql' && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={handleGenerateRandomQuery}
+                      disabled={generatingQuery || loading}
+                      size="small"
+                      startIcon={
+                        generatingQuery ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : (
+                          <span>🎲</span>
+                        )
+                      }
+                      sx={{ minWidth: 140 }}
+                    >
+                      {generatingQuery ? 'Generating...' : 'Random Query'}
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleTest}
+                    disabled={loading}
+                    sx={{ minWidth: 120 }}
+                  >
+                    {loading ? 'Testing...' : 'Test API'}
+                  </Button>
+                </Box>
               </Box>
               <GraphQLEditor
                 value={queryInput}
