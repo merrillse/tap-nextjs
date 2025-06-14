@@ -784,8 +784,8 @@ function TypeDetailView({
                 label={iface.name}
                 color="info"
                 variant="outlined"
-                onClick={() => iface.name && onTypeClick(iface.name)}
-                sx={{ cursor: 'pointer' }}
+                onClick={iface.name ? () => onTypeClick(iface.name!) : undefined}
+                sx={{ cursor: iface.name ? 'pointer' : 'default' }}
               />
             ))}
           </Box>
@@ -805,8 +805,8 @@ function TypeDetailView({
                 label={possibleType.name}
                 color="secondary"
                 variant="outlined"
-                onClick={() => possibleType.name && onTypeClick(possibleType.name)}
-                sx={{ cursor: 'pointer' }}
+                onClick={possibleType.name ? () => onTypeClick(possibleType.name!) : undefined}
+                sx={{ cursor: possibleType.name ? 'pointer' : 'default' }}
               />
             ))}
           </Box>
