@@ -123,8 +123,42 @@ export default function HomePage() {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
+            {/* Large Interconnected Nodes Icon */}
+            <div className="flex justify-center mb-8">
+              <div className="relative w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl">
+                <svg className="w-12 h-12 text-white" viewBox="0 0 28 28" fill="none">
+                  {/* Connection Lines */}
+                  <g stroke="currentColor" strokeWidth="1.2" opacity="0.9">
+                    <line x1="8" y1="8" x2="14" y2="14" />
+                    <line x1="20" y1="8" x2="14" y2="14" />
+                    <line x1="8" y1="8" x2="20" y2="8" />
+                    <line x1="8" y1="20" x2="14" y2="14" />
+                    <line x1="20" y1="20" x2="14" y2="14" />
+                    <line x1="8" y1="20" x2="20" y2="20" />
+                    <line x1="8" y1="8" x2="8" y2="20" />
+                    <line x1="20" y1="8" x2="20" y2="20" />
+                  </g>
+                  {/* Network Nodes */}
+                  <g fill="currentColor">
+                    <circle cx="8" cy="8" r="2.5" />
+                    <circle cx="20" cy="8" r="2.5" />
+                    <circle cx="8" cy="20" r="2.5" />
+                    <circle cx="20" cy="20" r="2.5" />
+                    <circle cx="14" cy="14" r="3.5" />
+                  </g>
+                  {/* Animated pulse effect on central node */}
+                  <circle cx="14" cy="14" r="3.5" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.6">
+                    <animate attributeName="r" values="3.5;5.5;3.5" dur="3s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+                {/* Enhanced glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-2xl blur-md opacity-60 -z-10"></div>
+              </div>
+            </div>
+            
             <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
-              Welcome to <span className="text-blue-600">TAP</span>
+              Welcome to <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Testing & API Platform</span>
             </h1>
             <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
               Your comprehensive Testing & API Platform for GraphQL and REST API testing with advanced authentication and load testing capabilities.

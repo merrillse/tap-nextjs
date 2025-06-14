@@ -87,11 +87,33 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!isSidebarCollapsed && (
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TAP</span>
+              {/* Interconnected Nodes Icon - Smaller Version */}
+              <div className="relative w-8 h-8 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-md">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 28 28" fill="none">
+                  {/* Connection Lines */}
+                  <g stroke="currentColor" strokeWidth="1" opacity="0.8">
+                    <line x1="8" y1="8" x2="14" y2="14" />
+                    <line x1="20" y1="8" x2="14" y2="14" />
+                    <line x1="8" y1="8" x2="20" y2="8" />
+                    <line x1="8" y1="20" x2="14" y2="14" />
+                    <line x1="20" y1="20" x2="14" y2="14" />
+                    <line x1="8" y1="20" x2="20" y2="20" />
+                    <line x1="8" y1="8" x2="8" y2="20" />
+                    <line x1="20" y1="8" x2="20" y2="20" />
+                  </g>
+                  {/* Network Nodes */}
+                  <g fill="currentColor">
+                    <circle cx="8" cy="8" r="2" />
+                    <circle cx="20" cy="8" r="2" />
+                    <circle cx="8" cy="20" r="2" />
+                    <circle cx="20" cy="20" r="2" />
+                    <circle cx="14" cy="14" r="2.5" />
+                  </g>
+                </svg>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-lg blur-sm opacity-30 -z-10"></div>
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">Testing & API Platform</h1>
+                <h1 className="text-lg font-semibold text-gray-900">tap</h1>
                 <p className="text-xs text-gray-500">MGQL Service Team</p>
               </div>
             </div>
