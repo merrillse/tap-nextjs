@@ -5,12 +5,12 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
-import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
+import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
@@ -104,56 +104,8 @@ function findMatches(text: string, query: string): Range<Decoration>[] {
   return matches;
 }
 
-// Search input widget
-class SearchWidget extends WidgetType {
-  constructor(
-    private query: string, 
-    private active: boolean, 
-    private currentMatch: number = -1,
-    private totalMatches: number = 0
-  ) {
-    super();
-  }
-  
-  toDOM() {
-    const div = document.createElement('div');
-    div.className = 'cm-search-widget';
-    div.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #333;
-      color: white;
-      border: 1px solid #555;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-family: monospace;
-      font-size: 12px;
-      z-index: 100;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    `;
-    
-    let text = `I-search: ${this.query}`;
-    if (this.totalMatches > 0) {
-      text += ` (${this.currentMatch + 1}/${this.totalMatches})`;
-    } else if (this.query && this.totalMatches === 0) {
-      text += ' (no matches)';
-    }
-    
-    div.textContent = text;
-    return div;
-  }
-  
-  eq(widget: SearchWidget) {
-    return widget.query === this.query && 
-           widget.active === this.active &&
-           widget.currentMatch === this.currentMatch &&
-           widget.totalMatches === this.totalMatches;
-  }
-}
-
-// View plugin for search decorations and widget
-const searchPlugin = ViewPlugin.fromClass(class {
+// View plugin for search decorations (no widget, just highlights)
+const createSearchPlugin = (updateSearchState: (state: any) => void) => ViewPlugin.fromClass(class {
   decorations: DecorationSet;
   
   constructor(view: EditorView) {
@@ -162,21 +114,21 @@ const searchPlugin = ViewPlugin.fromClass(class {
   
   update(update: ViewUpdate) {
     this.decorations = this.buildDecorations(update.view);
+    // Update React state when search state changes
+    const search = update.view.state.field(searchState);
+    updateSearchState({
+      active: search.active,
+      query: search.query,
+      currentMatch: search.currentMatch,
+      totalMatches: search.matches.length
+    });
   }
   
   buildDecorations(view: EditorView): DecorationSet {
     const search = view.state.field(searchState);
     const decorations: Range<Decoration>[] = [];
     
-    // Add search widget at position 0 (always first)
-    if (search.active) {
-      decorations.push(Decoration.widget({
-        widget: new SearchWidget(search.query, search.active, search.currentMatch, search.matches.length),
-        side: 1
-      }).range(0));
-    }
-    
-    // Add match highlights, but use different class for current match
+    // Add match highlights
     search.matches.forEach((match, index) => {
       if (index === search.currentMatch) {
         // Current match gets special highlighting
@@ -353,6 +305,29 @@ const emacsSearchKeymap = keymap.of([
       }
       return false;
     }
+  },
+  {
+    key: 'Backspace',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Remove character from search query
+        const newQuery = search.query.slice(0, -1);
+        const newMatches = findMatches(view.state.doc.toString(), newQuery);
+        
+        const transaction: any = { effects: setSearchQuery.of(newQuery) };
+        
+        // If we have matches, move cursor to the first one
+        if (newMatches.length > 0) {
+          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transaction.scrollIntoView = true;
+        }
+        
+        view.dispatch(transaction);
+        return true;
+      }
+      return false;
+    }
   }
 ]);
 
@@ -390,7 +365,32 @@ const searchInputHandler = EditorView.domEventHandlers({
     const search = view.state.field(searchState);
     
     if (search.active) {
+      // Handle backspace and delete in search mode - highest priority
+      if (event.key === 'Backspace') {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Remove last character from search query
+        const newQuery = search.query.slice(0, -1);
+        const newMatches = findMatches(view.state.doc.toString(), newQuery);
+        
+        const transaction: any = { effects: setSearchQuery.of(newQuery) };
+        
+        // If we have matches, move cursor to the first one
+        if (newMatches.length > 0) {
+          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transaction.scrollIntoView = true;
+        }
+        
+        view.dispatch(transaction);
+        return true;
+      }
+      
+      // Handle regular character input in search mode
       if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        
         // Add character to search and move cursor to first match
         const newQuery = search.query + event.key;
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
@@ -404,23 +404,6 @@ const searchInputHandler = EditorView.domEventHandlers({
         }
         
         view.dispatch(transaction);
-        event.preventDefault();
-        return true;
-      } else if (event.key === 'Backspace') {
-        // Remove character from search and move cursor to first match
-        const newQuery = search.query.slice(0, -1);
-        const newMatches = findMatches(view.state.doc.toString(), newQuery);
-        
-        const transaction: any = { effects: setSearchQuery.of(newQuery) };
-        
-        // If we have matches, move cursor to the first one
-        if (newMatches.length > 0) {
-          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
-          transaction.scrollIntoView = true;
-        }
-        
-        view.dispatch(transaction);
-        event.preventDefault();
         return true;
       }
     }
@@ -453,6 +436,13 @@ export function EnhancedGraphQLEditor({
   isGeneratingQuery = false
 }: EnhancedGraphQLEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [reactSearchState, setReactSearchState] = useState({
+    active: false,
+    query: '',
+    currentMatch: -1,
+    totalMatches: 0
+  });
+  const editorRef = useRef<any>(null);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -508,9 +498,9 @@ export function EnhancedGraphQLEditor({
   const extensions = [
     // GraphQL language support with optional schema
     graphql(builtSchema || undefined),
-    // Emacs-style incremental search
-    searchState,
-    searchPlugin,  
+    // Emacs-style incremental search (CodeMirror state field)
+    searchState, // This is the CodeMirror StateField, not React state
+    createSearchPlugin((state) => setReactSearchState(state)),
     searchInputHandler,
     syntaxHighlighting(graphQLHighlight),
     EditorView.theme({
@@ -579,10 +569,17 @@ export function EnhancedGraphQLEditor({
         border: isDark ? '2px solid rgba(255, 165, 0, 0.8)' : '2px solid rgba(255, 140, 0, 0.8)',
         borderRadius: '2px',
       },
-      '.cm-search-widget': {
-        backgroundColor: isDark ? '#2d2d2d !important' : '#f8f9fa !important',
-        color: isDark ? '#ffffff !important' : '#333333 !important',
-        border: isDark ? '1px solid #555555 !important' : '1px solid #cccccc !important',
+      // Mode line at bottom (Emacs-style)
+      '.cm-search-mode-line': {
+        position: 'relative !important',
+        backgroundColor: isDark ? '#2d3748 !important' : '#f1f5f9 !important',
+        color: isDark ? '#e2e8f0 !important' : '#334155 !important',
+        borderTop: isDark ? '1px solid #4a5568 !important' : '1px solid #cbd5e1 !important',
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important',
+      },
+      // Ensure editor container has relative positioning for mode line
+      '.cm-editor.cm-focused': {
+        position: 'relative',
       },
     }),
     // Our custom keymap with HIGHEST precedence to override default Ctrl+K
@@ -596,6 +593,7 @@ export function EnhancedGraphQLEditor({
     readOnly,
     theme: isDark ? oneDark : undefined,
     placeholder,
+    ref: editorRef,
     basicSetup: {
       lineNumbers: true,
       foldGutter: true,
@@ -684,11 +682,84 @@ export function EnhancedGraphQLEditor({
       <Box sx={{ 
         flex: 1, 
         overflow: 'auto',
+        position: 'relative',
         '& .cm-editor': {
           height: isFullscreen ? 'calc(100vh - 80px)' : height,
+          '&.cm-focused': {
+            position: 'relative',
+          }
         }
       }}>
         <CodeMirror {...editorProps} />
+        
+        {/* Emacs-style Search Mode Line */}
+        {reactSearchState.active && (
+          <Box sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            bgcolor: isDark ? '#2d3748' : '#f1f5f9',
+            color: isDark ? '#e2e8f0' : '#334155',
+            borderTop: 1,
+            borderColor: isDark ? '#4a5568' : '#cbd5e1',
+            px: 2,
+            py: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '12px',
+            fontWeight: 500,
+            zIndex: 1000,
+            boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+            minHeight: '32px'
+          }}>
+            {/* Left side: I-search prompt and query */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography component="span" sx={{ color: '#81c784', mr: 1, fontWeight: 'bold', fontSize: '12px' }}>
+                I-search:
+              </Typography>
+              <Box sx={{
+                color: isDark ? '#ffffff' : '#000000',
+                bgcolor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                minWidth: '20px',
+                fontSize: '12px',
+                fontFamily: 'monospace'
+              }}>
+                {reactSearchState.query || ''}
+              </Box>
+            </Box>
+            
+            {/* Right side: match counter and help */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '11px' }}>
+              <Box sx={{
+                color: reactSearchState.totalMatches > 0 ? '#90cdf4' : 
+                       (reactSearchState.query && reactSearchState.totalMatches === 0) ? '#fc8181' : '#a0aec0',
+                fontWeight: reactSearchState.totalMatches > 0 ? 'bold' : 'normal',
+                bgcolor: reactSearchState.totalMatches > 0 ? 'rgba(144, 205, 244, 0.1)' :
+                         (reactSearchState.query && reactSearchState.totalMatches === 0) ? 'rgba(252, 129, 129, 0.1)' : 'transparent',
+                px: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 1 : 0,
+                py: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 0.5 : 0,
+                borderRadius: 1,
+                fontSize: '11px'
+              }}>
+                {reactSearchState.totalMatches > 0 
+                  ? `(${reactSearchState.currentMatch + 1}/${reactSearchState.totalMatches})`
+                  : reactSearchState.query && reactSearchState.totalMatches === 0 
+                    ? '(no matches)'
+                    : '(type to search)'
+                }
+              </Box>
+              <Typography component="span" sx={{ color: '#a0aec0', fontSize: '11px' }}>
+                C-s: next • C-r: prev • C-g: exit • Esc: cancel
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {/* Schema Status */}
