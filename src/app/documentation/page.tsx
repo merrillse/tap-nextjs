@@ -288,7 +288,85 @@ assignments{mission{name}}}}`}
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🔧 Getting Started</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">🎯 Schema-Aware Autocomplete</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Intelligent code completion powered by live schema introspection. Get real-time suggestions for types, 
+                      fields, enums, and arguments as you write GraphQL queries.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>Live Schema Integration:</strong> Automatically loads schema for intelligent completions</li>
+                      <li><strong>Type-Aware Suggestions:</strong> Context-sensitive completions based on GraphQL types</li>
+                      <li><strong>Field Discovery:</strong> Explore available fields without leaving the editor</li>
+                      <li><strong>Enum Values:</strong> See all possible values for enumeration fields</li>
+                      <li><strong>Argument Hints:</strong> Required and optional arguments with proper typing</li>
+                      <li><strong>Syntax Validation:</strong> Real-time error highlighting and validation</li>
+                    </ul>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-white rounded border">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">🎹 Keyboard Shortcuts</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Trigger autocomplete:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Space</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Accept suggestion:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Tab</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Close autocomplete:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Esc</code>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Mac users: Use Cmd instead of Ctrl</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded border">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">🚦 Status Indicators</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-gray-600">Schema Loaded - Full autocomplete</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span className="text-gray-600">Schema loading - Syntax only</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-gray-600">Schema error - Limited features</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-white rounded border">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">� What You Can Autocomplete:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div className="p-2 bg-gray-50 rounded text-center">
+                          <p className="font-medium text-gray-900">Types</p>
+                          <p className="text-xs text-gray-600">Missionary, Mission</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded text-center">
+                          <p className="font-medium text-gray-900">Fields</p>
+                          <p className="text-xs text-gray-600">firstName, assignments</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded text-center">
+                          <p className="font-medium text-gray-900">Enums</p>
+                          <p className="text-xs text-gray-600">MALE, FEMALE</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded text-center">
+                          <p className="font-medium text-gray-900">Arguments</p>
+                          <p className="text-xs text-gray-600">missionaryId: ID</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">�🔧 Getting Started</h3>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                     <ol className="list-decimal list-inside space-y-3 text-gray-700">
                       <li>
@@ -298,7 +376,16 @@ assignments{mission{name}}}}`}
                         <strong>Select Environment:</strong> Choose your target environment (e.g., mis-gql-stage)
                       </li>
                       <li>
-                        <strong>Generate or Write Query:</strong> Use 🎲 Random Query or write your own
+                        <strong>Wait for Schema:</strong> Look for the green "Schema Loaded" indicator
+                      </li>
+                      <li>
+                        <strong>Start Typing:</strong> Begin writing your query and press <code className="bg-white px-1 rounded text-xs">Ctrl+Space</code> for suggestions
+                      </li>
+                      <li>
+                        <strong>Explore with Autocomplete:</strong> Use suggestions to discover available fields and types
+                      </li>
+                      <li>
+                        <strong>Generate or Write Query:</strong> Use 🎲 Random Query or write your own with autocomplete assistance
                       </li>
                       <li>
                         <strong>Format Query:</strong> Click ⚡ format button for clean formatting
@@ -313,8 +400,8 @@ assignments{mission{name}}}}`}
                     
                     <div className="mt-4 p-3 bg-blue-100 rounded">
                       <p className="text-sm text-blue-800">
-                        💡 <strong>Pro Tip:</strong> Use the Query Library to build a collection of demo queries for presentations, 
-                        test cases for regression testing, and examples for documentation.
+                        💡 <strong>Pro Tip:</strong> Use autocomplete to explore the schema! Start typing field names you're curious about, 
+                        and the editor will show you what's available. This is perfect for API discovery and learning the schema structure.
                       </p>
                     </div>
                   </div>

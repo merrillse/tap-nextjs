@@ -10,6 +10,7 @@ import { SaveQueryDialog, QueryLibraryDialog } from '@/components/QueryLibraryDi
 import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { GraphQLEditor, JSONViewer } from '@/components/CodeEditor';
+import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
 
 export default function APITestingPage() {
   const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
@@ -54,7 +55,31 @@ export default function APITestingPage() {
     localStorage.setItem('selectedEnvironment', selectedEnvironment);
     // Dispatch custom event to update indicator
     window.dispatchEvent(new Event('environmentChanged'));
+    
+    // Clear schema when environment changes - it will be loaded on demand
+    setSchema(null);
   }, [selectedEnvironment]);
+
+  // Auto-load schema for autocomplete when API client is ready
+  useEffect(() => {
+    const loadSchemaForAutocomplete = async () => {
+      if (!apiClient || schema) return; // Don't reload if already have schema
+      
+      try {
+        console.log('Loading schema for autocomplete...');
+        const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
+        setSchema(schemaResult as IntrospectionResult);
+        console.log('Schema loaded for autocomplete');
+      } catch (err) {
+        console.warn('Failed to load schema for autocomplete:', err);
+        // Don't show error to user - autocomplete will just be limited
+      }
+    };
+
+    // Load schema after a short delay to avoid blocking the UI
+    const timeoutId = setTimeout(loadSchemaForAutocomplete, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [apiClient, schema]);
 
   const sampleQueries = useMemo(() => ({
     graphql: `query Missionary($missionaryNumber: ID = "916793") {
@@ -360,10 +385,11 @@ Content-Type: application/json`
                   </Button>
                 </Box>
               </Box>
-              <GraphQLEditor
+              <EnhancedGraphQLEditor
                 value={queryInput}
                 onChange={setQueryInput}
                 placeholder="Enter your GraphQL query here..."
+                schema={schema}
               />
             </Box>
 
