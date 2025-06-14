@@ -78,6 +78,13 @@ export default function HomePage() {
       color: "bg-green-100"
     },
     {
+      title: "MGQL Schema Browser",
+      description: "Explore and navigate the Missionary GraphQL schema with interactive type browsing, search functionality, and detailed field information.",
+      icon: "🔍",
+      href: "/schema-browser",
+      color: "bg-indigo-100"
+    },
+    {
       title: "Load Testing",
       description: "Simulate concurrent requests to test API performance and identify bottlenecks under various load conditions.",
       icon: "⚡",
@@ -157,7 +164,7 @@ export default function HomePage() {
         {/* Features Grid */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Platform Features</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {features.map((feature) => (
               <FeatureCard key={feature.title} {...feature} />
             ))}

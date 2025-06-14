@@ -9,6 +9,7 @@ export default function DocumentationPage() {
     { id: 'overview', title: 'Overview', icon: '📖' },
     { id: 'environments', title: 'Environments', icon: '🌐' },
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
+    { id: 'schema-browser', title: 'MGQL Schema Browser', icon: '🔍' },
     { id: 'schemas', title: 'Schema Containers', icon: '📋' },
     { id: 'clients', title: 'Authorized Clients', icon: '👥' },
     { id: 'development', title: 'Development', icon: '🛠️' },
@@ -158,6 +159,77 @@ export default function DocumentationPage() {
                         <p className="text-sm text-gray-600">Health and medical data (requires approval)</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'schema-browser' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">MGQL Schema Browser</h2>
+                  
+                  <p className="text-gray-600 mb-6">
+                    The MGQL Schema Browser is a powerful tool for exploring and understanding the Missionary GraphQL schema structure. 
+                    It provides an interactive interface to browse types, fields, enums, and their relationships.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Key Features</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600 mb-6">
+                    <li>Real-time schema introspection from any environment</li>
+                    <li>Interactive search and filtering of types</li>
+                    <li>Clickable type navigation between related types</li>
+                    <li>Detailed field information including arguments and descriptions</li>
+                    <li>Enum values and interface implementations</li>
+                    <li>Deprecated field highlighting and warnings</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">How to Use</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <ol className="list-decimal list-inside space-y-3 text-gray-700">
+                      <li><strong>Select Environment:</strong> Choose your target environment (Development, Staging, or Production)</li>
+                      <li><strong>Browse Types:</strong> Use the left panel to see all available GraphQL types</li>
+                      <li><strong>Search & Filter:</strong> Use the search bar to find specific types or filter by type kind</li>
+                      <li><strong>Explore Details:</strong> Click on any type to see its fields, arguments, and relationships</li>
+                      <li><strong>Navigate:</strong> Click on type names within field definitions to jump to related types</li>
+                    </ol>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Type Categories</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">🏗️ Object Types</h4>
+                      <p className="text-sm text-gray-600">Complex types with fields (e.g., Missionary, Assignment)</p>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">📊 Scalar Types</h4>
+                      <p className="text-sm text-gray-600">Basic data types (String, Int, Boolean, etc.)</p>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">🔢 Enum Types</h4>
+                      <p className="text-sm text-gray-600">Predefined sets of values (Status, Gender, etc.)</p>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">📝 Input Types</h4>
+                      <p className="text-sm text-gray-600">Input objects for mutations and queries</p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Navigation Tips</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <ul className="list-disc list-inside space-y-2 text-green-700">
+                      <li>Use the search field&apos;s clear (X) button to quickly reset filters</li>
+                      <li>Selected types are automatically scrolled into view in both panels</li>
+                      <li>Type names are highlighted and clickable throughout the interface</li>
+                      <li>Deprecated fields are clearly marked with warning indicators</li>
+                      <li>The schema browser remembers your environment selection</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-amber-800 mb-2">💡 Pro Tip</h4>
+                    <p className="text-sm text-amber-700">
+                      Use the Schema Browser alongside the API Testing tool to understand the available 
+                      fields and their types before building your GraphQL queries.
+                    </p>
                   </div>
                 </div>
               )}
