@@ -293,6 +293,75 @@ function formatType(type: GraphQLType): string {
   return type.kind || 'Unknown';
 }
 
+// Helper function to extract the base type name (without LIST/NON_NULL wrappers)
+function getBaseTypeName(type: GraphQLType): string | null {
+  if (type.name) {
+    return type.name;
+  }
+  if (type.ofType) {
+    return getBaseTypeName(type.ofType);
+  }
+  return null;
+}
+
+// Helper function to check if a type is user-defined (not a built-in scalar)
+function isUserDefinedType(typeName: string): boolean {
+  const builtInTypes = ['String', 'Int', 'Float', 'Boolean', 'ID'];
+  return !builtInTypes.includes(typeName) && !typeName.startsWith('__');
+}
+
+// Component for clickable type names
+function ClickableTypeName({ 
+  type, 
+  onTypeClick, 
+  availableTypes 
+}: { 
+  type: GraphQLType; 
+  onTypeClick: (typeName: string) => void;
+  availableTypes: GraphQLType[];
+}) {
+  const baseTypeName = getBaseTypeName(type);
+  const formattedType = formatType(type);
+  
+  // Check if this is a user-defined type that exists in our schema
+  const isClickable = baseTypeName && 
+    isUserDefinedType(baseTypeName) && 
+    availableTypes.some(t => t.name === baseTypeName);
+
+  if (isClickable) {
+    // Split the formatted type to make only the base type name clickable
+    const parts = formattedType.split(baseTypeName!);
+    
+    return (
+      <Typography component="span" fontFamily="monospace" color="primary">
+        {parts[0]}
+        <Typography 
+          component="span" 
+          sx={{ 
+            color: 'primary.main',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            '&:hover': {
+              color: 'primary.dark',
+              fontWeight: 'bold'
+            }
+          }}
+          onClick={() => onTypeClick(baseTypeName!)}
+        >
+          {baseTypeName}
+        </Typography>
+        {parts[1]}
+      </Typography>
+    );
+  }
+
+  return (
+    <Typography component="span" fontFamily="monospace" color="text.secondary">
+      {formattedType}
+    </Typography>
+  );
+}
+
 export default function SchemaBrowserPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
   const [schema, setSchema] = useState<GraphQLSchema | null>(null);
@@ -544,7 +613,23 @@ export default function SchemaBrowserPage() {
           {/* Right Panel - Type Details */}
           <Paper sx={{ p: 3, height: 'calc(100vh - 300px)', overflow: 'auto' }}>
             {selectedType ? (
-              <TypeDetailView type={selectedType} />
+              <TypeDetailView 
+                type={selectedType} 
+                onTypeClick={(typeName: string) => {
+                  // First try to find in filtered types, then in all schema types
+                  let targetType = filteredTypes.find(t => t.name === typeName);
+                  if (!targetType && schema) {
+                    targetType = schema.types.find(t => t.name === typeName);
+                  }
+                  if (targetType) {
+                    setSelectedType(targetType);
+                    // Clear filters to show the selected type
+                    setSearchTerm('');
+                    setSelectedKind('all');
+                  }
+                }}
+                availableTypes={schema?.types || []}
+              />
             ) : (
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Info sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -561,7 +646,15 @@ export default function SchemaBrowserPage() {
 }
 
 // Type Detail Component
-function TypeDetailView({ type }: { type: GraphQLType }) {
+function TypeDetailView({ 
+  type, 
+  onTypeClick, 
+  availableTypes 
+}: { 
+  type: GraphQLType; 
+  onTypeClick: (typeName: string) => void;
+  availableTypes: GraphQLType[];
+}) {
   return (
     <Box>
       {/* Type Header */}
@@ -593,7 +686,12 @@ function TypeDetailView({ type }: { type: GraphQLType }) {
             Fields ({type.fields.length})
           </Typography>
           {type.fields.map((field) => (
-            <FieldView key={field.name} field={field} />
+            <FieldView 
+              key={field.name} 
+              field={field} 
+              onTypeClick={onTypeClick}
+              availableTypes={availableTypes}
+            />
           ))}
         </Box>
       )}
@@ -605,7 +703,12 @@ function TypeDetailView({ type }: { type: GraphQLType }) {
             Input Fields ({type.inputFields.length})
           </Typography>
           {type.inputFields.map((field) => (
-            <InputFieldView key={field.name} field={field} />
+            <InputFieldView 
+              key={field.name} 
+              field={field} 
+              onTypeClick={onTypeClick}
+              availableTypes={availableTypes}
+            />
           ))}
         </Box>
       )}
@@ -643,6 +746,8 @@ function TypeDetailView({ type }: { type: GraphQLType }) {
                 label={iface.name}
                 color="info"
                 variant="outlined"
+                onClick={() => iface.name && onTypeClick(iface.name)}
+                sx={{ cursor: 'pointer' }}
               />
             ))}
           </Box>
@@ -662,6 +767,8 @@ function TypeDetailView({ type }: { type: GraphQLType }) {
                 label={possibleType.name}
                 color="secondary"
                 variant="outlined"
+                onClick={() => possibleType.name && onTypeClick(possibleType.name)}
+                sx={{ cursor: 'pointer' }}
               />
             ))}
           </Box>
@@ -672,7 +779,15 @@ function TypeDetailView({ type }: { type: GraphQLType }) {
 }
 
 // Field Component
-function FieldView({ field }: { field: GraphQLField }) {
+function FieldView({ 
+  field, 
+  onTypeClick, 
+  availableTypes 
+}: { 
+  field: GraphQLField; 
+  onTypeClick: (typeName: string) => void;
+  availableTypes: GraphQLType[];
+}) {
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
@@ -680,9 +795,14 @@ function FieldView({ field }: { field: GraphQLField }) {
           <Typography variant="h6" fontFamily="monospace">
             {field.name}
           </Typography>
-          <Typography variant="body2" color="primary" fontFamily="monospace">
-            : {formatType(field.type)}
+          <Typography variant="body2" color="text.secondary">
+            : 
           </Typography>
+          <ClickableTypeName 
+            type={field.type} 
+            onTypeClick={onTypeClick}
+            availableTypes={availableTypes}
+          />
           {field.isDeprecated && (
             <Chip size="small" label="Deprecated" color="error" />
           )}
@@ -701,10 +821,21 @@ function FieldView({ field }: { field: GraphQLField }) {
             </Typography>
             {field.args.map((arg) => (
               <Box key={arg.name} sx={{ ml: 2, mb: 1 }}>
-                <Typography variant="body2" fontFamily="monospace">
-                  <strong>{arg.name}</strong>: {formatType(arg.type)}
-                  {arg.defaultValue && ` = ${arg.defaultValue}`}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" fontFamily="monospace">
+                    <strong>{arg.name}</strong>: 
+                  </Typography>
+                  <ClickableTypeName 
+                    type={arg.type} 
+                    onTypeClick={onTypeClick}
+                    availableTypes={availableTypes}
+                  />
+                  {arg.defaultValue && (
+                    <Typography variant="body2" color="text.secondary" fontFamily="monospace">
+                      = {arg.defaultValue}
+                    </Typography>
+                  )}
+                </Box>
                 {arg.description && (
                   <Typography variant="caption" color="text.secondary">
                     {arg.description}
@@ -726,7 +857,15 @@ function FieldView({ field }: { field: GraphQLField }) {
 }
 
 // Input Field Component
-function InputFieldView({ field }: { field: GraphQLInputField }) {
+function InputFieldView({ 
+  field, 
+  onTypeClick, 
+  availableTypes 
+}: { 
+  field: GraphQLInputField; 
+  onTypeClick: (typeName: string) => void;
+  availableTypes: GraphQLType[];
+}) {
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
@@ -734,9 +873,14 @@ function InputFieldView({ field }: { field: GraphQLInputField }) {
           <Typography variant="h6" fontFamily="monospace">
             {field.name}
           </Typography>
-          <Typography variant="body2" color="primary" fontFamily="monospace">
-            : {formatType(field.type)}
+          <Typography variant="body2" color="text.secondary">
+            : 
           </Typography>
+          <ClickableTypeName 
+            type={field.type} 
+            onTypeClick={onTypeClick}
+            availableTypes={availableTypes}
+          />
           {field.defaultValue && (
             <Typography variant="body2" color="text.secondary" fontFamily="monospace">
               = {field.defaultValue}
