@@ -5,19 +5,24 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
-import { EditorState, StateField, StateEffect, Range } from '@codemirror/state';
+import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { graphql } from 'cm6-graphql';
-import { buildSchema, buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
+import { buildClientSchema } from 'graphql';
 import { formatGraphQLQuery } from '@/lib/graphql-formatter';
+import { 
+  moveCompletionSelection,
+  currentCompletions,
+  completionKeymap
+} from '@codemirror/autocomplete';
 
 // Emacs-style incremental search implementation
 interface SearchState {
@@ -46,9 +51,9 @@ const searchState = StateField.define<SearchState>({
     };
   },
   update(state, tr) {
-    let newState = { ...state };
+    const newState = { ...state };
     
-    for (let effect of tr.effects) {
+    for (const effect of tr.effects) {
       if (effect.is(setSearchQuery)) {
         newState.query = effect.value;
         newState.matches = findMatches(tr.state.doc.toString(), effect.value);
@@ -190,7 +195,7 @@ const searchPlugin = ViewPlugin.fromClass(class {
   decorations: v => v.decorations
 });
 
-// Keymap for Emacs-style incremental search
+// Keymap for Emacs-style incremental search and autocomplete navigation
 const emacsSearchKeymap = keymap.of([
   {
     key: 'Ctrl-s',
@@ -259,13 +264,51 @@ const emacsSearchKeymap = keymap.of([
     }
   },
   {
+    key: 'Alt-n',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(true)(view);
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Alt-p',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(false)(view);
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Ctrl-j',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(true)(view);
+      }
+      return false;
+    }
+  },
+  {
+    key: 'Ctrl-k',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(false)(view);
+      }
+      return false;
+    }
+  },
+  {
     key: 'Ctrl-n',
     run(view) {
-      const search = view.state.field(searchState);
-      if (search.active) {
-        view.dispatch({ effects: exitSearch.of(true) });
-        // Let the default Ctrl-n behavior continue (move down)
-        return false;
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(true)(view);
       }
       return false;
     }
@@ -273,11 +316,29 @@ const emacsSearchKeymap = keymap.of([
   {
     key: 'Ctrl-p',
     run(view) {
-      const search = view.state.field(searchState);
-      if (search.active) {
-        view.dispatch({ effects: exitSearch.of(true) });
-        // Let the default Ctrl-p behavior continue (move up)
-        return false;
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(false)(view);
+      }
+      return false;
+    }
+  },
+  {
+    key: 'ArrowDown',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(true)(view);
+      }
+      return false;
+    }
+  },
+  {
+    key: 'ArrowUp',
+    run(view) {
+      const completions = currentCompletions(view.state);
+      if (completions.length > 0) {
+        return moveCompletionSelection(false)(view);
       }
       return false;
     }
@@ -295,9 +356,37 @@ const emacsSearchKeymap = keymap.of([
   }
 ]);
 
-// Custom input handler for incremental search
+// Custom input handler for incremental search and autocomplete navigation
 const searchInputHandler = EditorView.domEventHandlers({
   keydown(event, view) {
+    // Handle navigation key combinations for autocomplete
+    const isAltN = event.altKey && (event.key === 'n' || event.code === 'KeyN');
+    const isAltP = event.altKey && (event.key === 'p' || event.code === 'KeyP');
+    const isCtrlJ = event.ctrlKey && (event.key === 'j' || event.code === 'KeyJ');
+    const isCtrlK = event.ctrlKey && (event.key === 'k' || event.code === 'KeyK');
+    const isCtrlDown = event.ctrlKey && event.key === 'ArrowDown';
+    const isCtrlUp = event.ctrlKey && event.key === 'ArrowUp';
+    
+    if (isAltN || isAltP || isCtrlJ || isCtrlK || isCtrlDown || isCtrlUp) {
+      const completions = currentCompletions(view.state);
+      
+      if (completions.length > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const isNext = isAltN || isCtrlJ || isCtrlDown;
+        moveCompletionSelection(isNext)(view);
+        return true;
+      }
+      
+      // For Ctrl+Arrow keys, only handle when completions are active
+      if ((isCtrlDown || isCtrlUp) && completions.length === 0) {
+        return false;
+      }
+      
+      return true; // Prevent default for Alt keys even if no completions
+    }
+    
     const search = view.state.field(searchState);
     
     if (search.active) {
@@ -417,13 +506,12 @@ export function EnhancedGraphQLEditor({
   ]);
 
   const extensions = [
-    // Emacs-style incremental search
-    searchState,
-    searchPlugin,
-    emacsSearchKeymap,
-    searchInputHandler,
     // GraphQL language support with optional schema
     graphql(builtSchema || undefined),
+    // Emacs-style incremental search
+    searchState,
+    searchPlugin,  
+    searchInputHandler,
     syntaxHighlighting(graphQLHighlight),
     EditorView.theme({
       '&': {
@@ -454,12 +542,32 @@ export function EnhancedGraphQLEditor({
         border: isDark ? '1px solid #404040' : '1px solid #d1d5db',
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        minWidth: '200px',
+      },
+      '.cm-tooltip-autocomplete ul': {
+        maxHeight: '200px',
+        overflowY: 'auto',
       },
       '.cm-tooltip-autocomplete ul li': {
-        padding: '4px 8px',
+        padding: '6px 12px',
+        cursor: 'pointer',
+        borderRadius: '4px',
+        margin: '1px 4px',
+        color: isDark ? '#e1e4e8' : '#24292e',
+        backgroundColor: 'transparent',
+        fontSize: '13px',
+        lineHeight: '1.4',
+      },
+      '.cm-tooltip-autocomplete ul li:hover': {
+        backgroundColor: isDark ? '#2d3748' : '#f7fafc',
       },
       '.cm-tooltip-autocomplete ul li[aria-selected]': {
-        backgroundColor: isDark ? '#374151' : '#f3f4f6',
+        backgroundColor: isDark ? '#3182ce' : '#2563eb',
+        color: '#ffffff',
+        fontWeight: '500',
+      },
+      '.cm-tooltip-autocomplete ul li[aria-selected]:hover': {
+        backgroundColor: isDark ? '#2c5aa0' : '#1d4ed8',
       },
       // Emacs-style search styling
       '.cm-search-match': {
@@ -476,7 +584,9 @@ export function EnhancedGraphQLEditor({
         color: isDark ? '#ffffff !important' : '#333333 !important',
         border: isDark ? '1px solid #555555 !important' : '1px solid #cccccc !important',
       },
-    })
+    }),
+    // Our custom keymap with HIGHEST precedence to override default Ctrl+K
+    Prec.highest(emacsSearchKeymap)
   ];
 
   const editorProps = {

@@ -9,7 +9,7 @@ import { type SavedQuery } from '@/lib/query-library';
 import { SaveQueryDialog, QueryLibraryDialog } from '@/components/QueryLibraryDialog';
 import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
-import { GraphQLEditor, JSONViewer } from '@/components/CodeEditor';
+import { JSONViewer } from '@/components/CodeEditor';
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
 
 export default function APITestingPage() {

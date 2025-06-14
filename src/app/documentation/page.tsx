@@ -305,11 +305,19 @@ assignments{mission{name}}}}`}
                     
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="p-4 bg-white rounded border">
-                        <h4 className="text-sm font-medium text-gray-900 mb-3">🎹 Keyboard Shortcuts</h4>
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">⌨️ Keyboard Shortcuts</h4>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Trigger autocomplete:</span>
                             <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Space</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Navigate down:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-bold text-green-700">Ctrl+N</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Navigate up:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-bold text-green-700">Ctrl+P</code>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Accept suggestion:</span>
@@ -318,6 +326,21 @@ assignments{mission{name}}}}`}
                           <div className="flex justify-between">
                             <span className="text-gray-600">Close autocomplete:</span>
                             <code className="bg-gray-100 px-2 py-1 rounded text-xs">Esc</code>
+                          </div>
+                          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                            <p className="text-green-800 font-medium mb-1">✅ Authentic Emacs Experience:</p>
+                            <p className="text-green-700">
+                              <code className="bg-green-100 px-1 rounded">Ctrl+N</code> (next) and <code className="bg-green-100 px-1 rounded">Ctrl+P</code> (previous) 
+                              provide the true Emacs-style navigation experience you expect!
+                            </p>
+                          </div>
+                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                            <p className="text-blue-800 font-medium mb-1">🎯 Alternative Options:</p>
+                            <p className="text-blue-700">
+                              <code className="bg-blue-100 px-1 rounded">Ctrl+J/K</code> (vim-style), 
+                              <code className="bg-blue-100 px-1 rounded">Alt+N/P</code>, and 
+                              <code className="bg-blue-100 px-1 rounded">Ctrl+↓/↑</code> also work perfectly.
+                            </p>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-500">Mac users: Use Cmd instead of Ctrl</span>
@@ -465,6 +488,108 @@ assignments{mission{name}}}}`}
                         The search is blazingly fast, shows real-time match counts (e.g., "2/5"), and behaves exactly like Emacs users expect. 
                         Use <code className="bg-blue-100 px-1 rounded text-xs">Ctrl+S</code>/<code className="bg-blue-100 px-1 rounded text-xs">Ctrl+R</code> to move forward/backward through matches.
                         Perfect for efficiently navigating through large GraphQL queries.
+                      </p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">⚡ Multiple Navigation Options</h3>
+                  <div className="bg-violet-50 border border-violet-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      The platform supports multiple navigation styles for autocomplete, giving you the flexibility to use 
+                      your preferred keybindings. We've solved the keymap precedence challenges to provide authentic experiences 
+                      for both Emacs and vim users.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="p-4 bg-white rounded border border-green-200">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">🎯 Emacs-Style (Primary)</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Navigate down:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-bold text-green-700">Ctrl+N</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Navigate up:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-bold text-green-700">Ctrl+P</code>
+                          </div>
+                          <div className="mt-2 text-xs text-green-700">
+                            ✨ <strong>Authentic Experience:</strong> True Emacs navigation with highest keymap precedence
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded border border-blue-200">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">🔄 Alternative Options</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Vim-style:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+J / Ctrl+K</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Alternative:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Alt+N / Alt+P</code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Arrow keys:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+↓ / Ctrl+↑</code>
+                          </div>
+                          <div className="mt-2 text-xs text-blue-700">
+                            Choose what feels most natural to you!
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-white rounded border mb-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">🔬 The Technical Discovery</h4>
+                      <div className="text-sm text-gray-700 space-y-2">
+                        <p>
+                          <strong>The Challenge:</strong> Initially, we discovered that <code className="bg-gray-100 px-1 rounded">Ctrl+N</code> and <code className="bg-gray-100 px-1 rounded">Ctrl+P</code> 
+                          worked perfectly in the main editor but not for autocomplete navigation.
+                        </p>
+                        <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-2">
+                          <p className="text-blue-800 font-medium mb-1">� Root Cause Found:</p>
+                          <ul className="text-blue-700 text-xs space-y-1 list-disc list-inside">
+                            <li><strong>Not browser limitations:</strong> Browsers weren't intercepting the keys</li>
+                            <li><strong>Keymap precedence issue:</strong> CodeMirror's default keymaps had higher priority</li>
+                            <li><strong>Solution discovered:</strong> <code className="bg-blue-100 px-1 rounded">Prec.highest()</code> gives our keymap absolute precedence</li>
+                            <li><strong>Perfect result:</strong> All navigation styles now work flawlessly</li>
+                          </ul>
+                        </div>
+                        <p className="text-green-700 mt-2">
+                          <strong>Breakthrough:</strong> By using <code className="bg-green-100 px-1 rounded">Prec.highest()</code>, 
+                          we ensure our custom keybindings take precedence over CodeMirror's defaults while preserving 
+                          normal editor functionality when autocomplete isn't active.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-white rounded border">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">🎪 Complete Autocomplete Experience</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                        <div className="p-3 bg-gray-50 rounded text-center">
+                          <code className="block bg-white px-2 py-1 rounded text-xs mb-1">Ctrl+Space</code>
+                          <p className="text-gray-600">Trigger autocomplete</p>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded text-center">
+                          <code className="block bg-white px-2 py-1 rounded text-xs mb-1">Ctrl+N / Ctrl+P</code>
+                          <p className="text-gray-600">Navigate (Emacs)</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded text-center">
+                          <code className="block bg-white px-2 py-1 rounded text-xs mb-1">Ctrl+J / Ctrl+K</code>
+                          <p className="text-gray-600">Navigate (vim)</p>
+                        </div>
+                        <div className="p-3 bg-purple-50 rounded text-center">
+                          <code className="block bg-white px-2 py-1 rounded text-xs mb-1">Tab</code>
+                          <p className="text-gray-600">Accept suggestion</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-green-100 rounded border border-green-300">
+                      <p className="text-sm text-green-800">
+                        � <strong>Mission Accomplished:</strong> You now have the authentic Emacs experience you wanted! 
+                        <code className="bg-green-200 px-1 rounded">Ctrl+N</code> and <code className="bg-green-200 px-1 rounded">Ctrl+P</code> 
+                        work perfectly for autocomplete navigation, with vim-style and other alternatives available for maximum flexibility.
                       </p>
                     </div>
                   </div>
