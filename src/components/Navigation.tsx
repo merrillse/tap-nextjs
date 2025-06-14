@@ -50,6 +50,7 @@ export default function Navigation() {
       icon: '⚙️',
       items: [
         { name: 'Settings', href: '/settings', icon: '⚙️', description: 'Environment & app settings' },
+        { name: 'Documentation', href: '/documentation', icon: '📖', description: 'MIS GraphQL integration guide' },
       ]
     }
   ];
