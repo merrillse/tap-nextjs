@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh } from '@mui/icons-material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -25,6 +25,8 @@ interface EnhancedGraphQLEditorProps {
   label?: string;
   schema?: any; // GraphQL schema from introspection
   readOnly?: boolean;
+  onGenerateRandomQuery?: () => void;
+  isGeneratingQuery?: boolean;
 }
 
 export function EnhancedGraphQLEditor({
@@ -34,7 +36,9 @@ export function EnhancedGraphQLEditor({
   height = '300px',
   label = 'GraphQL Query',
   schema,
-  readOnly = false
+  readOnly = false,
+  onGenerateRandomQuery,
+  isGeneratingQuery = false
 }: EnhancedGraphQLEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const theme = useTheme();
@@ -191,6 +195,17 @@ export function EnhancedGraphQLEditor({
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {!readOnly && onGenerateRandomQuery && (
+            <Tooltip title="Generate Random Query">
+              <IconButton size="small" onClick={onGenerateRandomQuery} disabled={isGeneratingQuery}>
+                {isGeneratingQuery ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                ) : (
+                  <Casino fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
           {!readOnly && (
             <Tooltip title="Format GraphQL">
               <IconButton size="small" onClick={handleFormat}>

@@ -355,23 +355,6 @@ Content-Type: application/json`
                       >
                         Save
                       </Button>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={handleGenerateRandomQuery}
-                        disabled={generatingQuery || loading}
-                        size="small"
-                        startIcon={
-                          generatingQuery ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          ) : (
-                            <span>🎲</span>
-                          )
-                        }
-                        sx={{ minWidth: 140 }}
-                      >
-                        {generatingQuery ? 'Generating...' : 'Random Query'}
-                      </Button>
                     </>
                   )}
                   <Button
@@ -390,6 +373,8 @@ Content-Type: application/json`
                 onChange={setQueryInput}
                 placeholder="Enter your GraphQL query here..."
                 schema={schema}
+                onGenerateRandomQuery={handleGenerateRandomQuery}
+                isGeneratingQuery={generatingQuery}
               />
             </Box>
 

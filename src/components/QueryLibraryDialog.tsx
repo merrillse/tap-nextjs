@@ -314,14 +314,14 @@ export function QueryLibraryDialog({
                 {queries.length === 0 ? (
                   <>
                     <Typography variant="h6" gutterBottom>No saved queries yet</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" component="div">
                       Save your first query to build your library!
                     </Typography>
                   </>
                 ) : (
                   <>
                     <Typography variant="h6" gutterBottom>No queries found</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" component="div">
                       Try adjusting your search or filter criteria
                     </Typography>
                   </>
@@ -353,7 +353,7 @@ export function QueryLibraryDialog({
                         secondary={
                           <Box>
                             {query.description && (
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography variant="body2" color="text.secondary" component="div">
                                 {query.description}
                               </Typography>
                             )}
@@ -362,7 +362,7 @@ export function QueryLibraryDialog({
                                 <Chip key={tag} label={tag} size="small" variant="outlined" />
                               ))}
                             </Box>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" component="div">
                               Updated: {new Date(query.updatedAt).toLocaleDateString()}
                             </Typography>
                           </Box>
