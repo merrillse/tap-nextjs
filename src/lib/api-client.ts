@@ -1,4 +1,5 @@
 import { EnvironmentConfig } from './environments';
+import { getSelectedProxyClient } from './proxy-client';
 
 export interface AuthToken {
   access_token: string;
@@ -163,7 +164,8 @@ export class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Cache-Control': 'no-cache',
-        'proxy-client': 'primary',
+        'proxy-client': getSelectedProxyClient(),
+        'x-selected-environment': this.environmentKey || 'mis-gql-stage',
       },
       body: JSON.stringify({
         query,

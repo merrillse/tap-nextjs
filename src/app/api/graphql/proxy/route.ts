@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getEnvironmentConfig } from '@/lib/environments';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,19 +20,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get the proxy client from request headers, default to 'primary'
+    const proxyClient = request.headers.get('proxy-client') || 'primary';
+
+    // Get current environment configuration
+    const selectedEnv = request.headers.get('x-selected-environment') || 'mis-gql-stage';
+    const environment = getEnvironmentConfig(selectedEnv);
+    
+    if (!environment) {
+      return NextResponse.json({ error: 'Invalid environment selected' }, { status: 400 });
+    }
+
     // Prepare GraphQL request
     const requestBody = JSON.stringify({ 
       query,
       ...(Object.keys(variables).length > 0 && { variables })
     });
     
-    console.log('* Preparing request to https://mis-gql-stage.aws.churchofjesuschrist.org/graphql');
+    console.log(`* Preparing request to ${environment.graph_url}`);
     console.log('* Current time is', new Date().toISOString());
     console.log('* Using Bearer token:', access_token.substring(0, 50) + '...');
     console.log('* Request body size:', requestBody.length, 'bytes');
+    console.log(`* Proxy client: ${proxyClient}`);
     
     // Make the GraphQL request
-    const graphqlResponse = await fetch('https://mis-gql-stage.aws.churchofjesuschrist.org/graphql', {
+    const graphqlResponse = await fetch(environment.graph_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +52,7 @@ export async function POST(request: NextRequest) {
         'Accept': '*/*',
         'User-Agent': 'TAP-NextJS/1.0 (graphql-proxy)',
         'Cache-Control': 'no-cache',
-        'proxy-client': 'primary',
+        'proxy-client': proxyClient,
       },
       body: requestBody,
     });

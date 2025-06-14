@@ -1,9 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 export default function LoadTestingPage() {
   const [isRunning, setIsRunning] = useState(false);
+  const handleEndpointChange = (event: SelectChangeEvent) => {
+    setTestConfig({...testConfig, endpoint: event.target.value});
+  };
   const [testResults, setTestResults] = useState<{
     totalRequests: number;
     successfulRequests: number;
@@ -123,17 +128,18 @@ export default function LoadTestingPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target Endpoint
-                  </label>
-                  <select
-                    value={testConfig.endpoint}
-                    onChange={(e) => setTestConfig({...testConfig, endpoint: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="graphql">GraphQL - Missionary Query</option>
-                    <option value="rest">REST - Missionary API</option>
-                  </select>
+                  <FormControl fullWidth>
+                    <InputLabel id="endpoint-select-label">Target Endpoint</InputLabel>
+                    <Select
+                      labelId="endpoint-select-label"
+                      value={testConfig.endpoint}
+                      label="Target Endpoint"
+                      onChange={handleEndpointChange}
+                    >
+                      <MenuItem value="graphql">GraphQL - Missionary Query</MenuItem>
+                      <MenuItem value="rest">REST - Missionary API</MenuItem>
+                    </Select>
+                  </FormControl>
                 </div>
                 
                 <button

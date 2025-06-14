@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
+import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Button, Paper } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 export default function APITestingPage() {
   const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
@@ -20,6 +22,10 @@ export default function APITestingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+
+  const handleEnvironmentChange = (event: SelectChangeEvent) => {
+    setSelectedEnvironment(event.target.value);
+  };
 
   const environmentOptions = getEnvironmentNames();
 
@@ -188,16 +194,19 @@ Content-Type: application/json`
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Environment</label>
-                  <select 
-                    value={selectedEnvironment}
-                    onChange={(e) => setSelectedEnvironment(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {environmentOptions.map(env => (
-                      <option key={env.key} value={env.key}>{env.name}</option>
-                    ))}
-                  </select>
+                  <FormControl fullWidth>
+                    <InputLabel id="environment-select-label">Environment</InputLabel>
+                    <Select
+                      labelId="environment-select-label"
+                      value={selectedEnvironment}
+                      label="Environment"
+                      onChange={handleEnvironmentChange}
+                    >
+                      {environmentOptions.map(env => (
+                        <MenuItem key={env.key} value={env.key}>{env.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </div>
               </div>
             </div>

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         'Accept': '*/*',
         'User-Agent': 'TAP-NextJS/1.0 (graphql-test)',
         'Cache-Control': 'no-cache',
-        'proxy-client': 'primary',
+        'proxy-client': request.headers.get('proxy-client') || 'primary',
       },
       body: requestBody,
     });
