@@ -30,8 +30,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MuiThemeProvider>
-          <Navigation />
-          {children}
+          <Navigation>
+            {children}
+          </Navigation>
         </MuiThemeProvider>
       </body>
     </html>

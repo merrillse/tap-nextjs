@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import EnvironmentIndicator from './EnvironmentIndicator';
 
 interface NavItem {
@@ -17,16 +18,29 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export default function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+export default function Navigation({ children }: { children: React.ReactNode }) {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  // Generate breadcrumbs from pathname
+  const generateBreadcrumbs = () => {
+    const paths = pathname.split('/').filter(Boolean);
+    const breadcrumbs = [{ name: 'Home', href: '/' }];
+    
+    let currentPath = '';
+    paths.forEach((path) => {
+      currentPath += `/${path}`;
+      const name = path.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      breadcrumbs.push({ name, href: currentPath });
+    });
+    
+    return breadcrumbs;
+  };
 
   // Navigation structure with logical groupings
-  const navItems: NavItem[] = [
-    { name: 'Home', href: '/', icon: '🏠' },
-  ];
-
   const navGroups: NavGroup[] = [
     {
       name: 'Search & Data',
@@ -57,177 +71,161 @@ export default function Navigation() {
     }
   ];
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setActiveDropdown(null);
-      }
-    }
+  const toggleGroup = (groupName: string) => {
+    setActiveGroup(activeGroup === groupName ? null : groupName);
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const toggleDropdown = (groupName: string) => {
-    setActiveDropdown(activeDropdown === groupName ? null : groupName);
+  const isActive = (href: string) => {
+    return pathname === href;
   };
 
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+    <div className="flex h-screen bg-gray-50">
+      {/* Left Sidebar */}
+      <div className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg border-r border-gray-200 transition-all duration-300 flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          {!isSidebarCollapsed && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">TAP</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-semibold text-gray-900">
-                  Testing & API Platform
-                </span>
-                <span className="text-xs text-gray-400 -mt-1 font-mono">
-                  OAuth: Missionary Graph Service Team - 0oak0jqakvevwjWrp357
-                </span>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Testing & API Platform</h1>
+                <p className="text-xs text-gray-500">MGQL Service Team</p>
               </div>
+            </div>
+          )}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          >
+            <svg className={`w-5 h-5 transform transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Navigation Groups */}
+        <div className="flex-1 overflow-y-auto py-4">
+          {/* Home Link */}
+          <div className="px-3 mb-6">
+            <Link
+              href="/"
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                isActive('/') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span className="text-lg">🏠</span>
+              {!isSidebarCollapsed && <span>Home</span>}
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1" ref={dropdownRef}>
-            {/* Single nav items */}
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.name}</span>
-              </Link>
-            ))}
-
-            {/* Dropdown groups */}
-            {navGroups.map((group) => (
-              <div key={group.name} className="relative">
+          {/* Navigation Groups */}
+          {navGroups.map((group) => (
+            <div key={group.name} className="mb-6">
+              {!isSidebarCollapsed && (
                 <button
-                  onClick={() => toggleDropdown(group.name)}
-                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                  onClick={() => toggleGroup(group.name)}
+                  className="w-full flex items-center justify-between px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors duration-200"
                 >
-                  <span className="text-lg">{group.icon}</span>
-                  <span>{group.name}</span>
+                  <div className="flex items-center space-x-2">
+                    <span>{group.icon}</span>
+                    <span>{group.name}</span>
+                  </div>
                   <svg 
-                    className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === group.name ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 transition-transform duration-200 ${activeGroup === group.name ? 'rotate-90' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
-
-                {/* Dropdown menu */}
-                {activeDropdown === group.name && (
-                  <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setActiveDropdown(null)}
-                        className="flex items-start space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
-                      >
-                        <span className="text-lg mt-0.5">{item.icon}</span>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-gray-500 mt-1">{item.description}</div>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <EnvironmentIndicator />
-          </div>
-
-          {/* Mobile menu button and environment indicator */}
-          <div className="md:hidden flex items-center space-x-3">
-            <EnvironmentIndicator />
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 p-2"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            {/* Single nav items */}
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 block px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.name}</span>
-              </Link>
-            ))}
-
-            {/* Mobile group sections */}
-            {navGroups.map((group) => (
-              <div key={group.name}>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  {group.icon} {group.name}
-                </div>
+              )}
+              
+              <div className={`space-y-1 px-3 ${!isSidebarCollapsed && activeGroup !== group.name ? 'hidden' : ''}`}>
                 {group.items.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 block px-6 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group ${
+                      isActive(item.href) 
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    title={isSidebarCollapsed ? item.name : ''}
                   >
                     <span className="text-lg">{item.icon}</span>
-                    <div>
-                      <div>{item.name}</div>
-                      {item.description && (
-                        <div className="text-xs text-gray-500">{item.description}</div>
-                      )}
-                    </div>
+                    {!isSidebarCollapsed && (
+                      <div className="flex-1">
+                        <div>{item.name}</div>
+                        {item.description && (
+                          <div className="text-xs text-gray-500 group-hover:text-gray-600">{item.description}</div>
+                        )}
+                      </div>
+                    )}
                   </Link>
                 ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
-    </nav>
+
+        {/* Sidebar Footer */}
+        {!isSidebarCollapsed && (
+          <div className="p-4 border-t border-gray-200">
+            <EnvironmentIndicator />
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Beautiful Breadcrumbs */}
+            <nav className="flex items-center space-x-2">
+              {generateBreadcrumbs().map((crumb, index, array) => (
+                <div key={crumb.href} className="flex items-center space-x-2">
+                  <Link
+                    href={crumb.href}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      index === array.length - 1
+                        ? 'bg-blue-50 text-blue-700 cursor-default'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {index === 0 && <span className="mr-1">🏠</span>}
+                    {crumb.name}
+                  </Link>
+                  {index < array.length - 1 && (
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </nav>
+
+            {/* Header Actions */}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                Welcome back, M. Engineer
+              </div>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">ME</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
