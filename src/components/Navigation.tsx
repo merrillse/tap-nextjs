@@ -212,10 +212,41 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             {/* Header Actions */}
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">
-                Welcome back, M. Engineer
+                Missionary Graph Service Team (0oak0jqakvevwjWrp357)
               </div>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">ME</span>
+              {/* Sexy Interconnected Nodes Team Logo */}
+              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
+                {/* Interconnected Network Pattern */}
+                <svg className="w-7 h-7 text-white" viewBox="0 0 28 28" fill="none">
+                  {/* Connection Lines */}
+                  <g stroke="currentColor" strokeWidth="1" opacity="0.8">
+                    <line x1="8" y1="8" x2="14" y2="14" />
+                    <line x1="20" y1="8" x2="14" y2="14" />
+                    <line x1="8" y1="8" x2="20" y2="8" />
+                    <line x1="8" y1="20" x2="14" y2="14" />
+                    <line x1="20" y1="20" x2="14" y2="14" />
+                    <line x1="8" y1="20" x2="20" y2="20" />
+                    <line x1="8" y1="8" x2="8" y2="20" />
+                    <line x1="20" y1="8" x2="20" y2="20" />
+                  </g>
+                  {/* Network Nodes */}
+                  <g fill="currentColor">
+                    {/* Corner nodes */}
+                    <circle cx="8" cy="8" r="2.5" />
+                    <circle cx="20" cy="8" r="2.5" />
+                    <circle cx="8" cy="20" r="2.5" />
+                    <circle cx="20" cy="20" r="2.5" />
+                    {/* Central hub node */}
+                    <circle cx="14" cy="14" r="3" />
+                  </g>
+                  {/* Subtle pulse effect on central node */}
+                  <circle cx="14" cy="14" r="3" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.4">
+                    <animate attributeName="r" values="3;4.5;3" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-lg blur-sm opacity-50 -z-10"></div>
               </div>
             </div>
           </div>
