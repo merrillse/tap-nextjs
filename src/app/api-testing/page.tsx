@@ -94,6 +94,10 @@ export default function APITestingPage() {
   const [copySnackbarOpen, setCopySnackbarOpen] = useState(false);
   const [copySnackbarMessage, setCopySnackbarMessage] = useState('');
 
+  // State for sent request details
+  const [sentRequestBody, setSentRequestBody] = useState<string | null>(null);
+  const [sentRequestHeaders, setSentRequestHeaders] = useState<Record<string, string> | null>(null);
+
   const handleResponseTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setResponseTabValue(newValue);
   };
@@ -243,6 +247,8 @@ export default function APITestingPage() {
     setLoading(true);
     setError(null);
     setResponse(null);
+    setSentRequestBody(null); // Clear previous sent request
+    setSentRequestHeaders(null); // Clear previous sent request
     
     const startTime = Date.now();
     let parsedVariables = {}; // Initialize as empty object
@@ -296,6 +302,15 @@ export default function APITestingPage() {
       if (selectedEndpoint === 'graphql') {
         console.log(`[Apex Debug] Executing GraphQL query for endpoint: ${selectedEndpoint}`);
         console.log(`[Apex Debug] Query: ${queryInput}`);
+        
+        // Capture request details before sending
+        const requestDetailsToStore = {
+          query: queryInput,
+          variables: parsedVariables,
+        };
+        setSentRequestBody(safeStringify(requestDetailsToStore));
+        setSentRequestHeaders(parsedHeaders as Record<string, string>);
+
         const result = await apiClient.executeGraphQLQuery(queryInput, parsedVariables, parsedHeaders as Record<string, string>);
         console.log('[Apex Debug] GraphQL execution result:', result);
         const executionTime = Date.now() - startTime;
@@ -627,6 +642,33 @@ export default function APITestingPage() {
                   />
                 </AccordionDetails>
               </Accordion>
+              
+              {/* Sent Request Details Viewer */}
+              {sentRequestBody && sentRequestHeaders && (
+                <Accordion sx={{ borderRadius: '1rem', boxShadow: 'lg', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }} defaultExpanded={false}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="sent-request-content" id="sent-request-header" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Typography variant="subtitle1" fontWeight="medium">Sent Request Details</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box>
+                      <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
+                        Request Body
+                      </Typography>
+                      <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
+                        <JSONViewer value={sentRequestBody} />
+                      </Paper>
+                    </Box>
+                    <Box>
+                      <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
+                        Request Headers
+                      </Typography>
+                      <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
+                        <JSONViewer value={safeStringify(sentRequestHeaders)} />
+                      </Paper>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              )}
               
               {/* Authentication Status - Compact Card */}
               {apiClient && (
