@@ -328,6 +328,23 @@ const emacsSearchKeymap = keymap.of([
       }
       return false;
     }
+  },
+  {
+    key: 'Ctrl-f',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Exit search and move cursor forward one character
+        const currentPos = view.state.selection.main.head;
+        view.dispatch({
+          effects: exitSearch.of(true),
+          selection: { anchor: currentPos + 1, head: currentPos + 1 },
+          scrollIntoView: true
+        });
+        return true;
+      }
+      return false;
+    }
   }
 ]);
 
@@ -365,6 +382,24 @@ const searchInputHandler = EditorView.domEventHandlers({
     const search = view.state.field(searchState);
     
     if (search.active) {
+      // Handle search-specific control keys first (these should NOT exit search)
+      if (event.ctrlKey || event.metaKey) {
+        const key = event.key.toLowerCase();
+        
+        // These keys should continue search mode - don't exit
+        if (key === 's' || key === 'r' || key === 'g') {
+          return false; // Let the keymap handle these
+        }
+        
+        // Handle other specific control keys that should exit search
+        const exitKeys = ['f', 'b', 'a', 'e', 'k', 'n', 'p', 'v', 'l', 'd', 'h', 'w', 'u', 'i', 'o', 't', 'y', 'x', 'c', 'z'];
+        if (exitKeys.includes(key)) {
+          view.dispatch({ effects: exitSearch.of(true) });
+          // Don't prevent default - let the control key do its normal action
+          return false;
+        }
+      }
+      
       // Handle backspace and delete in search mode - highest priority
       if (event.key === 'Backspace') {
         event.preventDefault();
