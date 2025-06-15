@@ -332,31 +332,6 @@ Content-Type: application/json`
                   {selectedEndpoint === 'graphql' ? 'GraphQL Query' : 'REST Request'}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  {selectedEndpoint === 'graphql' && (
-                    <>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => setShowLibraryDialog(true)}
-                        size="small"
-                        startIcon={<span>📚</span>}
-                        sx={{ minWidth: 120 }}
-                      >
-                        Library
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={handleSaveQuery}
-                        disabled={!queryInput.trim()}
-                        size="small"
-                        startIcon={<span>💾</span>}
-                        sx={{ minWidth: 100 }}
-                      >
-                        Save
-                      </Button>
-                    </>
-                  )}
                   <Button
                     variant="contained"
                     color="success"
@@ -375,6 +350,9 @@ Content-Type: application/json`
                 schema={schema}
                 onGenerateRandomQuery={handleGenerateRandomQuery}
                 isGeneratingQuery={generatingQuery}
+                onSaveQuery={selectedEndpoint === 'graphql' ? handleSaveQuery : undefined}
+                onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
+                canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
               />
             </Box>
 

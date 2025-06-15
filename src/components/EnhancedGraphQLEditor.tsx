@@ -6,8 +6,8 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino } from '@mui/icons-material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip } from '@mui/material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
@@ -18,6 +18,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { graphql } from 'cm6-graphql';
 import { buildClientSchema } from 'graphql';
 import { formatGraphQLQuery } from '@/lib/graphql-formatter';
+import { QueryLibrary, type SavedQuery } from '@/lib/query-library';
 import { 
   moveCompletionSelection,
   currentCompletions,
@@ -345,6 +346,18 @@ const emacsSearchKeymap = keymap.of([
       }
       return false;
     }
+  },
+  {
+    key: 'Escape',
+    run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Exit search mode
+        view.dispatch({ effects: exitSearch.of(true) });
+        return true;
+      }
+      return false;
+    }
   }
 ]);
 
@@ -447,6 +460,105 @@ const searchInputHandler = EditorView.domEventHandlers({
   }
 });
 
+// Side Panel Library Component for Fullscreen Mode
+interface SidePanelLibraryProps {
+  onSelectQuery: (query: SavedQuery) => void;
+  onRunQuery: (query: SavedQuery) => void;
+}
+
+function SidePanelLibrary({ onSelectQuery, onRunQuery }: SidePanelLibraryProps) {
+  const [queries, setQueries] = useState<SavedQuery[]>([]);
+
+  useEffect(() => {
+    const loadQueries = () => {
+      const allQueries = QueryLibrary.getQueries();
+      setQueries(allQueries);
+    };
+
+    loadQueries();
+    // Refresh queries when the component mounts
+    window.addEventListener('storage', loadQueries);
+    return () => window.removeEventListener('storage', loadQueries);
+  }, []);
+
+  if (queries.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          No saved queries yet
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Save a query to see it here
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <List sx={{ p: 0 }}>
+      {queries.map((query) => (
+        <ListItem 
+          key={query.id}
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+        >
+          <ListItemText
+            primary={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
+                  {query.name}
+                </Typography>
+                <Chip 
+                  label={query.environment} 
+                  size="small" 
+                  variant="outlined"
+                  sx={{ fontSize: '0.7rem', height: '20px' }}
+                />
+              </Box>
+            }
+            secondary={
+              <Box>
+                {query.description && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {query.description}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(query.updatedAt).toLocaleDateString()}
+                </Typography>
+              </Box>
+            }
+          />
+          <ListItemSecondaryAction>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title="Load Query">
+                <IconButton 
+                  size="small" 
+                  onClick={() => onSelectQuery(query)}
+                  sx={{ fontSize: '0.8rem' }}
+                >
+                  <span>📝</span>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Run Query">
+                <IconButton 
+                  size="small" 
+                  onClick={() => onRunQuery(query)}
+                >
+                  <PlayArrow fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </ListItemSecondaryAction>
+        </ListItem>
+      ))}
+    </List>
+  );
+}
+
 interface EnhancedGraphQLEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -457,6 +569,9 @@ interface EnhancedGraphQLEditorProps {
   readOnly?: boolean;
   onGenerateRandomQuery?: () => void;
   isGeneratingQuery?: boolean;
+  onSaveQuery?: () => void;
+  onShowLibrary?: () => void;
+  canSaveQuery?: boolean;
 }
 
 export function EnhancedGraphQLEditor({
@@ -468,9 +583,13 @@ export function EnhancedGraphQLEditor({
   schema,
   readOnly = false,
   onGenerateRandomQuery,
-  isGeneratingQuery = false
+  isGeneratingQuery = false,
+  onSaveQuery,
+  onShowLibrary,
+  canSaveQuery = false
 }: EnhancedGraphQLEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSidePanelLibrary, setShowSidePanelLibrary] = useState(false);
   const [reactSearchState, setReactSearchState] = useState({
     active: false,
     query: '',
@@ -480,6 +599,21 @@ export function EnhancedGraphQLEditor({
   const editorRef = useRef<any>(null);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+
+  // Handle Escape key to close side panel
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showSidePanelLibrary && isFullscreen) {
+        event.preventDefault();
+        setShowSidePanelLibrary(false);
+      }
+    };
+
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showSidePanelLibrary, isFullscreen]);
 
   // Build GraphQL schema for autocomplete
   const builtSchema = useMemo(() => {
@@ -655,19 +789,35 @@ export function EnhancedGraphQLEditor({
         zIndex: isFullscreen ? 9999 : 'auto',
         height: isFullscreen ? '100vh' : 'auto',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        overflow: 'hidden'
       }}
     >
-      {/* Header */}
+      {/* Main Content Area */}
       <Box sx={{ 
         display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        p: 2, 
-        borderBottom: 1, 
-        borderColor: 'divider',
-        bgcolor: 'grey.50'
+        flex: 1, 
+        overflow: 'hidden',
+        position: 'relative'
       }}>
+        {/* Editor Section */}
+        <Box sx={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          transition: isFullscreen ? 'margin-right 0.3s ease' : 'none',
+          marginRight: isFullscreen && showSidePanelLibrary ? '400px' : '0px'
+        }}>
+          {/* Header */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            p: 2, 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            bgcolor: 'grey.50'
+          }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
             {label}
@@ -693,6 +843,43 @@ export function EnhancedGraphQLEditor({
               </IconButton>
             </Tooltip>
           )}
+          
+          {/* Query Management Buttons */}
+          {!readOnly && (onShowLibrary || onSaveQuery) && (
+            <>
+              {onGenerateRandomQuery && (
+                <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+              )}
+              {onShowLibrary && (
+                <Tooltip title="Query Library">
+                  <IconButton 
+                    size="small" 
+                    onClick={() => {
+                      if (isFullscreen) {
+                        setShowSidePanelLibrary(!showSidePanelLibrary);
+                      } else {
+                        onShowLibrary();
+                      }
+                    }}
+                  >
+                    <LibraryBooks fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onSaveQuery && (
+                <Tooltip title="Save Query">
+                  <IconButton size="small" onClick={onSaveQuery} disabled={!canSaveQuery}>
+                    <Save fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
+          )}
+          
+          {/* Editor Actions */}
+          {((onGenerateRandomQuery || onShowLibrary || onSaveQuery) && !readOnly) && (
+            <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+          )}
           {!readOnly && (
             <Tooltip title="Format GraphQL">
               <IconButton size="small" onClick={handleFormat}>
@@ -705,6 +892,7 @@ export function EnhancedGraphQLEditor({
               <ContentCopy fontSize="small" />
             </IconButton>
           </Tooltip>
+          <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
           <Tooltip title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
             <IconButton size="small" onClick={() => setIsFullscreen(!isFullscreen)}>
               {isFullscreen ? <FullscreenExit fontSize="small" /> : <Fullscreen fontSize="small" />}
@@ -814,6 +1002,68 @@ export function EnhancedGraphQLEditor({
           </Typography>
         </Box>
       )}
+        </Box>
+        
+        {/* Side Panel Library (Fullscreen only) */}
+        {isFullscreen && (
+          <Box sx={{
+            position: 'fixed',
+            top: 0,
+            right: showSidePanelLibrary ? 0 : '-400px',
+            bottom: 0,
+            width: '400px',
+            bgcolor: 'background.paper',
+            borderLeft: 1,
+            borderColor: 'divider',
+            zIndex: 10000,
+            transition: 'right 0.3s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: showSidePanelLibrary ? '0 0 20px rgba(0,0,0,0.1)' : 'none'
+          }}>
+            {/* Side Panel Header */}
+            <Box sx={{
+              p: 2,
+              borderBottom: 1,
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              bgcolor: 'grey.50'
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                Query Library
+              </Typography>
+              <IconButton 
+                size="small" 
+                onClick={() => setShowSidePanelLibrary(false)}
+                sx={{ ml: 1 }}
+              >
+                <span style={{ fontSize: '18px' }}>×</span>
+              </IconButton>
+            </Box>
+            
+            {/* Side Panel Content */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <SidePanelLibrary 
+                onSelectQuery={(query) => {
+                  if (onChange) {
+                    onChange(query.query);
+                  }
+                  setShowSidePanelLibrary(false);
+                }}
+                onRunQuery={(query) => {
+                  if (onChange) {
+                    onChange(query.query);
+                  }
+                  setShowSidePanelLibrary(false);
+                  // TODO: Trigger query execution
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+      </Box>
     </Paper>
   );
 }

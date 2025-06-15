@@ -113,7 +113,16 @@ export function SaveQueryDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      style={{ zIndex: 10000 }}
+      BackdropProps={{
+        style: { zIndex: 9999 }
+      }}
+    >
       <DialogTitle>
         {editingQuery ? 'Update Query' : 'Save Query'}
       </DialogTitle>
@@ -269,7 +278,16 @@ export function QueryLibraryDialog({
   const stats = QueryLibrary.getStats();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      style={{ zIndex: 10000 }}
+      BackdropProps={{
+        style: { zIndex: 9999 }
+      }}
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Query Library</Typography>
