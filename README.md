@@ -1,6 +1,6 @@
-# MIS GraphQL Next.js Application
+# Apex GraphQL Next.js Application
 
-A Next.js application for integrating with MIS (Missionary Information System) GraphQL APIs across multiple environments (dev, staging, production) with secure OAuth 2.0 authentication.
+A Next.js application for integrating with GraphQL APIs, including MIS (Missionary Information System) and MOGS (Missionary Oracle GraphQL Service), across multiple environments (dev, staging, production) with secure OAuth 2.0 authentication.
 
 ## Getting Started
 
@@ -18,11 +18,20 @@ Edit `.env.local` and add your actual client secrets:
 # MIS GraphQL Development Environment
 MIS_GQL_DEV_CLIENT_SECRET=your_dev_client_secret_here
 
-# MIS GraphQL Staging Environment  
+# MIS GraphQL Staging Environment
 MIS_GQL_STAGE_CLIENT_SECRET=your_stage_client_secret_here
 
 # MIS GraphQL Production Environment
 MIS_GQL_PROD_CLIENT_SECRET=your_prod_client_secret_here
+
+# MOGS GraphQL Development Environment
+MOGS_DEV_CLIENT_SECRET=your_mogs_dev_client_secret_here
+
+# MOGS GraphQL Local Environment
+MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_client_secret_here
+
+# MOGS GraphQL Production Environment
+MOGS_PROD_CLIENT_SECRET=your_mogs_prod_client_secret_here
 ```
 
 ⚠️ **Important**: Never commit `.env.local` to the repository. It's already in `.gitignore`.
@@ -41,7 +50,38 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## MIS GraphQL Integration
+## Supported GraphQL Systems
+
+This application supports integration with the following GraphQL systems:
+
+### 1. MIS GraphQL (Missionary Information System)
+
+- **Development**: `https://mis-gql-dev.aws.churchofjesuschrist.org/graphql`
+- **Staging**: `https://mis-gql-stage.aws.churchofjesuschrist.org/graphql`
+- **Production**: `https://mis-gql-prod.aws.churchofjesuschrist.org/graphql`
+
+Each MIS environment uses OAuth 2.0 client credentials flow with Okta for authentication. Refer to the sections below for details on MIS client schema containers, authorized clients, and Okta configuration.
+
+### 2. MOGS GraphQL (Missionary Oracle GraphQL Service)
+
+- **Development**: `https://mms-gql-service-dev.pvu.cf.churchofjesuschrist.org/graphql`
+  - **Okta Token URL**: `https://dev-73389086.okta.com/oauth2/default/v1/token`
+  - **Client ID**: `0oa5uce4xpm2l7K8G5d7`
+  - **Scope**: `client_token`
+- **Local**: `http://localhost:8080/graphql`
+  - **Okta Token URL**: `https://dev-73389086.okta.com/oauth2/default/v1/token`
+  - **Client ID**: `0oa5uce4xpm2l7K8G5d7`
+  - **Scope**: `client_token`
+- **Production**: `https://mms-gql-service.pvu.cf.churchofjesuschrist.org/graphql`
+  - **Okta Token URL**: `https://id.churchofjesuschrist.org/oauth2/auskwf3oaqYZwid57357/v1/token`
+  - **Client ID**: `0oak0jqakvevwjWrp357`
+  - **Scope**: `client_token`
+
+*(Additional MOGS environments like staging can be added as they become available.)*
+
+MOGS environments also use OAuth 2.0 client credentials flow with Okta. The client secrets for MOGS development (`MOGS_DEV_CLIENT_SECRET`), local (`MOGS_LOCAL_CLIENT_SECRET`), and production (`MOGS_PROD_CLIENT_SECRET`) need to be configured in your `.env.local` file.
+
+## MIS GraphQL Integration Details
 
 ### Environment Configuration
 
@@ -236,8 +276,11 @@ All external API communication goes through Next.js API routes to maintain secur
 ```env
 # Required for all environments
 MIS_GQL_DEV_CLIENT_SECRET=     # Development environment secret
-MIS_GQL_STAGE_CLIENT_SECRET=   # Staging environment secret  
+MIS_GQL_STAGE_CLIENT_SECRET=   # Staging environment secret
 MIS_GQL_PROD_CLIENT_SECRET=    # Production environment secret
+MOGS_DEV_CLIENT_SECRET=      # MOGS Development environment secret
+MOGS_LOCAL_CLIENT_SECRET=    # MOGS Local environment secret
+MOGS_PROD_CLIENT_SECRET=     # MOGS Production environment secret
 
 # Optional configuration
 NODE_ENV=development           # Application environment
@@ -260,8 +303,11 @@ In your deployment platform, configure:
 
 ```env
 MIS_GQL_DEV_CLIENT_SECRET=your_dev_secret
-MIS_GQL_STAGE_CLIENT_SECRET=your_stage_secret  
+MIS_GQL_STAGE_CLIENT_SECRET=your_stage_secret
 MIS_GQL_PROD_CLIENT_SECRET=your_prod_secret
+MOGS_DEV_CLIENT_SECRET=your_mogs_dev_secret
+MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_secret # Typically not needed for deployed environments
+MOGS_PROD_CLIENT_SECRET=your_mogs_prod_secret
 ```
 
 ### Docker Deployment
@@ -281,20 +327,20 @@ CMD ["npm", "start"]
 
 ### Common Issues
 
-1. **OAuth Authentication Failures**
-   - Verify client secrets in `.env.local`
-   - Check Okta client configuration
-   - Use `/debug` page to inspect tokens
+1.  **OAuth Authentication Failures**
+    *   Verify client secrets in `.env.local` (for MIS and MOGS environments)
+    *   Check Okta client configuration for the respective service
+    *   Use `/debug` page to inspect tokens
 
-2. **GraphQL Query Errors**
-   - Confirm client has required scopes
-   - Verify schema container access
-   - Test with `/api-testing` interface
+2.  **GraphQL Query Errors**
+    *   Confirm client has required scopes
+    *   Verify schema container access
+    *   Test with `/api-testing` interface
 
-3. **Environment Connection Issues**
-   - Check network connectivity to MIS endpoints
-   - Verify environment URLs in `src/lib/environments.ts`
-   - Use health check functionality
+3.  **Environment Connection Issues**
+    *   Check network connectivity to MIS endpoints
+    *   Verify environment URLs in `src/lib/environments.ts`
+    *   Use health check functionality
 
 ### Debug Tools
 
@@ -314,4 +360,5 @@ CMD ["npm", "start"]
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [MIS GraphQL API Documentation](internal-link)
+- [MOGS GraphQL API Documentation](internal-link) {/* TODO: Add actual link if available */}
 - [OAuth 2.0 Client Credentials Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)

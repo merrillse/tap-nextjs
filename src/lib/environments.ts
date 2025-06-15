@@ -51,6 +51,45 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     client_id: '0oak0jqakvevwjWrp357',
     client_secret: '', // Managed server-side via environment variables
     scope: 'client_token'
+  },
+  'mogs-gql-dev': {
+    name: 'MOGS GraphQL Development',
+    scheme: 'https',
+    domain: 'mms-gql-service-dev.pvu.cf.churchofjesuschrist.org',
+    path: 'graphql',
+    base_url: 'https://mms-gql-service-dev.pvu.cf.churchofjesuschrist.org',
+    graph_url: 'https://mms-gql-service-dev.pvu.cf.churchofjesuschrist.org/graphql',
+    health_url: 'https://mms-gql-service-dev.pvu.cf.churchofjesuschrist.org/actuator/health',
+    access_token_url: 'https://dev-73389086.okta.com/oauth2/default/v1/token',
+    client_id: '0oa5uce4xpm2l7K8G5d7',
+    client_secret: '', // Managed server-side via environment variables (MOGS_DEV_CLIENT_SECRET)
+    scope: 'client_token'
+  },
+  'mogs-gql-local': {
+    name: 'MOGS GraphQL Local',
+    scheme: 'http',
+    domain: 'localhost:8080', // Combined domain and port for simplicity here, adjust if needed
+    path: 'graphql',
+    base_url: 'http://localhost:8080',
+    graph_url: 'http://localhost:8080/graphql',
+    health_url: 'http://localhost:8080/actuator/health',
+    access_token_url: 'https://dev-73389086.okta.com/oauth2/default/v1/token',
+    client_id: '0oa5uce4xpm2l7K8G5d7',
+    client_secret: '', // Managed server-side via environment variables (MOGS_LOCAL_CLIENT_SECRET)
+    scope: 'client_token'
+  },
+  'mogs-gql-prod': {
+    name: 'MOGS GraphQL Production',
+    scheme: 'https',
+    domain: 'mms-gql-service.pvu.cf.churchofjesuschrist.org',
+    path: 'graphql',
+    base_url: 'https://mms-gql-service.pvu.cf.churchofjesuschrist.org',
+    graph_url: 'https://mms-gql-service.pvu.cf.churchofjesuschrist.org/graphql',
+    health_url: 'https://mms-gql-service.pvu.cf.churchofjesuschrist.org/actuator/health',
+    access_token_url: 'https://id.churchofjesuschrist.org/oauth2/auskwf3oaqYZwid57357/v1/token',
+    client_id: '0oak0jqakvevwjWrp357',
+    client_secret: '', // Managed server-side via environment variables (MOGS_PROD_CLIENT_SECRET)
+    scope: 'client_token'
   }
 };
 
