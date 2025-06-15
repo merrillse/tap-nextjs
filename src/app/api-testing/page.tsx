@@ -463,18 +463,19 @@ export default function APITestingPage() {
           <div className="flex flex-col space-y-4 overflow-y-auto pr-2"> {/* Reduced space-y, added overflow and padding */}
             
             {/* Query Editor with Enhanced Header */}
-            <Paper elevation={3} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 flex flex-col flex-grow overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-4 text-white"> {/* Reduced padding */}
+            <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden">
+              {/* Updated Header for GraphQL Query Panel */}
+              <div className="bg-slate-50 p-3 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">GraphQL Query</h2>
-                      <p className="text-white/80 text-sm">Define your GraphQL operation</p>
+                      <h2 className="text-lg font-semibold text-slate-700">GraphQL Query</h2>
+                      <p className="text-slate-500 text-sm">Define your GraphQL operation</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -482,24 +483,19 @@ export default function APITestingPage() {
                       variant="contained"
                       onClick={handleTest}
                       disabled={loading}
+                      size="medium"
                       sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                        color: 'white',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        borderRadius: '8px',
-                        minWidth: 120,
-                        fontWeight: 'bold',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                        },
-                        '&:disabled': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                        }
+                        // Using theme colors for a more standard look
+                        // backgroundColor: loading ? 'grey.300' : 'primary.main',
+                        // color: loading ? 'text.disabled' : 'primary.contrastText',
+                        // '&:hover': {
+                        //   backgroundColor: loading ? 'grey.300' : 'primary.dark',
+                        // },
+                        minWidth: 110,
+                        fontWeight: 'medium',
                       }}
                       startIcon={loading ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-inherit border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" />
@@ -596,39 +592,40 @@ export default function APITestingPage() {
 
           {/* Response Panel - Right Side */}
           <div className="flex flex-col space-y-6 h-full"> {/* Ensure this panel also uses full height */}
-            <Paper elevation={3} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 flex flex-col flex-grow overflow-hidden h-full">
-              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-4 text-white"> {/* Reduced padding */}
+            <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full">
+              {/* Updated Header for API Response Panel */}
+              <div className="bg-slate-50 p-3 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">API Response</h2>
-                      <p className="text-white/80 text-sm">Query results and diagnostics</p>
+                      <h2 className="text-lg font-semibold text-slate-700">API Response</h2>
+                      <p className="text-slate-500 text-sm">Query results and diagnostics</p>
                     </div>
                   </div>
                   
                   {response && (
-                    <div className="flex items-center space-x-4">
-                      <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    <div className="flex items-center space-x-3">
+                      <div className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                         response.status >= 200 && response.status < 300 && !response.error
-                          ? 'bg-green-400/20 text-green-100 border border-green-300/30' 
-                          : 'bg-red-400/20 text-red-100 border border-red-300/30'
+                          ? 'bg-green-100 text-green-700 border border-green-200' 
+                          : 'bg-red-100 text-red-700 border border-red-200'
                       }`}>
                         {response.status} {response.status >= 200 && response.status < 300 && !response.error ? 'SUCCESS' : 'ERROR'}
                       </div>
-                      <div className="text-white/90 text-sm font-medium">
-                        ⚡ {response.executionTime}
+                      <div className="text-slate-600 text-sm font-medium">
+                        <span role="img" aria-label="lightning">⚡</span> {response.executionTime}
                       </div>
                     </div>
                   )}
                 </div>
               </div>
               
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.1)' }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}> {/* Changed bgcolor for tabs */}
                 <Tabs value={responseTabValue} onChange={handleResponseTabChange} aria-label="response tabs" variant="fullWidth">
                   <Tab label="Body" {...a11yProps(0)} />
                   <Tab label="Headers" {...a11yProps(1)} />
