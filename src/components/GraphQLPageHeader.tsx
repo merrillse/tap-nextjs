@@ -75,8 +75,8 @@ export default function GraphQLPageHeader({
               </div>
             )}
             
-            {/* Proxy Client Status */}
-            {currentProxyClient && (
+            {/* Proxy Client Status - Only for MGQL */}
+            {systemType === 'MGQL' && currentProxyClient && (
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-500">•</span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -123,27 +123,44 @@ export default function GraphQLPageHeader({
               </Select>
             </FormControl>
             
-            <Autocomplete
-              size="small"
-              sx={{ minWidth: 250 }}
-              options={proxyClients}
-              getOptionLabel={(option) => option.name}
-              value={proxyClients.find(c => c.clientId === selectedProxyClient) || null}
-              onChange={(event, newValue) => {
-                onProxyClientChange(newValue?.clientId || 'primary');
-              }}
-              renderInput={(params) => (
-                <TextField {...params} label="Proxy Client" />
-              )}
-              renderOption={(props, option) => (
-                <li {...props}>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{option.name}</span>
-                    <span className="text-xs text-gray-500 font-mono">{option.clientId}</span>
-                  </div>
-                </li>
-              )}
-            />
+            {/* Only show Proxy Client selector for MGQL environments */}
+            {systemType === 'MGQL' && (
+              <Autocomplete
+                size="small"
+                sx={{ 
+                  minWidth: 250,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: '#e5e7eb',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#d1d5db',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  }
+                }}
+                options={proxyClients}
+                getOptionLabel={(option) => option.name}
+                value={proxyClients.find(c => c.clientId === selectedProxyClient) || null}
+                onChange={(event, newValue) => {
+                  onProxyClientChange(newValue?.clientId || 'primary');
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Proxy Client" />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{option.name}</span>
+                      <span className="text-xs text-gray-500 font-mono">{option.clientId}</span>
+                    </div>
+                  </li>
+                )}
+              />
+            )}
             
             {/* Refresh Button and Additional Info */}
             {onRefresh && (
