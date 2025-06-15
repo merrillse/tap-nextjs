@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, type ReactNode, type JSX } from 'react';
+import { useState, useEffect, useMemo, type JSX } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
@@ -119,7 +119,7 @@ const proxyClients = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function APITestingPage() {
-  const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
+  const selectedEndpoint = 'graphql'; // Fixed to GraphQL only
   const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
   const [selectedProxyClient, setSelectedProxyClient] = useState('0oak0jqakvevwjWrp357'); // Default to primary
   const [queryInput, setQueryInput] = useState('');
@@ -181,7 +181,7 @@ export default function APITestingPage() {
       } else {
         savedVars = '{}'; // Default if not found
       }
-    } catch (e) {
+    } catch {
       savedVars = '{}'; // Default if invalid JSON
     }
     setGraphqlVariables(savedVars);
@@ -194,7 +194,7 @@ export default function APITestingPage() {
       } else {
         savedHeaders = '{}'; // Default if not found
       }
-    } catch (e) {
+    } catch {
       savedHeaders = '{}'; // Default if invalid JSON
     }
     setHttpHeaders(savedHeaders);
@@ -569,7 +569,7 @@ export default function APITestingPage() {
           proxyClients={proxyClients}
           onProxyClientChange={handleProxyClientChange}
           onRefresh={refreshSchema}
-          additionalInfo={schema ? 'Schema loaded for autocomplete' : 'Schema not loaded'}
+          showControls={false}
         />
       )}
       
@@ -598,19 +598,103 @@ export default function APITestingPage() {
                         <p className="text-slate-500 text-sm">Define your GraphQL operation</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
+                      {/* Environment Selector */}
+                      <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <InputLabel id="query-environment-select-label">Environment</InputLabel>
+                        <Select
+                          labelId="query-environment-select-label"
+                          value={selectedEnvironment}
+                          label="Environment"
+                          onChange={handleEnvironmentChange}
+                          sx={{
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#e5e7eb',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#d1d5db',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#3b82f6',
+                            }
+                          }}
+                        >
+                          {environmentOptions.map(env => (
+                            <MenuItem key={env.key} value={env.key}>
+                              <div className="flex items-center space-x-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                  {env.key.includes('mogs') ? 'MOGS' : 'MGQL'}
+                                </span>
+                                <span>{env.name}</span>
+                              </div>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      
+                      {/* Proxy Client Selector - Only for MGQL environments */}
+                      {!selectedEnvironment.includes('mogs') && (
+                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                          <InputLabel id="query-proxy-client-select-label">Proxy Client</InputLabel>
+                          <Select
+                            labelId="query-proxy-client-select-label"
+                            value={selectedProxyClient}
+                            label="Proxy Client"
+                            onChange={(e) => handleProxyClientChange(e.target.value)}
+                            sx={{
+                              backgroundColor: 'white',
+                              borderRadius: '8px',
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#e5e7eb',
+                              },
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#d1d5db',
+                              },
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#3b82f6',
+                              }
+                            }}
+                          >
+                            {proxyClients.map(client => (
+                              <MenuItem key={client.clientId} value={client.clientId}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{client.name}</span>
+                                  <span className="text-xs text-gray-500 font-mono">{client.clientId}</span>
+                                </div>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
+                      
+                      {/* Refresh Schema Button */}
+                      <Tooltip title="Refresh schema">
+                        <IconButton
+                          onClick={refreshSchema}
+                          size="small"
+                          sx={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e5e7eb',
+                            '&:hover': {
+                              backgroundColor: '#f9fafb',
+                            }
+                          }}
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Execute Button */}
                       <Button
                         variant="contained"
                         onClick={handleTest}
                         disabled={loading}
                         size="medium"
                         sx={{
-                          // Using theme colors for a more standard look
-                          // backgroundColor: loading ? 'grey.300' : 'primary.main',
-                          // color: loading ? 'text.disabled' : 'primary.contrastText',
-                          // '&:hover': {
-                          //   backgroundColor: loading ? 'grey.300' : 'primary.dark',
-                          // },
                           minWidth: 110,
                           fontWeight: 'medium',
                         }}

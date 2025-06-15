@@ -22,6 +22,7 @@ interface GraphQLPageHeaderProps {
   additionalInfo?: string;
   onRefresh?: () => void;
   isLoading?: boolean;
+  showControls?: boolean;
 }
 
 export default function GraphQLPageHeader({
@@ -36,7 +37,8 @@ export default function GraphQLPageHeader({
   onProxyClientChange,
   additionalInfo,
   onRefresh,
-  isLoading = false
+  isLoading = false,
+  showControls = true
 }: GraphQLPageHeaderProps) {
   const currentEnv = getEnvironmentConfig(selectedEnvironment);
   const systemType = selectedEnvironment.includes('mogs') ? 'MOGS' : 'MGQL';
@@ -61,34 +63,35 @@ export default function GraphQLPageHeader({
           </div>
         </div>
         
-        {/* Controls Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {/* Environment Status Indicator */}
-            {currentEnv && (
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {systemType}
-                </span>
-                <span className="text-sm text-gray-500">•</span>
-                <span className="text-sm text-gray-600">{currentEnv.name}</span>
-              </div>
-            )}
+        {/* Controls Row - Only show when showControls is true */}
+        {showControls && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Environment Status Indicator */}
+              {currentEnv && (
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {systemType}
+                  </span>
+                  <span className="text-sm text-gray-500">•</span>
+                  <span className="text-sm text-gray-600">{currentEnv.name}</span>
+                </div>
+              )}
+              
+              {/* Proxy Client Status - Only for MGQL */}
+              {systemType === 'MGQL' && currentProxyClient && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500">•</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Proxy
+                  </span>
+                  <span className="text-sm text-gray-600">{currentProxyClient.name}</span>
+                </div>
+              )}
+            </div>
             
-            {/* Proxy Client Status - Only for MGQL */}
-            {systemType === 'MGQL' && currentProxyClient && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">•</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Proxy
-                </span>
-                <span className="text-sm text-gray-600">{currentProxyClient.name}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Environment and Proxy Client Selectors */}
-          <div className="flex items-center space-x-4">
+            {/* Environment and Proxy Client Selectors */}
+            <div className="flex items-center space-x-4">
             <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel id="environment-select-label">Select Environment</InputLabel>
               <Select
@@ -182,6 +185,7 @@ export default function GraphQLPageHeader({
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
