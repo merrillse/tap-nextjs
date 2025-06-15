@@ -825,6 +825,7 @@ export function EnhancedGraphQLEditor({
       }),
       syntaxHighlighting(graphQLHighlight), // Use the defined graphQLHighlight
       Prec.high(keymap.of(completionKeymap)), // Ensure completion keymap has high precedence
+      Prec.high(searchInputHandler), // Add the searchInputHandler with high precedence
       emacsSearchKeymap, // Keep Emacs-style search
       searchState, // State for Emacs-style search
       createSearchPlugin(setReactSearchState), // Instantiate the search plugin
