@@ -387,7 +387,7 @@ export function QueryLibraryDialog({
                           </Box>
                         }
                         secondary={
-                          <Box>
+                          <Box component="div">
                             {query.description && (
                               <Typography variant="body2" color="text.secondary" component="div">
                                 {query.description}
@@ -409,6 +409,7 @@ export function QueryLibraryDialog({
                             </Typography>
                           </Box>
                         }
+                        primaryTypographyProps={{ component: 'div' }}
                         secondaryTypographyProps={{ component: 'div' }}
                       />
                       <ListItemSecondaryAction>
