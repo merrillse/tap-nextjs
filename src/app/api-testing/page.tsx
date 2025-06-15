@@ -31,6 +31,7 @@ import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscree
 import { SelectChangeEvent } from '@mui/material/Select';
 import { CodeEditor, JSONViewer } from '@/components/CodeEditor'; // JSONViewer might be CodeEditor with readOnly
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
+import GraphQLPageHeader from '@/components/GraphQLPageHeader';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -186,6 +187,20 @@ export default function APITestingPage() {
     const timeoutId = setTimeout(loadSchemaForAutocomplete, 1000);
     return () => clearTimeout(timeoutId);
   }, [apiClient, schema]);
+
+  // Manual refresh schema function
+  const refreshSchema = async () => {
+    if (!apiClient) return;
+    
+    try {
+      console.log('Refreshing schema...');
+      const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
+      setSchema(schemaResult as IntrospectionResult);
+      console.log('Schema refreshed successfully');
+    } catch (err) {
+      console.warn('Failed to refresh schema:', err);
+    }
+  };
 
   const sampleQueries = useMemo(() => ({
     graphql: `query Missionary($missionaryNumber: ID = "916793") {
@@ -477,70 +492,26 @@ export default function APITestingPage() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 ${isResponsePanelFullscreen ? 'overflow-hidden' : ''}`}>
+      
+      {/* Enhanced Header (conditionally hidden in fullscreen) */}
+      {!isResponsePanelFullscreen && (
+        <GraphQLPageHeader
+          title="GraphQL Testing Platform"
+          description="Execute GraphQL queries with real-time authentication and schema validation for both MGQL and MOGS systems"
+          icon={
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+          }
+          selectedEnvironment={selectedEnvironment}
+          environmentOptions={environmentOptions}
+          onEnvironmentChange={handleEnvironmentChange}
+          onRefresh={refreshSchema}
+          additionalInfo={schema ? 'Schema loaded for autocomplete' : 'Schema not loaded'}
+        />
+      )}
+      
       <div className={`max-w-full mx-auto px-6 py-6 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : ''}`}>
-        
-        {/* Enhanced Header with Gradient (conditionally hidden in fullscreen) */}
-        {!isResponsePanelFullscreen && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-xl blur-md opacity-60 -z-10"></div>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                    GraphQL Testing Platform
-                  </h1>
-                  <p className="text-gray-600 mt-1">Execute GraphQL queries with real-time authentication and schema validation</p>
-                </div>
-              </div>
-              
-              {/* Environment Selector in Header */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-gray-700">Environment:</span>
-                </div>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <InputLabel id="environment-select-label">Select Environment</InputLabel>
-                  <Select
-                    labelId="environment-select-label"
-                    value={selectedEnvironment}
-                    label="Select Environment"
-                    onChange={handleEnvironmentChange}
-                    sx={{
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#e5e7eb',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#3b82f6',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#3b82f6',
-                      },
-                    }}
-                  >
-                    {environmentOptions.map(env => (
-                      <MenuItem key={env.key} value={env.key}>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                          <span>{env.name}</span>
-                        </div>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Main Content Grid - Full Width Side by Side */}
         <div className={`grid lg:grid-cols-2 gap-8 ${isResponsePanelFullscreen ? 'flex-grow contents' : 'h-[calc(100vh-200px)]'}`}>

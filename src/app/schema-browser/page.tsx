@@ -38,6 +38,7 @@ import {
 import { SelectChangeEvent } from '@mui/material/Select';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
+import GraphQLPageHeader from '@/components/GraphQLPageHeader';
 
 // GraphQL Schema Types
 interface GraphQLType {
@@ -499,56 +500,31 @@ export default function SchemaBrowserPage() {
   }, [schema]);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          MGQL Schema Browser
-        </Typography>
-        <Typography variant="body1" color="text.secondary" gutterBottom>
-          Explore the MIS GraphQL schema structure, types, fields, and relationships
-        </Typography>
-      </Box>
+      <GraphQLPageHeader
+        title="GraphQL Schema Browser"
+        description="Explore GraphQL schema structure, types, fields, and relationships for both MGQL and MOGS systems"
+        icon={
+          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        }
+        selectedEnvironment={selectedEnvironment}
+        environmentOptions={environmentOptions}
+        onEnvironmentChange={handleEnvironmentChange}
+        onRefresh={loadSchema}
+        isLoading={loading}
+        additionalInfo={loading ? 'Loading schema...' : schema ? `${filteredTypes.length} types loaded` : 'Click refresh to load schema'}
+      />
 
-      {/* Environment Selection */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-          <Box>
-            <FormControl fullWidth>
-              <InputLabel>Environment</InputLabel>
-              <Select
-                value={selectedEnvironment}
-                label="Environment"
-                onChange={handleEnvironmentChange}
-              >
-                {environmentOptions.map(env => (
-                  <MenuItem key={env.key} value={env.key}>{env.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton
-              onClick={loadSchema}
-              disabled={loading}
-              color="primary"
-              size="large"
-            >
-              <Refresh />
-            </IconButton>
-            <Typography variant="body2" color="text.secondary">
-              {loading ? 'Loading schema...' : schema ? `${filteredTypes.length} types loaded` : 'Click refresh to load schema'}
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Error Display */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Error Display */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
       {/* Loading */}
       {loading && (
@@ -678,8 +654,8 @@ export default function SchemaBrowserPage() {
             )}
           </Paper>
         </Box>
-      )}
-    </Container>
+      )}      </Container>
+    </div>
   );
 }
 
