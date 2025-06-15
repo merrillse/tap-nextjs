@@ -67,10 +67,61 @@ function a11yProps(index: number) {
   };
 }
 
+// Available proxy clients - sorted by name for easy discovery
+const proxyClients = [
+  { name: 'Primary', clientId: '0oak0jqakvevwjWrp357' },
+  { name: 'CCDOPS - Church Calendar', clientId: '0oa17jzhwi9uusIoz358' },
+  { name: 'CCDOPS - Church Calendar [non-prod]', clientId: '0oaki3kbszeewJmMX357' },
+  { name: 'CCDOPS - Church Calendar [PROD]', clientId: '0oaki3swtbO6fOZ9x357' },
+  { name: 'CES', clientId: '0oa16arpkjgDezdcI358' },
+  { name: 'CMIS Authorization Service', clientId: '0oao4ayxo9fgtnKYj357' },
+  { name: 'CMIS Callings', clientId: '0oa1joivv92SShYCD358' },
+  { name: 'CMIS Services Team', clientId: '0oan0z1efagK9cXWu357' },
+  { name: 'DMBA Group [non-prod]', clientId: '0oan1043xxD4cTtoU357' },
+  { name: 'DMBA Group [PROD]', clientId: '0oan1036pnukfeJSi357' },
+  { name: 'EDUINT - Education Integrations', clientId: '0oagzh13nq0zK7c5I357' },
+  { name: 'English Connect', clientId: '0oaixehfyryjaiS7M357' },
+  { name: 'GVM Travel [non-prod]', clientId: '0oartjtss42ayIfJl357' },
+  { name: 'GVM Travel [PROD]', clientId: '0oartjm5nguKZFN2c357' },
+  { name: 'HR:MSR:Emergency Contact', clientId: '0oavpvglc1wJ9hVKv357' },
+  { name: 'Identity', clientId: '0oa1099z1t0ZRaFwP358' },
+  { name: 'ISR - Non-prod', clientId: '0oaqbq6isq9sDyIdx357' },
+  { name: 'ISR - Prod', clientId: '0oapmoioz2z64riCE357' },
+  { name: 'LCR [non-prod]', clientId: '0oalni75ar2LGLtVR357' },
+  { name: 'LCR [PROD]', clientId: '0oalni7s7aEWlSTHQ357' },
+  { name: 'Maps Service', clientId: '0oajrl8w5aVKhlkgq357' },
+  { name: 'MBI', clientId: 'MBI' },
+  { name: 'Member Tools', clientId: '0oakhtcbhyLVVeYFj357' },
+  { name: 'Missionary Areabook [non-prod]', clientId: '0oasw5r8hmlOJ5GG0357' },
+  { name: 'Missionary Areabook [PROD]', clientId: '0oasw6uegahMJ8N9Y357' },
+  { name: 'Missionary Connect [non-prod]', clientId: '0oap88us4pbRI1HX3357' },
+  { name: 'Missionary Connect [PROD]', clientId: '0oap88ozbhEr8UKIQ357' },
+  { name: 'Missionary Graph Service Team', clientId: '0oak0jqakvevwjWrp357' },
+  { name: 'Missionary History [non-prod]', clientId: '0oartk3ix1S0lvthA357' },
+  { name: 'Missionary History [PROD]', clientId: '0oartjyikqPqM5LZm357' },
+  { name: 'Missionary Portal [non-prod]', clientId: '0oa1gg8qdjlQh49GY358' },
+  { name: 'Missionary Portal [PROD]', clientId: '0oa1gg90u4erOhnH2358' },
+  { name: 'Missionary WORKS [non-prod]', clientId: '0oaoywrjdh16anAjm357' },
+  { name: 'Missionary WORKS [PROD]', clientId: '0oaoypfnvzf56iHqv357' },
+  { name: 'MTC Tech [non-prod]', clientId: '0oan0z7opvD8AseBb357' },
+  { name: 'MTC Tech [PROD]', clientId: '0oan0z9i7ax38R7Tx357' },
+  { name: 'Pathway Anthology [non-prod]', clientId: '0oa10ty566kw1iqcC358' },
+  { name: 'Pathway Anthology [PROD]', clientId: '0oa18avadd4EBvHhP358' },
+  { name: 'QuickReg [non-prod]', clientId: '0oavlgns0tNH0dvXb357' },
+  { name: 'QuickReg [PROD]', clientId: '0oaxn76jai315m4i5357' },
+  { name: 'RISK-MDQ', clientId: '0oa11ext3xoSIlS9S358' },
+  { name: 'ServiceNow & Missionary Integration', clientId: '0oa1iwzkz1dcZvAIL358' },
+  { name: 'TallEmbark', clientId: '0oa11j79yw80Y9jwj358' },
+  { name: 'WAS - Ward Activity Sharing [non-prod]', clientId: '0oa1dfokrc9S2D5aO358' },
+  { name: 'WAS - Ward Activity Sharing [PROD]', clientId: '0oa19kxjttvFItg3y358' },
+  { name: 'Ward Directory & Map', clientId: '0oamyits9uliqoOn7357' },
+  { name: 'WSR', clientId: '0oa1gs5l1prHsbDUc358' },
+].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function APITestingPage() {
   const [selectedEndpoint, setSelectedEndpoint] = useState('graphql');
   const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
+  const [selectedProxyClient, setSelectedProxyClient] = useState('0oak0jqakvevwjWrp357'); // Default to primary
   const [queryInput, setQueryInput] = useState('');
   const [graphqlVariables, setGraphqlVariables] = useState('{}'); // Default to empty JSON object
   const [httpHeaders, setHttpHeaders] = useState('{}'); // Default to empty JSON object
@@ -107,12 +158,20 @@ export default function APITestingPage() {
     setSelectedEnvironment(event.target.value);
   };
 
+  const handleProxyClientChange = (clientId: string) => {
+    setSelectedProxyClient(clientId);
+    localStorage.setItem('selectedProxyClient', clientId);
+  };
+
   const environmentOptions = getEnvironmentNames();
 
   // Load saved environment on component mount
   useEffect(() => {
     const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
     setSelectedEnvironment(savedEnv);
+
+    const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
+    setSelectedProxyClient(savedProxyClient);
 
     // Robust loading for graphqlVariables
     let savedVars = localStorage.getItem('graphqlVariables');
@@ -506,6 +565,9 @@ export default function APITestingPage() {
           selectedEnvironment={selectedEnvironment}
           environmentOptions={environmentOptions}
           onEnvironmentChange={handleEnvironmentChange}
+          selectedProxyClient={selectedProxyClient}
+          proxyClients={proxyClients}
+          onProxyClientChange={handleProxyClientChange}
           onRefresh={refreshSchema}
           additionalInfo={schema ? 'Schema loaded for autocomplete' : 'Schema not loaded'}
         />
@@ -528,7 +590,7 @@ export default function APITestingPage() {
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                       </div>
                       <div>
