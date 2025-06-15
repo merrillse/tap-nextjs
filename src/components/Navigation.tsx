@@ -138,7 +138,28 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 isActive('/') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="text-lg">🏠</span>
+              <div className="relative">
+                {/* Modern Professional Home Icon */}
+                <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all duration-200 ${
+                  isActive('/') 
+                    ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-md' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700'
+                }`}>
+                  <svg 
+                    className="w-3 h-3" 
+                    fill="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    {/* Modern geometric home design */}
+                    <path d="M12 2.5l-8.5 7.5v11.5c0 0.55 0.45 1 1 1h4.5v-6.5c0-0.55 0.45-1 1-1h4c0.55 0 1 0.45 1 1v6.5h4.5c0.55 0 1-0.45 1-1v-11.5l-8.5-7.5z"/>
+                    {/* Subtle accent line */}
+                    <path d="M12 6l-6 5.25v0.75h12v-0.75l-6-5.25z" opacity="0.3"/>
+                  </svg>
+                </div>
+                {isActive('/') && (
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-lg blur opacity-20 -z-10"></div>
+                )}
+              </div>
               {!isSidebarCollapsed && <span>Home</span>}
             </Link>
           </div>
