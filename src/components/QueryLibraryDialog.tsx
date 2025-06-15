@@ -37,25 +37,27 @@ import {
   Search as SearchIcon,
   Download as ExportIcon,
   MoreVert as MoreIcon,
-  ContentCopy as CopyIcon,
-  Folder as FolderIcon
+  Folder as FolderIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { QueryLibrary, SavedQuery } from '@/lib/query-library';
+import { safeStringify } from '@/lib/utils';
 
-interface QueryLibraryDialogProps {
+export interface QueryLibraryDialogProps {
   open: boolean;
   onClose: () => void;
   onSelectQuery: (query: SavedQuery) => void;
   onRunQuery: (query: SavedQuery) => void;
-  currentQuery?: string;
+  onEditQuery: (query: SavedQuery) => void;
   currentEnvironment: string;
 }
 
-interface SaveQueryDialogProps {
+export interface SaveQueryDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (query: SavedQuery) => void;
-  queryString: string;
+  query: string; // Keep as query, was queryString
+  variables?: string; // Variables as JSON string
   environment: string;
   editingQuery?: SavedQuery | null;
 }
@@ -64,13 +66,15 @@ export function SaveQueryDialog({
   open,
   onClose,
   onSave,
-  queryString,
+  query,
+  variables,
   environment,
   editingQuery
 }: SaveQueryDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [currentVariables, setCurrentVariables] = useState('{}');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -78,32 +82,56 @@ export function SaveQueryDialog({
       setName(editingQuery.name);
       setDescription(editingQuery.description || '');
       setTags(editingQuery.tags?.join(', ') || '');
+      // editingQuery.variables is Record<string, unknown>, stringify for CodeEditor
+      setCurrentVariables(editingQuery.variables ? safeStringify(editingQuery.variables) : '{}');
     } else {
       setName('');
       setDescription('');
       setTags('');
+      // variables prop is already a string
+      setCurrentVariables(variables || '{}');
     }
     setError('');
-  }, [editingQuery, open]);
+  }, [editingQuery, open, variables]);
 
   const handleSave = () => {
+    setError(''); // Clear previous errors at the start of a save attempt
+
     if (!name.trim()) {
       setError('Query name is required');
       return;
     }
 
+    let parsedVars: Record<string, unknown> | undefined = undefined;
     try {
-      const variables = QueryLibrary.extractVariables(queryString);
+      if (currentVariables.trim() && currentVariables !== '{}') {
+        parsedVars = JSON.parse(currentVariables);
+      }
+    } catch (e) {
+      setError('Variables are not valid JSON. Please fix or clear before saving.');
+      return;
+    }
+
+    try {
       const tagArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
       
-      const savedQuery = QueryLibrary.saveQuery({
+      // Constructing the object for QueryLibrary.saveQuery
+      // It expects Omit<SavedQuery, 'id' | 'createdAt' | 'updatedAt'> or a full SavedQuery if ID exists for update
+      const queryDataForSave: Omit<SavedQuery, 'id' | 'createdAt' | 'updatedAt'> & { id?: string } = {
         name: name.trim(),
-        query: queryString,
-        variables,
+        query: query, // Use the query prop
+        variables: parsedVars, // This is now Record<string, unknown> | undefined
         description: description.trim() || undefined,
         environment,
-        tags: tagArray.length > 0 ? tagArray : undefined
-      });
+        tags: tagArray.length > 0 ? tagArray : undefined,
+      };
+
+      if (editingQuery?.id) {
+        queryDataForSave.id = editingQuery.id;
+      }
+
+      // QueryLibrary.saveQuery handles if it's an update or new based on id or name
+      const savedQuery = QueryLibrary.saveQuery(queryDataForSave as any); // Use any for now due to complex type in saveQuery
 
       onSave(savedQuery);
       onClose();
@@ -161,14 +189,31 @@ export function SaveQueryDialog({
             placeholder="e.g., missionary, search, demo"
             helperText="Comma-separated tags for organization"
           />
+
+          <TextField
+            label="GraphQL Variables (JSON)"
+            value={currentVariables} // This is a string
+            onChange={(e) => setCurrentVariables(e.target.value)}
+            fullWidth
+            multiline
+            rows={3}
+            placeholder='{ "id": "123" }'
+            helperText="Variables to be saved with this query."
+            InputProps={{
+              sx: { fontFamily: 'monospace' }
+            }}
+          />
           
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom component="div">
               Environment: <Chip 
                 label={environment} 
                 size="small"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()} 
               />
+            </Typography>
+            <Typography variant="caption" color="text.secondary" component="div">
+              Query will be associated with this environment.
             </Typography>
           </Box>
         </Box>
@@ -188,6 +233,7 @@ export function QueryLibraryDialog({
   onClose,
   onSelectQuery,
   onRunQuery,
+  onEditQuery,
   currentEnvironment
 }: QueryLibraryDialogProps) {
   const [queries, setQueries] = useState<SavedQuery[]>([]);
@@ -195,274 +241,227 @@ export function QueryLibraryDialog({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedQuery, setSelectedQuery] = useState<SavedQuery | null>(null);
+  const [selectedQueryForMenu, setSelectedQueryForMenu] = useState<SavedQuery | null>(null);
 
   const loadQueries = () => {
-    const allQueries = QueryLibrary.getQueries();
+    const allQueries = QueryLibrary.getQueries(); // Corrected method name
     setQueries(allQueries);
-    filterQueries(allQueries, searchTerm, selectedTab);
+    setFilteredQueries(allQueries);
   };
 
   useEffect(() => {
     if (open) {
       loadQueries();
+      setSearchTerm('');
+      setSelectedTab(0);
     }
-  }, [open]); // loadQueries is stable, no need to include it
+  }, [open]);
 
-  const filterQueries = (allQueries: SavedQuery[], search: string, tab: number) => {
-    let filtered = allQueries;
-
-    // Filter by environment
-    if (tab === 1) {
-      filtered = filtered.filter(q => q.environment === currentEnvironment);
+  useEffect(() => {
+    let result = queries;
+    if (searchTerm) {
+      // searchQueries in QueryLibrary takes one argument (searchTerm) and filters its internal list
+      // To filter the `queries` state, we either need to pass `queries` to a modified searchQueries 
+      // or replicate search logic here. For now, let's assume QueryLibrary.searchQueries(term) searches all.
+      // This might need adjustment if QueryLibrary.searchQueries is meant to take a list.
+      // For now, filtering the already loaded `queries` array locally for more responsive UI.
+      const term = searchTerm.toLowerCase();
+      result = queries.filter(q => 
+        q.name.toLowerCase().includes(term) ||
+        q.query.toLowerCase().includes(term) ||
+        (q.description && q.description.toLowerCase().includes(term)) ||
+        (q.tags && q.tags.some(tag => tag.toLowerCase().includes(term)))
+      );
     }
-
-    // Filter by search term
-    if (search) {
-      filtered = QueryLibrary.searchQueries(search);
+    
+    if (selectedTab === 1) {
+      result = result.filter(q => q.environment === currentEnvironment);
+    } else if (selectedTab === 2) {
+      result = result.filter(q => q.environment !== currentEnvironment);
     }
+    setFilteredQueries(result);
+  }, [searchTerm, queries, selectedTab, currentEnvironment]);
 
-    // Sort by updated date (newest first)
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-    setFilteredQueries(filtered);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
   };
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    filterQueries(queries, term, selectedTab);
-  };
-
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
-    filterQueries(queries, searchTerm, newValue);
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, query: SavedQuery) => {
-    event.stopPropagation();
     setAnchorEl(event.currentTarget);
-    setSelectedQuery(query);
+    setSelectedQueryForMenu(query);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedQuery(null);
+    setSelectedQueryForMenu(null);
   };
 
-  const handleDeleteQuery = () => {
-    if (selectedQuery) {
-      QueryLibrary.deleteQuery(selectedQuery.id);
+  const handleDelete = () => {
+    if (selectedQueryForMenu?.id) {
+      QueryLibrary.deleteQuery(selectedQueryForMenu.id);
       loadQueries();
     }
     handleMenuClose();
   };
 
-  const handleCopyQuery = () => {
-    if (selectedQuery) {
-      navigator.clipboard.writeText(selectedQuery.query);
+  const handleEdit = () => {
+    if (selectedQueryForMenu) {
+      onEditQuery(selectedQueryForMenu);
+      // onClose(); // User might want to keep library open
     }
     handleMenuClose();
   };
 
-  const handleExportQueries = () => {
-    const data = QueryLibrary.exportQueries();
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `graphql-queries-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportSelected = () => {
+    if (selectedQueryForMenu) {
+      const content = QueryLibrary.exportQueries([selectedQueryForMenu.id]); // Assuming exportQueries can take IDs
+      const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${selectedQueryForMenu.name.replace(/\s+/g, '_')}_query.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    handleMenuClose();
   };
 
-  const stats = QueryLibrary.getStats();
+  const handleExportAll = () => {
+    const content = QueryLibrary.exportQueries(); // Exports all
+    const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "apex_graphql_queries_export.json");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // handleMenuClose(); // Not from item menu
+  };
 
   return (
     <Dialog 
       open={open} 
       onClose={onClose} 
       maxWidth="md" 
-      fullWidth
-      style={{ zIndex: 10000 }}
+      fullWidth 
+      style={{ zIndex: 9999 }}
       BackdropProps={{
-        style: { zIndex: 9999 }
+        style: { zIndex: 9998 }
       }}
     >
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Query Library</Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="Export Queries">
-              <IconButton onClick={handleExportQueries} size="small">
-                <ExportIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
+          Query Library
+          <Button onClick={handleExportAll} startIcon={<ExportIcon />} size="small">
+            Export All Queries
+          </Button>
         </Box>
       </DialogTitle>
-      
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Statistics */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip 
-              icon={<FolderIcon />} 
-              label={`${stats.totalQueries} queries`} 
-              size="small"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <Chip 
-              label={`${stats.environments.length} environments`} 
-              size="small"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </Box>
-
-          {/* Search and Tabs */}
-          <TextField
-            placeholder="Search queries..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <Tabs value={selectedTab} onChange={handleTabChange}>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: '60vh' }}>
+        <TextField
+          fullWidth
+          placeholder="Search queries by name, description, or tags..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={selectedTab} onChange={handleTabChange} aria-label="query filter tabs">
             <Tab label="All Queries" />
-            <Tab label={`Current Environment (${currentEnvironment})`} />
+            <Tab label={`Current Env (${currentEnvironment})`} />
+            <Tab label="Other Environments" />
           </Tabs>
-
-          {/* Query List */}
-          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {filteredQueries.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                {queries.length === 0 ? (
-                  <>
-                    <Typography variant="h6" gutterBottom>No saved queries yet</Typography>
-                    <Typography variant="body2" component="div">
-                      Save your first query to build your library!
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <Typography variant="h6" gutterBottom>No queries found</Typography>
-                    <Typography variant="body2" component="div">
-                      Try adjusting your search or filter criteria
-                    </Typography>
-                  </>
-                )}
-              </Box>
-            ) : (
-              <List>
-                {filteredQueries.map((query, index) => (
-                  <div key={query.id}>
-                    <ListItem
-                      component="div"
-                      onClick={() => onSelectQuery(query)}
-                      sx={{ 
-                        cursor: 'pointer',
-                        '&:hover': { backgroundColor: 'action.hover' }
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="medium">
-                              {query.name}
-                            </Typography>
-                            {query.environment !== currentEnvironment && (
-                              <Chip 
-                                label={query.environment} 
-                                size="small" 
-                                color="secondary"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Box component="div">
-                            {query.description && (
-                              <Typography variant="body2" color="text.secondary" component="div">
-                                {query.description}
-                              </Typography>
-                            )}
-                            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
-                              {query.tags?.map(tag => (
-                                <Chip 
-                                  key={tag} 
-                                  label={tag} 
-                                  size="small" 
-                                  variant="outlined"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              ))}
-                            </Box>
-                            <Typography variant="caption" color="text.secondary" component="div">
-                              Updated: {new Date(query.updatedAt).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        }
-                        primaryTypographyProps={{ component: 'div' }}
-                        secondaryTypographyProps={{ component: 'div' }}
-                      />
-                      <ListItemSecondaryAction>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <Tooltip title="Run Query">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRunQuery(query);
-                              }}
-                              color="success"
-                            >
-                              <RunIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => handleMenuOpen(e, query)}
-                          >
-                            <MoreIcon />
-                          </IconButton>
-                        </Box>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    {index < filteredQueries.length - 1 && <Divider />}
-                  </div>
-                ))}
-              </List>
-            )}
-          </Box>
         </Box>
+        {filteredQueries.length === 0 ? (
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="subtitle1" color="text.secondary">
+              No queries found matching your criteria.
+            </Typography>
+          </Box>
+        ) : (
+          <List sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(60vh - 150px)' }}>
+            {filteredQueries.map((query) => (
+              <ListItem 
+                key={query.id} 
+                divider 
+                sx={{
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: 'action.hover' },
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'flex-start' 
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                  <ListItemText
+                    primary={<Typography variant="h6">{query.name}</Typography>}
+                    secondary={query.description || 'No description'}
+                    onClick={() => onSelectQuery(query)}
+                    sx={{ flexGrow: 1, pr: 1 }}
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Tooltip title="Run Query">
+                      <IconButton edge="end" aria-label="run" onClick={() => onRunQuery(query)} size="small">
+                        <RunIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="More Actions">
+                      <IconButton edge="end" aria-label="more" onClick={(e) => handleMenuOpen(e, query)} size="small">
+                        <MoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+                  <Chip 
+                    icon={<FolderIcon fontSize="small"/>} 
+                    label={query.environment} 
+                    size="small" 
+                    variant="outlined" 
+                    color={query.environment === currentEnvironment ? "primary" : "default"}
+                  />
+                  {query.tags?.map(tag => (
+                    <Chip key={tag} label={tag} size="small" variant="outlined" />
+                  ))}
+                </Box>
+                {query.variables && Object.keys(query.variables).length > 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                    Variables: {Object.keys(query.variables).join(', ')}
+                  </Typography>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        )}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleEdit}><EditIcon sx={{ mr: 1 }}/> Edit Query</MenuItem>
+          {/* Duplicate removed for now as QueryLibrary.duplicateQuery doesn't exist */}
+          <MenuItem onClick={handleExportSelected}><ExportIcon sx={{ mr: 1 }}/> Export Selected Query</MenuItem>
+          <Divider />
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}><DeleteIcon sx={{ mr: 1 }}/> Delete Query</MenuItem>
+        </Menu>
       </DialogContent>
-      
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
-
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={handleCopyQuery}>
-          <CopyIcon sx={{ mr: 1 }} />
-          Copy Query
-        </MenuItem>
-        <MenuItem onClick={handleDeleteQuery} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete Query
-        </MenuItem>
-      </Menu>
     </Dialog>
   );
 }

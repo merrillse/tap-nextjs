@@ -9,6 +9,14 @@ export interface AuthToken {
   scope: string;
 }
 
+export interface GraphQLResponse {
+  data?: unknown;
+  errors?: Array<{ message: string; [key: string]: unknown }>;
+  // The following are added by our proxy/client, not from the GraphQL server directly
+  status?: number; 
+  responseHeaders?: Record<string, string>;
+}
+
 export class ApiClient {
   private config: EnvironmentConfig;
   private environmentKey: string;
@@ -77,7 +85,6 @@ export class ApiClient {
     return this.token.access_token;
   }
 
-  // Direct methods for debugging - may fail due to CORS
   /** @deprecated Use server-side API route instead */
   async requestTokenWithBasicAuth(): Promise<string> {
     const credentials = btoa(`${this.config.client_id}:${this.config.client_secret}`);
@@ -145,11 +152,11 @@ export class ApiClient {
     return this.token.access_token;
   }
 
-  async executeGraphQLQuery(query: string, variables: Record<string, unknown> = {}): Promise<{
-    data?: unknown;
-    errors?: Array<{ message: string; [key: string]: unknown }>;
-  }> {
-    // Get OAuth token via our server-side proxy
+  async executeGraphQLQuery(
+    query: string, 
+    variables: Record<string, unknown> = {},
+    customHeaders: Record<string, string> = {}
+  ): Promise<GraphQLResponse> {
     const accessToken = await this.getAccessToken();
     const requestBody = JSON.stringify({ query, variables });
 
@@ -157,33 +164,42 @@ export class ApiClient {
     console.log('* Current time is', new Date().toISOString());
     console.log('* Request body size:', requestBody.length, 'bytes');
 
-    // Make GraphQL request via our server-side proxy to avoid CORS
+    const proxyHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Cache-Control': 'no-cache',
+      'proxy-client': getSelectedProxyClient(),
+      'x-selected-environment': this.environmentKey || 'mis-gql-stage',
+      ...customHeaders, // Spread custom headers here
+    };
+
     const response = await fetch('/api/graphql/proxy', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache',
-        'proxy-client': getSelectedProxyClient(),
-        'x-selected-environment': this.environmentKey || 'mis-gql-stage',
-      },
+      headers: proxyHeaders,
       body: JSON.stringify({
         query,
         variables,
-        access_token: accessToken
+        access_token: accessToken,
+        // customHeaders are now part of the fetch headers, not body to proxy
       }),
     });
 
     const responseText = await response.text();
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
 
-    // Log response details
     console.log('GraphQL Proxy Response:');
     console.log('< HTTP/1.1', response.status);
     console.log('< content-type:', response.headers.get('content-type'));
     console.log('* Received', (responseText.length / 1024).toFixed(1), 'KB chunk via proxy');
-    
-    // Log the raw response for debugging
     console.log('GraphQL Proxy Raw Response:', responseText.substring(0, 500));
+
+    let gqlResponse: GraphQLResponse = {
+      status: response.status,
+      responseHeaders: responseHeaders,
+    };
 
     if (!response.ok) {
       console.error('GraphQL proxy request failed:', {
@@ -192,117 +208,41 @@ export class ApiClient {
         body: responseText
       });
       
-      // Try to parse error response if it's JSON
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          if (errorData.error) {
-            throw new Error(`GraphQL proxy error: ${errorData.error}${errorData.details ? ` - ${errorData.details}` : ''}`);
-          }
-        } catch (parseError) {
-          // Response isn't JSON, use the raw text
+      try {
+        const errorData = JSON.parse(responseText);
+        if (errorData.errors) {
+          gqlResponse.errors = errorData.errors;
+        } else if (errorData.error) {
+          gqlResponse.errors = [{ message: `GraphQL proxy error: ${errorData.error}${errorData.details ? ` - ${errorData.details}` : ''}` }];
+        } else {
+          gqlResponse.errors = [{ message: `GraphQL proxy request failed with status ${response.status}: ${responseText}` }];
         }
+      } catch (e) {
+        gqlResponse.errors = [{ message: `GraphQL proxy request failed with status ${response.status} and non-JSON response: ${responseText}` }];
       }
-      
-      // Provide specific error messages for common HTTP status codes
-      if (response.status === 401) {
-        throw new Error(`Authentication failed: The access token is invalid or expired. Please check your credentials.`);
-      } else if (response.status === 403) {
-        throw new Error(`Access forbidden: You don't have permission to access this resource.`);
-      } else if (response.status === 500) {
-        throw new Error(`Server error: The GraphQL server encountered an internal error.`);
-      }
-      
-      throw new Error(`GraphQL request failed: ${response.status} ${response.statusText || 'Unknown error'}`);
+      // Do not throw here, return the gqlResponse with error details
+      return gqlResponse;
     }
 
-    let data;
     try {
-      data = JSON.parse(responseText);
+      const parsedData = JSON.parse(responseText);
+      gqlResponse.data = parsedData.data;
+      if (parsedData.errors) {
+        gqlResponse.errors = parsedData.errors;
+      }
     } catch (error) {
-      console.error('Failed to parse GraphQL proxy response:', responseText);
-      throw new Error(`Invalid JSON response: ${responseText}`);
+      console.error('Error parsing GraphQL JSON response:', error);
+      gqlResponse.errors = [{ message: `Failed to parse GraphQL JSON response: ${error instanceof Error ? error.message : String(error)}` }];
     }
-
-    console.log('GraphQL Proxy Parsed Response:', data);
     
-    // Handle different response formats
-    if (data.success && data.data) {
-      // Wrapped success response format
-      const graphqlResult = data.data;
-      if (graphqlResult.errors) {
-        console.warn('GraphQL returned errors:', graphqlResult.errors);
-      }
-      return graphqlResult;
-    } else if (data.data || data.errors) {
-      // Direct GraphQL response format
-      if (data.errors) {
-        console.warn('GraphQL returned errors:', data.errors);
-        // If there are errors but no data, throw an error with details
-        if (!data.data) {
-          const errorMessages = data.errors.map((err: any) => err.message || err.toString()).join(', ');
-          throw new Error(`GraphQL errors: ${errorMessages}`);
-        }
-      }
-      return data;
-    } else if (data.error) {
-      // Error response format
-      console.error('GraphQL proxy error response:', data);
-      throw new Error(`GraphQL proxy error: ${data.error}${data.details ? ` - ${data.details}` : ''}`);
-    } else {
-      // Unknown response format
-      console.error('Unknown GraphQL response format:', data);
-      throw new Error(`Unknown GraphQL response format: ${JSON.stringify(data)}`);
-    }
-  }
-
-  async checkHealth(): Promise<{
-    status: string;
-    error?: string;
-    [key: string]: unknown;
-  }> {
-    try {
-      const response = await fetch('/api/health/check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          health_url: this.config.health_url
-        }),
-      });
-
-      const healthData = await response.json();
-
-      if (response.ok && healthData.success) {
-        return {
-          status: 'UP',
-          ...healthData.data
-        };
-      } else {
-        return {
-          status: 'DOWN',
-          error: healthData.error || `HTTP ${healthData.status}: ${healthData.statusText}`
-        };
-      }
-    } catch (error) {
-      return {
-        status: 'DOWN',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  getConfig(): EnvironmentConfig {
-    return this.config;
+    return gqlResponse;
   }
 
   getCurrentToken(): AuthToken | null {
     return this.token;
   }
 
-  // Public method for testing token acquisition
-  async testTokenAcquisition(): Promise<string> {
-    return this.getAccessToken();
+  getEnvironmentKey(): string {
+    return this.environmentKey;
   }
 }

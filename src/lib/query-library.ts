@@ -130,8 +130,13 @@ export class QueryLibrary {
   /**
    * Export queries as JSON
    */
-  static exportQueries(): string {
-    return JSON.stringify(this.getQueries(), null, 2);
+  static exportQueries(queryIds?: string[]): string {
+    const queries = this.getQueries();
+    if (queryIds && queryIds.length > 0) {
+      const filteredQueries = queries.filter(q => queryIds.includes(q.id));
+      return JSON.stringify(filteredQueries, null, 2);
+    }
+    return JSON.stringify(queries, null, 2);
   }
 
   /**

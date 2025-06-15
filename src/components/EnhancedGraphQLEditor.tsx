@@ -598,14 +598,118 @@ export function EnhancedGraphQLEditor({
   });
   const editorRef = useRef<any>(null);
   const theme = useTheme();
+
+  // Debug fullscreen state changes
+  useEffect(() => {
+    console.log('🔍 DEBUG: Fullscreen state changed:', isFullscreen);
+    console.log('🔍 DEBUG: Document body style:', document.body.style.overflow);
+    console.log('🔍 DEBUG: Window dimensions:', window.innerWidth, 'x', window.innerHeight);
+    
+    // Add/remove fullscreen styles
+    if (isFullscreen) {
+      // Inject CSS to prevent parent containers from clipping
+      const style = document.createElement('style');
+      style.id = 'graphql-editor-fullscreen-styles';
+      style.textContent = `
+        .graphql-editor-fullscreen [data-testid="graphql-editor-paper"] {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          z-index: 9999 !important;
+          transform: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    } else {
+      // Remove injected styles
+      const style = document.getElementById('graphql-editor-fullscreen-styles');
+      if (style) {
+        style.remove();
+      }
+    }
+    
+    // Check if Paper element exists and has correct styles
+    setTimeout(() => {
+      const paperElement = document.querySelector('[data-testid="graphql-editor-paper"]');
+      if (paperElement) {
+        const styles = window.getComputedStyle(paperElement);
+        console.log('🔍 DEBUG: Paper element position:', styles.position);
+        console.log('🔍 DEBUG: Paper element zIndex:', styles.zIndex);
+        console.log('🔍 DEBUG: Paper element width:', styles.width);
+        console.log('🔍 DEBUG: Paper element height:', styles.height);
+        console.log('🔍 DEBUG: Paper element top:', styles.top);
+        console.log('🔍 DEBUG: Paper element left:', styles.left);
+        
+        // Check CodeMirror editor
+        const editorElement = paperElement.querySelector('.cm-editor');
+        if (editorElement) {
+          const editorStyles = window.getComputedStyle(editorElement);
+          console.log('🔍 DEBUG: CodeMirror editor height:', editorStyles.height);
+          console.log('🔍 DEBUG: CodeMirror editor width:', editorStyles.width);
+          console.log('🔍 DEBUG: CodeMirror editor display:', editorStyles.display);
+        }
+        
+        // Check main content area
+        const mainContent = paperElement.querySelector('div[data-testid="main-content"]');
+        if (mainContent) {
+          const mainStyles = window.getComputedStyle(mainContent);
+          console.log('🔍 DEBUG: Main content height:', mainStyles.height);
+          console.log('🔍 DEBUG: Main content flex:', mainStyles.flex);
+        }
+      } else {
+        console.log('🔍 DEBUG: Paper element not found');
+      }
+    }, 100);
+  }, [isFullscreen]);
+
+  // Function to handle fullscreen toggle with debugging
+  const handleFullscreenToggle = () => {
+    console.log('🔍 DEBUG: Fullscreen button clicked, current state:', isFullscreen);
+    const newState = !isFullscreen;
+    setIsFullscreen(newState);
+    console.log('🔍 DEBUG: Setting fullscreen to:', newState);
+    
+    // Close side panel when entering fullscreen
+    if (newState) {
+      setShowSidePanelLibrary(false);
+      console.log('🔍 DEBUG: Closed side panel for fullscreen');
+    }
+    
+    // Prevent body scroll and add fullscreen class when in fullscreen
+    if (newState) {
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add('graphql-editor-fullscreen');
+      console.log('🔍 DEBUG: Set body overflow to hidden and added fullscreen class');
+    } else {
+      document.body.style.overflow = '';
+      document.body.classList.remove('graphql-editor-fullscreen');
+      console.log('🔍 DEBUG: Reset body overflow and removed fullscreen class');
+    }
+  };
   const isDark = theme.palette.mode === 'dark';
 
-  // Handle Escape key to close side panel
+  // Handle Escape key to close side panel or exit fullscreen
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showSidePanelLibrary && isFullscreen) {
-        event.preventDefault();
-        setShowSidePanelLibrary(false);
+      if (event.key === 'Escape') {
+        console.log('🔍 DEBUG: Escape key pressed, fullscreen:', isFullscreen, 'sidePanelLibrary:', showSidePanelLibrary);
+        if (showSidePanelLibrary && isFullscreen) {
+          // Close side panel first
+          event.preventDefault();
+          setShowSidePanelLibrary(false);
+          console.log('🔍 DEBUG: Closing side panel');
+        } else if (isFullscreen) {
+          // Exit fullscreen if no side panel is open
+          event.preventDefault();
+          console.log('🔍 DEBUG: Exiting fullscreen via Escape');
+          setIsFullscreen(false);
+          document.body.style.overflow = '';
+          document.body.classList.remove('graphql-editor-fullscreen');
+        }
       }
     };
 
@@ -614,6 +718,19 @@ export function EnhancedGraphQLEditor({
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
   }, [showSidePanelLibrary, isFullscreen]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up body classes and styles on unmount
+      document.body.style.overflow = '';
+      document.body.classList.remove('graphql-editor-fullscreen');
+      const style = document.getElementById('graphql-editor-fullscreen-styles');
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
 
   // Build GraphQL schema for autocomplete
   const builtSchema = useMemo(() => {
@@ -778,292 +895,348 @@ export function EnhancedGraphQLEditor({
   };
 
   return (
-    <Paper 
-      elevation={1} 
-      sx={{ 
-        position: isFullscreen ? 'fixed' : 'relative',
-        top: isFullscreen ? 0 : 'auto',
-        left: isFullscreen ? 0 : 'auto',
-        right: isFullscreen ? 0 : 'auto',
-        bottom: isFullscreen ? 0 : 'auto',
-        zIndex: isFullscreen ? 9999 : 'auto',
-        height: isFullscreen ? '100vh' : 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden'
-      }}
-    >
-      {/* Main Content Area */}
-      <Box sx={{ 
-        display: 'flex', 
-        flex: 1, 
-        overflow: 'hidden',
-        position: 'relative'
-      }}>
-        {/* Editor Section */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column',
-          transition: isFullscreen ? 'margin-right 0.3s ease' : 'none',
-          marginRight: isFullscreen && showSidePanelLibrary ? '400px' : '0px'
-        }}>
-          {/* Header */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            p: 2, 
-            borderBottom: 1, 
-            borderColor: 'divider',
-            bgcolor: 'grey.50'
-          }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-            {label}
-          </Typography>
-          {builtSchema && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'medium' }}>
-                Schema Loaded
-              </Typography>
-            </Box>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {!readOnly && onGenerateRandomQuery && (
-            <Tooltip title="Generate Random Query">
-              <IconButton size="small" onClick={onGenerateRandomQuery} disabled={isGeneratingQuery}>
-                {isGeneratingQuery ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                ) : (
-                  <Casino fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          )}
-          
-          {/* Query Management Buttons */}
-          {!readOnly && (onShowLibrary || onSaveQuery) && (
-            <>
-              {onGenerateRandomQuery && (
-                <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-              )}
-              {onShowLibrary && (
-                <Tooltip title="Query Library">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => {
-                      if (isFullscreen) {
-                        setShowSidePanelLibrary(!showSidePanelLibrary);
-                      } else {
-                        onShowLibrary();
-                      }
-                    }}
-                  >
-                    <LibraryBooks fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {onSaveQuery && (
-                <Tooltip title="Save Query">
-                  <IconButton size="small" onClick={onSaveQuery} disabled={!canSaveQuery}>
-                    <Save fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </>
-          )}
-          
-          {/* Editor Actions */}
-          {((onGenerateRandomQuery || onShowLibrary || onSaveQuery) && !readOnly) && (
-            <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-          )}
-          {!readOnly && (
-            <Tooltip title="Format GraphQL">
-              <IconButton size="small" onClick={handleFormat}>
-                <AutoFixHigh fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title="Copy to clipboard">
-            <IconButton size="small" onClick={handleCopy}>
-              <ContentCopy fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-          <Tooltip title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
-            <IconButton size="small" onClick={() => setIsFullscreen(!isFullscreen)}>
-              {isFullscreen ? <FullscreenExit fontSize="small" /> : <Fullscreen fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
-
-      {/* Editor */}
-      <Box sx={{ 
-        flex: 1, 
-        overflow: 'auto',
-        position: 'relative',
-        '& .cm-editor': {
-          height: isFullscreen ? 'calc(100vh - 80px)' : height,
-          '&.cm-focused': {
-            position: 'relative',
-          }
-        }
-      }}>
-        <CodeMirror {...editorProps} />
-        
-        {/* Emacs-style Search Mode Line */}
-        {reactSearchState.active && (
-          <Box sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            bgcolor: isDark ? '#2d3748' : '#f1f5f9',
-            color: isDark ? '#e2e8f0' : '#334155',
-            borderTop: 1,
-            borderColor: isDark ? '#4a5568' : '#cbd5e1',
-            px: 2,
-            py: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            fontSize: '12px',
-            fontWeight: 500,
-            zIndex: 1000,
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
-            minHeight: '32px'
-          }}>
-            {/* Left side: I-search prompt and query */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography component="span" sx={{ color: '#81c784', mr: 1, fontWeight: 'bold', fontSize: '12px' }}>
-                I-search:
-              </Typography>
-              <Box sx={{
-                color: isDark ? '#ffffff' : '#000000',
-                bgcolor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                minWidth: '20px',
-                fontSize: '12px',
-                fontFamily: 'monospace'
-              }}>
-                {reactSearchState.query || ''}
-              </Box>
-            </Box>
-            
-            {/* Right side: match counter and help */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '11px' }}>
-              <Box sx={{
-                color: reactSearchState.totalMatches > 0 ? '#90cdf4' : 
-                       (reactSearchState.query && reactSearchState.totalMatches === 0) ? '#fc8181' : '#a0aec0',
-                fontWeight: reactSearchState.totalMatches > 0 ? 'bold' : 'normal',
-                bgcolor: reactSearchState.totalMatches > 0 ? 'rgba(144, 205, 244, 0.1)' :
-                         (reactSearchState.query && reactSearchState.totalMatches === 0) ? 'rgba(252, 129, 129, 0.1)' : 'transparent',
-                px: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 1 : 0,
-                py: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 0.5 : 0,
-                borderRadius: 1,
-                fontSize: '11px'
-              }}>
-                {reactSearchState.totalMatches > 0 
-                  ? `(${reactSearchState.currentMatch + 1}/${reactSearchState.totalMatches})`
-                  : reactSearchState.query && reactSearchState.totalMatches === 0 
-                    ? '(no matches)'
-                    : '(type to search)'
-                }
-              </Box>
-              <Typography component="span" sx={{ color: '#a0aec0', fontSize: '11px' }}>
-                C-s: next • C-r: prev • C-g: exit • Esc: cancel
-              </Typography>
-            </Box>
-          </Box>
-        )}
-      </Box>
-
-      {/* Schema Status */}
-      {!builtSchema && !readOnly && (
-        <Box sx={{ 
-          p: 2, 
-          borderTop: 1, 
-          borderColor: 'divider',
-          bgcolor: 'warning.50',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
-          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-          <Typography variant="caption" sx={{ color: 'warning.main' }}>
-            Schema not loaded - autocomplete limited to syntax only
-          </Typography>
-        </Box>
-      )}
-        </Box>
-        
-        {/* Side Panel Library (Fullscreen only) */}
-        {isFullscreen && (
-          <Box sx={{
+    <>
+      {/* Fullscreen Backdrop - Render before Paper so it appears behind */}
+      {isFullscreen && (
+        <Box
+          sx={{
             position: 'fixed',
             top: 0,
-            right: showSidePanelLibrary ? 0 : '-400px',
+            left: 0,
+            right: 0,
             bottom: 0,
-            width: '400px',
-            bgcolor: 'background.paper',
-            borderLeft: 1,
-            borderColor: 'divider',
-            zIndex: 10000,
-            transition: 'right 0.3s ease',
-            display: 'flex',
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9998,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      
+      <Paper 
+        elevation={isFullscreen ? 24 : 1}
+        data-testid="graphql-editor-paper"
+        sx={{ 
+          position: isFullscreen ? 'fixed' : 'relative',
+          top: isFullscreen ? 0 : 'auto',
+          left: isFullscreen ? 0 : 'auto',
+          right: isFullscreen ? 0 : 'auto',
+          bottom: isFullscreen ? 0 : 'auto',
+          zIndex: isFullscreen ? 9999 : 'auto',
+          width: isFullscreen ? '100vw' : 'auto',
+          height: isFullscreen ? '100vh' : 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          backgroundColor: isFullscreen ? 'background.paper' : 'inherit',
+          ...(isFullscreen && {
+            borderRadius: 0,
+            maxWidth: 'none',
+            maxHeight: 'none',
+            // Debug styling - use outline instead of border to not affect layout
+            outline: '5px solid red',
+            outlineOffset: '-5px',
+            padding: 0,
+            margin: 0
+          })
+        }}
+      >
+        {/* Main Content Area */}
+        <Box 
+          data-testid="main-content"
+          sx={{ 
+            display: 'flex', 
+            flex: 1, 
+            overflow: 'hidden',
+            position: 'relative',
+            ...(isFullscreen && {
+              padding: 0,
+              margin: 0
+            })
+          }}
+        >
+          {/* Editor Section */}
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
             flexDirection: 'column',
-            boxShadow: showSidePanelLibrary ? '0 0 20px rgba(0,0,0,0.1)' : 'none'
+            // Remove margin in fullscreen mode - side panel is disabled
+            transition: 'none',
+            marginRight: '0px',
+            ...(isFullscreen && {
+              padding: 0,
+              margin: 0
+            })
           }}>
-            {/* Side Panel Header */}
-            <Box sx={{
-              p: 2,
-              borderBottom: 1,
+            {/* Header */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              p: isFullscreen ? 1 : 2, 
+              borderBottom: 1, 
               borderColor: 'divider',
+              bgcolor: 'grey.50'
+            }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
+              {label}
+            </Typography>
+            {builtSchema && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'medium' }}>
+                  Schema Loaded
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {!readOnly && onGenerateRandomQuery && (
+              <Tooltip title="Generate Random Query">
+                <IconButton size="small" onClick={onGenerateRandomQuery} disabled={isGeneratingQuery}>
+                  {isGeneratingQuery ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                  ) : (
+                    <Casino fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+            
+            {/* Query Management Buttons */}
+            {!readOnly && (onShowLibrary || onSaveQuery) && (
+              <>
+                {onGenerateRandomQuery && (
+                  <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+                )}
+                {onShowLibrary && !isFullscreen && (
+                  <Tooltip title="Query Library">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => {
+                        if (isFullscreen) {
+                          setShowSidePanelLibrary(!showSidePanelLibrary);
+                        } else {
+                          onShowLibrary();
+                        }
+                      }}
+                    >
+                      <LibraryBooks fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {onSaveQuery && (
+                  <Tooltip title="Save Query">
+                    <IconButton size="small" onClick={onSaveQuery} disabled={!canSaveQuery}>
+                      <Save fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
+            )}
+            
+            {/* Editor Actions */}
+            {((onGenerateRandomQuery || onShowLibrary || onSaveQuery) && !readOnly) && (
+              <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+            )}
+            {!readOnly && (
+              <Tooltip title="Format GraphQL">
+                <IconButton size="small" onClick={handleFormat}>
+                  <AutoFixHigh fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Copy to clipboard">
+              <IconButton size="small" onClick={handleCopy}>
+                <ContentCopy fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+            <Tooltip title={isFullscreen ? "Exit fullscreen (ESC)" : "Enter fullscreen"}>
+              <IconButton 
+                size="small" 
+                onClick={handleFullscreenToggle}
+                sx={{
+                  backgroundColor: isFullscreen ? 'primary.main' : 'transparent',
+                  color: isFullscreen ? 'primary.contrastText' : 'inherit',
+                  '&:hover': {
+                    backgroundColor: isFullscreen ? 'primary.dark' : 'action.hover'
+                  }
+                }}
+              >
+                {isFullscreen ? <FullscreenExit fontSize="small" /> : <Fullscreen fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+
+        {/* Editor */}
+        <Box sx={{ 
+          flex: 1, 
+          overflow: 'auto',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          '& .cm-editor': {
+            height: isFullscreen ? '100%' : height,
+            flex: isFullscreen ? 1 : 'none',
+            '&.cm-focused': {
+              position: 'relative',
+            }
+          }
+        }}>
+          <CodeMirror {...editorProps} />
+          
+          {/* Emacs-style Search Mode Line */}
+          {reactSearchState.active && (
+            <Box sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              bgcolor: isDark ? '#2d3748' : '#f1f5f9',
+              color: isDark ? '#e2e8f0' : '#334155',
+              borderTop: 1,
+              borderColor: isDark ? '#4a5568' : '#cbd5e1',
+              px: 2,
+              py: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              bgcolor: 'grey.50'
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: '12px',
+              fontWeight: 500,
+              zIndex: 1000,
+              boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+              minHeight: '32px'
             }}>
-              <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                Query Library
-              </Typography>
-              <IconButton 
-                size="small" 
-                onClick={() => setShowSidePanelLibrary(false)}
-                sx={{ ml: 1 }}
-              >
-                <span style={{ fontSize: '18px' }}>×</span>
-              </IconButton>
-            </Box>
-            
-            {/* Side Panel Content */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
-              <SidePanelLibrary 
-                onSelectQuery={(query) => {
-                  if (onChange) {
-                    onChange(query.query);
+              {/* Left side: I-search prompt and query */}
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography component="span" sx={{ color: '#81c784', mr: 1, fontWeight: 'bold', fontSize: '12px' }}>
+                  I-search:
+                </Typography>
+                <Box sx={{
+                  color: isDark ? '#ffffff' : '#000000',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  minWidth: '20px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace'
+                }}>
+                  {reactSearchState.query || ''}
+                </Box>
+              </Box>
+              
+              {/* Right side: match counter and help */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '11px' }}>
+                <Box sx={{
+                  color: reactSearchState.totalMatches > 0 ? '#90cdf4' : 
+                         (reactSearchState.query && reactSearchState.totalMatches === 0) ? '#fc8181' : '#a0aec0',
+                  fontWeight: reactSearchState.totalMatches > 0 ? 'bold' : 'normal',
+                  bgcolor: reactSearchState.totalMatches > 0 ? 'rgba(144, 205, 244, 0.1)' :
+                           (reactSearchState.query && reactSearchState.totalMatches === 0) ? 'rgba(252, 129, 129, 0.1)' : 'transparent',
+                  px: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 1 : 0,
+                  py: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 0.5 : 0,
+                  borderRadius: 1,
+                  fontSize: '11px'
+                }}>
+                  {reactSearchState.totalMatches > 0 
+                    ? `(${reactSearchState.currentMatch + 1}/${reactSearchState.totalMatches})`
+                    : reactSearchState.query && reactSearchState.totalMatches === 0 
+                      ? '(no matches)'
+                      : '(type to search)'
                   }
-                  setShowSidePanelLibrary(false);
-                }}
-                onRunQuery={(query) => {
-                  if (onChange) {
-                    onChange(query.query);
-                  }
-                  setShowSidePanelLibrary(false);
-                  // TODO: Trigger query execution
-                }}
-              />
+                </Box>
+                <Typography component="span" sx={{ color: '#a0aec0', fontSize: '11px' }}>
+                  C-s: next • C-r: prev • C-g: exit • Esc: cancel
+                </Typography>
+              </Box>
             </Box>
+          )}
+        </Box>
+
+        {/* Schema Status */}
+        {!builtSchema && !readOnly && (
+          <Box sx={{ 
+            p: 2, 
+            borderTop: 1, 
+            borderColor: 'divider',
+            bgcolor: 'warning.50',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+            <Typography variant="caption" sx={{ color: 'warning.main' }}>
+              Schema not loaded - autocomplete limited to syntax only
+            </Typography>
           </Box>
         )}
-      </Box>
-    </Paper>
+          </Box>
+          
+          {/* Side Panel Library (Disabled in fullscreen mode for true fullscreen experience) */}
+          {false && isFullscreen && (
+            <Box sx={{
+              position: 'fixed',
+              top: 0,
+              right: showSidePanelLibrary ? 0 : '-400px',
+              bottom: 0,
+              width: '400px',
+              bgcolor: 'background.paper',
+              borderLeft: 1,
+              borderColor: 'divider',
+              zIndex: 10000,
+              transition: 'right 0.3s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: showSidePanelLibrary ? '0 0 20px rgba(0,0,0,0.1)' : 'none'
+            }}>
+              {/* Side Panel Header */}
+              <Box sx={{
+                p: 2,
+                borderBottom: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                bgcolor: 'grey.50'
+              }}>
+                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                  Query Library
+                </Typography>
+                <IconButton 
+                  size="small" 
+                  onClick={() => setShowSidePanelLibrary(false)}
+                  sx={{ ml: 1 }}
+                >
+                  <span style={{ fontSize: '18px' }}>×</span>
+                </IconButton>
+              </Box>
+              
+              {/* Side Panel Content */}
+              <Box sx={{ flex: 1, overflow: 'auto' }}>
+                <SidePanelLibrary 
+                  onSelectQuery={(query) => {
+                    if (onChange) {
+                      onChange(query.query);
+                    }
+                    setShowSidePanelLibrary(false);
+                  }}
+                  onRunQuery={(query) => {
+                    if (onChange) {
+                      onChange(query.query);
+                    }
+                    setShowSidePanelLibrary(false);
+                    // TODO: Trigger query execution
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Paper>
+    </>
   );
 }
