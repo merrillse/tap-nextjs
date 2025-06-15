@@ -881,6 +881,7 @@ export default function APITestingPage() {
             query={queryInput}
             variables={graphqlVariables}
             environment={selectedEnvironment}
+            proxyClient={selectedProxyClient}
             editingQuery={editingQuery} // Changed from existingQuery to editingQuery
           />
         )}

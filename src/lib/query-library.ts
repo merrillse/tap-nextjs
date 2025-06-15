@@ -12,6 +12,7 @@ export interface SavedQuery {
   createdAt: string;
   updatedAt: string;
   environment: string;
+  proxyClient?: string; // Added proxy client tracking
   tags?: string[];
 }
 

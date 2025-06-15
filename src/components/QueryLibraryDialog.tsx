@@ -43,6 +43,63 @@ import {
 import { QueryLibrary, SavedQuery } from '@/lib/query-library';
 import { safeStringify } from '@/lib/utils';
 
+// Proxy clients list for name resolution
+const PROXY_CLIENTS = [
+  { name: 'Primary', clientId: '0oak0jqakvevwjWrp357' },
+  { name: 'CCDOPS - Church Calendar', clientId: '0oa17jzhwi9uusIoz358' },
+  { name: 'CCDOPS - Church Calendar [non-prod]', clientId: '0oaki3kbszeewJmMX357' },
+  { name: 'CCDOPS - Church Calendar [PROD]', clientId: '0oaki3swtbO6fOZ9x357' },
+  { name: 'CES', clientId: '0oa16arpkjgDezdcI358' },
+  { name: 'CMIS Authorization Service', clientId: '0oao4ayxo9fgtnKYj357' },
+  { name: 'CMIS Callings', clientId: '0oa1joivv92SShYCD358' },
+  { name: 'CMIS Services Team', clientId: '0oan0z1efagK9cXWu357' },
+  { name: 'DMBA Group [non-prod]', clientId: '0oan1043xxD4cTtoU357' },
+  { name: 'DMBA Group [PROD]', clientId: '0oan1036pnukfeJSi357' },
+  { name: 'EDUINT - Education Integrations', clientId: '0oagzh13nq0zK7c5I357' },
+  { name: 'English Connect', clientId: '0oaixehfyryjaiS7M357' },
+  { name: 'GVM Travel [non-prod]', clientId: '0oartjtss42ayIfJl357' },
+  { name: 'GVM Travel [PROD]', clientId: '0oartjm5nguKZFN2c357' },
+  { name: 'HR:MSR:Emergency Contact', clientId: '0oavpvglc1wJ9hVKv357' },
+  { name: 'Identity', clientId: '0oa1099z1t0ZRaFwP358' },
+  { name: 'ISR - Non-prod', clientId: '0oaqbq6isq9sDyIdx357' },
+  { name: 'ISR - Prod', clientId: '0oapmoioz2z64riCE357' },
+  { name: 'LCR [non-prod]', clientId: '0oalni75ar2LGLtVR357' },
+  { name: 'LCR [PROD]', clientId: '0oalni7s7aEWlSTHQ357' },
+  { name: 'Maps Service', clientId: '0oajrl8w5aVKhlkgq357' },
+  { name: 'MBI', clientId: 'MBI' },
+  { name: 'Member Tools', clientId: '0oakhtcbhyLVVeYFj357' },
+  { name: 'Missionary Areabook [non-prod]', clientId: '0oasw5r8hmlOJ5GG0357' },
+  { name: 'Missionary Areabook [PROD]', clientId: '0oasw6uegahMJ8N9Y357' },
+  { name: 'Missionary Connect [non-prod]', clientId: '0oap88us4pbRI1HX3357' },
+  { name: 'Missionary Connect [PROD]', clientId: '0oap88ozbhEr8UKIQ357' },
+  { name: 'Missionary Graph Service Team', clientId: '0oak0jqakvevwjWrp357' },
+  { name: 'Missionary History [non-prod]', clientId: '0oartk3ix1S0lvthA357' },
+  { name: 'Missionary History [PROD]', clientId: '0oartjyikqPqM5LZm357' },
+  { name: 'Missionary Portal [non-prod]', clientId: '0oa1gg8qdjlQh49GY358' },
+  { name: 'Missionary Portal [PROD]', clientId: '0oa1gg90u4erOhnH2358' },
+  { name: 'Missionary WORKS [non-prod]', clientId: '0oaoywrjdh16anAjm357' },
+  { name: 'Missionary WORKS [PROD]', clientId: '0oaoypfnvzf56iHqv357' },
+  { name: 'MTC Tech [non-prod]', clientId: '0oan0z7opvD8AseBb357' },
+  { name: 'MTC Tech [PROD]', clientId: '0oan0z9i7ax38R7Tx357' },
+  { name: 'Pathway Anthology [non-prod]', clientId: '0oa10ty566kw1iqcC358' },
+  { name: 'Pathway Anthology [PROD]', clientId: '0oa18avadd4EBvHhP358' },
+  { name: 'QuickReg [non-prod]', clientId: '0oavlgns0tNH0dvXb357' },
+  { name: 'QuickReg [PROD]', clientId: '0oaxn76jai315m4i5357' },
+  { name: 'RISK-MDQ', clientId: '0oa11ext3xoSIlS9S358' },
+  { name: 'ServiceNow & Missionary Integration', clientId: '0oa1iwzkz1dcZvAIL358' },
+  { name: 'TallEmbark', clientId: '0oa11j79yw80Y9jwj358' },
+  { name: 'WAS - Ward Activity Sharing [non-prod]', clientId: '0oa1dfokrc9S2D5aO358' },
+  { name: 'WAS - Ward Activity Sharing [PROD]', clientId: '0oa19kxjttvFItg3y358' },
+  { name: 'Ward Directory & Map', clientId: '0oamyits9uliqoOn7357' },
+  { name: 'WSR', clientId: '0oa1gs5l1prHsbDUc358' },
+];
+
+// Helper function to get proxy client name from ID
+function getProxyClientName(clientId: string): string {
+  const client = PROXY_CLIENTS.find(c => c.clientId === clientId);
+  return client ? client.name : clientId;
+}
+
 export interface QueryLibraryDialogProps {
   open: boolean;
   onClose: () => void;
@@ -59,6 +116,7 @@ export interface SaveQueryDialogProps {
   query: string; // Keep as query, was queryString
   variables?: string; // Variables as JSON string
   environment: string;
+  proxyClient?: string; // Added proxy client
   editingQuery?: SavedQuery | null;
 }
 
@@ -69,6 +127,7 @@ export function SaveQueryDialog({
   query,
   variables,
   environment,
+  proxyClient,
   editingQuery
 }: SaveQueryDialogProps) {
   const [name, setName] = useState('');
@@ -123,6 +182,7 @@ export function SaveQueryDialog({
         variables: parsedVars, // This is now Record<string, unknown> | undefined
         description: description.trim() || undefined,
         environment,
+        proxyClient, // Added proxy client tracking
         tags: tagArray.length > 0 ? tagArray : undefined,
       };
 
@@ -273,7 +333,9 @@ export function QueryLibraryDialog({
         q.name.toLowerCase().includes(term) ||
         q.query.toLowerCase().includes(term) ||
         (q.description && q.description.toLowerCase().includes(term)) ||
-        (q.tags && q.tags.some(tag => tag.toLowerCase().includes(term)))
+        (q.tags && q.tags.some(tag => tag.toLowerCase().includes(term))) ||
+        (q.proxyClient && q.proxyClient.toLowerCase().includes(term)) ||
+        (q.proxyClient && getProxyClientName(q.proxyClient).toLowerCase().includes(term))
       );
     }
     
@@ -374,7 +436,7 @@ export function QueryLibraryDialog({
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: '60vh' }}>
         <TextField
           fullWidth
-          placeholder="Search queries by name, description, or tags..."
+          placeholder="Search queries by name, description, tags, or proxy client..."
           value={searchTerm}
           onChange={handleSearchChange}
           InputProps={{
@@ -440,6 +502,15 @@ export function QueryLibraryDialog({
                     variant="outlined" 
                     color={query.environment === currentEnvironment ? "primary" : "default"}
                   />
+                  {query.proxyClient && (
+                    <Chip 
+                      label={`Proxy: ${getProxyClientName(query.proxyClient)}`}
+                      size="small" 
+                      variant="outlined" 
+                      color="secondary"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  )}
                   {query.tags?.map(tag => (
                     <Chip key={tag} label={tag} size="small" variant="outlined" />
                   ))}
