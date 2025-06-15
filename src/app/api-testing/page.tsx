@@ -272,10 +272,10 @@ export default function APITestingPage() {
 
     try {
       if (selectedEndpoint === 'graphql') {
-        console.log(`[Apex Debug] Executing GraphQL query for endpoint: ${selectedEndpoint}`); // New log
-        console.log(`[Apex Debug] Query: ${queryInput}`); // New log
+        console.log(`[Apex Debug] Executing GraphQL query for endpoint: ${selectedEndpoint}`);
+        console.log(`[Apex Debug] Query: ${queryInput}`);
         const result = await apiClient.executeGraphQLQuery(queryInput, parsedVariables, parsedHeaders as Record<string, string>);
-        console.log('[Apex Debug] GraphQL execution result:', result); // New log
+        console.log('[Apex Debug] GraphQL execution result:', result);
         const executionTime = Date.now() - startTime;
         
         setResponse({
@@ -284,7 +284,7 @@ export default function APITestingPage() {
           error: result.errors ? safeStringify(result.errors) : undefined,
           executionTime: `${executionTime}ms`,
           timestamp: new Date().toISOString(),
-          headers: result.headers || { 'content-type': 'application/json', 'cache-control': 'no-cache' }
+          headers: result.responseHeaders || { 'content-type': 'application/json', 'cache-control': 'no-cache' } // Changed from result.headers
         });
         if (result.errors) {
           setResponseTabValue(2); // Switch to error tab if GraphQL errors exist
@@ -362,7 +362,7 @@ export default function APITestingPage() {
 
   const handleSelectQuery = (query: SavedQuery) => {
     setQueryInput(query.query);
-    setGraphqlVariables(query.variables || '{}');
+    setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}'); // Stringify variables
     // We don't save/load HTTP headers with queries for now
     setShowLibraryDialog(false);
     
@@ -378,7 +378,7 @@ export default function APITestingPage() {
 
   const handleRunSavedQuery = async (query: SavedQuery) => {
     setQueryInput(query.query);
-    setGraphqlVariables(query.variables || '{}');
+    setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}'); // Stringify variables
     setShowLibraryDialog(false);
     
     if (query.environment !== selectedEnvironment) {
@@ -643,7 +643,7 @@ export default function APITestingPage() {
                     </div>
                   )}
                   {!loading && response?.data && (
-                    <JSONViewer value={safeStringify(response.data)} readOnly height="100%" />
+                    <JSONViewer value={safeStringify(response.data)} />
                   )}
                   {!loading && !response?.data && !response?.error && !error && (
                      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
@@ -653,7 +653,7 @@ export default function APITestingPage() {
                 </TabPanel>
                 <TabPanel value={responseTabValue} index={1}>
                   {response?.headers ? (
-                    <JSONViewer value={safeStringify(response.headers)} readOnly height="100%" />
+                    <JSONViewer value={safeStringify(response.headers)} />
                   ) : (
                      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                         <Typography variant="body1" color="textSecondary">No headers to display.</Typography>
@@ -706,7 +706,7 @@ export default function APITestingPage() {
             query={queryInput}
             variables={graphqlVariables}
             environment={selectedEnvironment}
-            existingQuery={editingQuery}
+            editingQuery={editingQuery} // Changed from existingQuery to editingQuery
           />
         )}
         {showLibraryDialog && (
@@ -718,11 +718,12 @@ export default function APITestingPage() {
             onEditQuery={(query) => {
               setEditingQuery(query);
               setQueryInput(query.query);
-              setGraphqlVariables(query.variables || '{}');
+              setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}');
               setShowLibraryDialog(false);
               // Potentially open save dialog directly or indicate editing mode
               // For now, just loads it into editor, user can click save
             }}
+            currentEnvironment={selectedEnvironment} // Added missing currentEnvironment prop
           />
         )}
       </div>

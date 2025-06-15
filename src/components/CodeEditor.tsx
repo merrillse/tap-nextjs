@@ -239,17 +239,100 @@ export function GraphQLEditor({ value, onChange, placeholder }: {
   );
 }
 
-export function JSONViewer({ value, label }: {
+export interface JSONViewerProps {
   value: string;
-  label?: string;
-}) {
+  readOnly?: boolean;
+  height?: string;
+  label?: string; // Added label to match usage
+}
+
+export function JSONViewer({ 
+  value, 
+  readOnly = true, // Default to true for a viewer
+  height = '100%', 
+  label // Added label
+}: JSONViewerProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  // Custom syntax highlighting themes
+  const lightJSONHighlight = HighlightStyle.define([
+    { tag: t.propertyName, color: '#005cc5' }, // JSON keys
+    { tag: t.string, color: '#032f62' }, // String values
+    { tag: t.number, color: '#005cc5' }, // Numbers
+    { tag: t.bool, color: '#005cc5' }, // Booleans
+    { tag: t.null, color: '#6a737d' }, // null values
+    { tag: t.punctuation, color: '#24292e' }, // Punctuation
+    { tag: t.bracket, color: '#24292e' }, // Brackets
+  ]);
+
+  const darkJSONHighlight = HighlightStyle.define([
+    { tag: t.propertyName, color: '#79b8ff' }, // JSON keys
+    { tag: t.string, color: '#9ecbff' }, // String values
+    { tag: t.number, color: '#79b8ff' }, // Numbers
+    { tag: t.bool, color: '#79b8ff' }, // Booleans
+    { tag: t.null, color: '#959da5' }, // null values
+    { tag: t.punctuation, color: '#e1e4e8' }, // Punctuation
+    { tag: t.bracket, color: '#e1e4e8' }, // Brackets
+  ]);
+
   return (
-    <CodeEditor
-      value={value}
-      language="json"
-      readOnly={true}
-      height="400px"
-      label={label || "JSON Response"}
-    />
+    <Box sx={{ height, position: 'relative', border: `1px solid ${theme.palette.divider}`, borderRadius: '4px', overflow: 'hidden' }}>
+      {label && (
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            p: '2px 8px', 
+            backgroundColor: theme.palette.background.paper, 
+            borderBottomRightRadius: '4px', 
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            borderRight: `1px solid ${theme.palette.divider}`,
+            zIndex: 1 
+          }}
+        >
+          {label}
+        </Typography>
+      )}
+      <CodeMirror
+        value={value}
+        height={height}
+        extensions={[
+          json(),
+          EditorView.lineWrapping,
+          isDark ? syntaxHighlighting(darkJSONHighlight) : syntaxHighlighting(lightJSONHighlight),
+          EditorView.theme({
+            "&": {
+              fontSize: "0.875rem",
+              backgroundColor: isDark ? theme.palette.grey[900] : theme.palette.background.default,
+              color: isDark ? theme.palette.common.white : theme.palette.common.black,
+            },
+            ".cm-gutters": {
+              backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
+              color: theme.palette.text.secondary,
+              borderRight: `1px solid ${theme.palette.divider}`,
+            },
+            ".cm-content": {
+              caretColor: theme.palette.primary.main,
+            },
+            "&.cm-focused .cm-cursor": {
+              borderLeftColor: theme.palette.primary.main,
+            },
+            "&.cm-focused .cm-selectionBackground, ::selection": {
+              backgroundColor: theme.palette.action.selected,
+            },
+            ".cm-activeLine": {
+              backgroundColor: theme.palette.action.hover,
+            },
+            ".cm-activeLineGutter": {
+              backgroundColor: theme.palette.action.hover,
+            }
+          })
+        ]}
+        readOnly={readOnly}
+      />
+    </Box>
   );
 }
