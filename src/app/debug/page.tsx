@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getEnvironmentConfig } from '@/lib/environments';
+import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 
 interface TestResult {
@@ -15,11 +15,22 @@ export default function DebugPage() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
   const [currentEnvironment, setCurrentEnvironment] = useState('mis-gql-stage');
+  const [availableEnvironments, setAvailableEnvironments] = useState<any[]>([]);
 
   useEffect(() => {
     const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
     setCurrentEnvironment(savedEnv);
+    
+    // Load all available environments
+    const environments = getEnvironmentNames();
+    setAvailableEnvironments(environments);
   }, []);
+
+  const handleEnvironmentChange = (environmentId: string) => {
+    setCurrentEnvironment(environmentId);
+    localStorage.setItem('selectedEnvironment', environmentId);
+    setTestResults([]); // Clear previous test results when switching
+  };
 
   const runTests = async () => {
     setTesting(true);
@@ -209,13 +220,48 @@ export default function DebugPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">OAuth Debug Tool</h1>
           <p className="mt-2 text-gray-600">
-            Comprehensive OAuth authentication debugging for {getEnvironmentConfig(currentEnvironment)?.name}
+            Comprehensive OAuth authentication debugging for GraphQL systems
           </p>
+        </div>
+
+        {/* Environment Selector */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Environment Selection</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableEnvironments.map((env) => (
+              <button
+                key={env.key}
+                onClick={() => handleEnvironmentChange(env.key)}
+                className={`p-4 border rounded-lg text-left transition-colors ${
+                  currentEnvironment === env.key
+                    ? 'border-blue-500 bg-blue-50 text-blue-900'
+                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                }`}
+              >
+                <div className="font-medium">{env.name}</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {env.key.includes('mogs') ? 'MOGS System' : 'MGQL System'}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Current Configuration</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <strong>Environment:</strong><br />
+              <code className="text-xs bg-gray-100 p-1 rounded">
+                {getEnvironmentConfig(currentEnvironment)?.name}
+              </code>
+            </div>
+            <div>
+              <strong>System Type:</strong><br />
+              <code className="text-xs bg-gray-100 p-1 rounded">
+                {currentEnvironment.includes('mogs') ? 'MOGS (Missionary Oracle GraphQL Service)' : 'MGQL (MIS GraphQL)'}
+              </code>
+            </div>
             <div>
               <strong>OAuth Endpoint:</strong><br />
               <code className="text-xs bg-gray-100 p-1 rounded">
@@ -249,10 +295,10 @@ export default function DebugPage() {
             disabled={testing}
             className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {testing ? 'Running Tests...' : 'Run Comprehensive OAuth Tests'}
+            {testing ? 'Running Tests...' : `Run Comprehensive Tests for ${getEnvironmentConfig(currentEnvironment)?.name}`}
           </button>
           <p className="mt-2 text-sm text-gray-600">
-            This will test multiple OAuth authentication methods and endpoints
+            This will test OAuth authentication, GraphQL connectivity, and health endpoints for the selected system
           </p>
         </div>
 
@@ -293,13 +339,14 @@ export default function DebugPage() {
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-medium text-blue-900 mb-2">Next Steps</h3>
             <div className="text-blue-800">
-              <p className="mb-2">Based on the test results:</p>
+              <p className="mb-2">Based on the test results for {getEnvironmentConfig(currentEnvironment)?.name}:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>If all tests fail with 403: Check if client credentials are correct</li>
-                <li>If tests fail with CORS: Server-side proxy should handle this</li>
+                <li>If all tests fail with 403: Check if client credentials are correct for this system</li>
+                <li>If tests fail with CORS: Server-side proxy should handle this automatically</li>
                 <li>If Basic Auth passes: Use that method for production</li>
-                <li>If Form Auth passes: Alternative method available</li>
-                <li>If health check fails: Check if the MIS service is running</li>
+                <li>If Form Auth passes: Alternative authentication method available</li>
+                <li>If health check fails: Check if the {currentEnvironment.includes('mogs') ? 'MOGS' : 'MGQL'} service is running</li>
+                <li>Try switching to a different environment to compare authentication behavior</li>
               </ul>
             </div>
           </div>
