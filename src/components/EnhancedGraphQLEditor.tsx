@@ -24,6 +24,7 @@ import {
   currentCompletions,
   completionKeymap
 } from '@codemirror/autocomplete';
+import { search, searchKeymap } from '@codemirror/search'; // Added for standard search/replace
 
 // Emacs-style incremental search implementation
 interface SearchState {
@@ -692,6 +693,21 @@ export function EnhancedGraphQLEditor({
   };
   const isDark = theme.palette.mode === 'dark';
 
+  // Custom syntax highlighting
+  const graphQLHighlight = HighlightStyle.define([
+    { tag: t.keyword, color: isDark ? '#f97583' : '#d73a49' }, // GraphQL keywords
+    { tag: t.typeName, color: isDark ? '#b392f0' : '#6f42c1' }, // Type names
+    { tag: t.propertyName, color: isDark ? '#79b8ff' : '#005cc5' }, // Field names
+    { tag: t.string, color: isDark ? '#9ecbff' : '#032f62' }, // String values
+    { tag: t.number, color: isDark ? '#79b8ff' : '#005cc5' }, // Numbers
+    { tag: t.bool, color: isDark ? '#79b8ff' : '#005cc5' }, // Booleans
+    { tag: t.null, color: isDark ? '#959da5' : '#6a737d' }, // null values
+    { tag: t.comment, color: isDark ? '#959da5' : '#6a737d', fontStyle: 'italic' }, // Comments
+    { tag: t.punctuation, color: isDark ? '#e1e4e8' : '#24292e' }, // Punctuation
+    { tag: t.bracket, color: isDark ? '#e1e4e8' : '#24292e' }, // Brackets
+    { tag: t.variableName, color: isDark ? '#ffab70' : '#e36209' }, // Variables
+  ]);
+
   // Handle Escape key to close side panel or exit fullscreen
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -766,116 +782,74 @@ export function EnhancedGraphQLEditor({
     }
   };
 
-  // Custom syntax highlighting
-  const graphQLHighlight = HighlightStyle.define([
-    { tag: t.keyword, color: isDark ? '#f97583' : '#d73a49' }, // GraphQL keywords
-    { tag: t.typeName, color: isDark ? '#b392f0' : '#6f42c1' }, // Type names
-    { tag: t.propertyName, color: isDark ? '#79b8ff' : '#005cc5' }, // Field names
-    { tag: t.string, color: isDark ? '#9ecbff' : '#032f62' }, // String values
-    { tag: t.number, color: isDark ? '#79b8ff' : '#005cc5' }, // Numbers
-    { tag: t.bool, color: isDark ? '#79b8ff' : '#005cc5' }, // Booleans
-    { tag: t.null, color: isDark ? '#959da5' : '#6a737d' }, // null values
-    { tag: t.comment, color: isDark ? '#959da5' : '#6a737d', fontStyle: 'italic' }, // Comments
-    { tag: t.punctuation, color: isDark ? '#e1e4e8' : '#24292e' }, // Punctuation
-    { tag: t.bracket, color: isDark ? '#e1e4e8' : '#24292e' }, // Brackets
-    { tag: t.variableName, color: isDark ? '#ffab70' : '#e36209' }, // Variables
-  ]);
+  const baseExtensions = useMemo(() => {
+    const extensions = [
+      EditorView.lineWrapping,
+      EditorView.theme({
+        "&": {
+          fontSize: "13px",
+          height: "100%",
+          backgroundColor: isDark ? '#282c34' : '#ffffff',
+        },
+        ".cm-content": {
+          caretColor: isDark ? "#ffffff" : "#000000",
+          fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace',
+        },
+        ".cm-gutters": {
+          backgroundColor: isDark ? '#282c34' : '#f0f0f0',
+          color: isDark ? "#888" : "#666",
+          borderRight: isDark ? "1px solid #333" : "1px solid #ddd",
+        },
+        ".cm-activeLineGutter": {
+          backgroundColor: isDark ? '#333a4a' : '#e0e0e0',
+        },
+        ".cm-tooltip-autocomplete": {
+          backgroundColor: isDark ? "#333a4a" : "#f0f0f0",
+          border: isDark ? "1px solid #444" : "1px solid #ccc",
+          borderRadius: "4px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+          maxHeight: "200px",
+          overflowY: "auto",
+        },
+        ".cm-tooltip-autocomplete ul li": {
+          padding: "4px 8px",
+          color: isDark ? "#abb2bf" : "#333",
+        },
+        ".cm-tooltip-autocomplete ul li[aria-selected]": {
+          backgroundColor: isDark ? "#3b4048" : "#d4e2f0",
+          color: isDark ? "#ffffff" : "#000",
+        },
+        // Search match styling (for Emacs-style search)
+        ".cm-search-match": { backgroundColor: "yellow", color: "black" },
+        ".cm-search-current-match": { backgroundColor: "orange", color: "black" },
+      }),
+      syntaxHighlighting(graphQLHighlight), // Use the defined graphQLHighlight
+      Prec.high(keymap.of(completionKeymap)), // Ensure completion keymap has high precedence
+      emacsSearchKeymap, // Keep Emacs-style search
+      searchState, // State for Emacs-style search
+      createSearchPlugin(setReactSearchState), // Instantiate the search plugin
+      search(), // Added for standard search panel functionality
+      keymap.of(searchKeymap), // Added for standard search keybindings (Cmd/Ctrl-F)
+    ];
 
-  const extensions = [
-    // GraphQL language support with optional schema
-    graphql(builtSchema || undefined),
-    // Emacs-style incremental search (CodeMirror state field)
-    searchState, // This is the CodeMirror StateField, not React state
-    createSearchPlugin((state) => setReactSearchState(state)),
-    searchInputHandler,
-    syntaxHighlighting(graphQLHighlight),
-    EditorView.theme({
-      '&': {
-        fontSize: '14px',
-        position: 'relative',
-      },
-      '.cm-content': {
-        padding: '16px',
-        minHeight: height,
-      },
-      '.cm-focused': {
-        outline: 'none',
-      },
-      '.cm-editor': {
-        borderRadius: '8px',
-      },
-      '.cm-scroller': {
-        fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-      },
-      '.cm-activeLine': {
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-      },
-      '.cm-activeLineGutter': {
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-      },
-      '.cm-tooltip-autocomplete': {
-        backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
-        border: isDark ? '1px solid #404040' : '1px solid #d1d5db',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        minWidth: '200px',
-      },
-      '.cm-tooltip-autocomplete ul': {
-        maxHeight: '200px',
-        overflowY: 'auto',
-      },
-      '.cm-tooltip-autocomplete ul li': {
-        padding: '6px 12px',
-        cursor: 'pointer',
-        borderRadius: '4px',
-        margin: '1px 4px',
-        color: isDark ? '#e1e4e8' : '#24292e',
-        backgroundColor: 'transparent',
-        fontSize: '13px',
-        lineHeight: '1.4',
-      },
-      '.cm-tooltip-autocomplete ul li:hover': {
-        backgroundColor: isDark ? '#2d3748' : '#f7fafc',
-      },
-      '.cm-tooltip-autocomplete ul li[aria-selected]': {
-        backgroundColor: isDark ? '#3182ce' : '#2563eb',
-        color: '#ffffff',
-        fontWeight: '500',
-      },
-      '.cm-tooltip-autocomplete ul li[aria-selected]:hover': {
-        backgroundColor: isDark ? '#2c5aa0' : '#1d4ed8',
-      },
-      // Emacs-style search styling
-      '.cm-search-match': {
-        backgroundColor: isDark ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.3)',
-        border: isDark ? '1px solid rgba(255, 255, 0, 0.5)' : '1px solid rgba(255, 215, 0, 0.5)',
-      },
-      '.cm-search-current-match': {
-        backgroundColor: isDark ? 'rgba(255, 165, 0, 0.6)' : 'rgba(255, 140, 0, 0.6)',
-        border: isDark ? '2px solid rgba(255, 165, 0, 0.8)' : '2px solid rgba(255, 140, 0, 0.8)',
-        borderRadius: '2px',
-      },
-      // Mode line at bottom (Emacs-style)
-      '.cm-search-mode-line': {
-        position: 'relative !important',
-        backgroundColor: isDark ? '#2d3748 !important' : '#f1f5f9 !important',
-        color: isDark ? '#e2e8f0 !important' : '#334155 !important',
-        borderTop: isDark ? '1px solid #4a5568 !important' : '1px solid #cbd5e1 !important',
-        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important',
-      },
-      // Ensure editor container has relative positioning for mode line
-      '.cm-editor.cm-focused': {
-        position: 'relative',
-      },
-    }),
-    // Our custom keymap with HIGHEST precedence to override default Ctrl+K
-    Prec.highest(emacsSearchKeymap)
-  ];
+    if (builtSchema) { // Use builtSchema
+      extensions.push(
+        graphql(builtSchema), // Use builtSchema
+        // Add any other schema-specific extensions here
+      );
+    } else {
+      extensions.push(
+        graphql(), // Empty schema for syntax highlighting only
+      );
+    }
+
+    return extensions;
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState]); // Add dependencies
 
   const editorProps = {
     value,
     onChange: onChange || (() => {}),
-    extensions,
+    extensions: baseExtensions,
     readOnly,
     theme: isDark ? oneDark : undefined,
     placeholder,
