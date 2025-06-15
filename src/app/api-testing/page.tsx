@@ -580,7 +580,7 @@ export default function APITestingPage() {
                   </div>
                 </div>
                 
-                <div className="flex-grow p-0" style={{ minHeight: '250px' }}> {/* Ensure editor has enough space */}
+                <div className="flex-grow p-0 overflow-y-auto" style={{ minHeight: '250px' }}> {/* Added overflow-y-auto here */}
                   <EnhancedGraphQLEditor
                     value={queryInput}
                     onChange={setQueryInput}

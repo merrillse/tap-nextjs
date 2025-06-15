@@ -146,10 +146,13 @@ export function SaveQueryDialog({
       onClose={onClose} 
       maxWidth="sm" 
       fullWidth
-      style={{ zIndex: 10000 }}
-      BackdropProps={{
-        style: { zIndex: 9999 }
+      PaperProps={{
+        style: { zIndex: 2004 } // Explicitly set Paper z-index
       }}
+      BackdropProps={{
+        style: { zIndex: 2003 } // Backdrop z-index lower than Paper
+      }}
+      transitionDuration={0} // Disable enter/exit transitions
     >
       <DialogTitle>
         {editingQuery ? 'Update Query' : 'Save Query'}
@@ -352,10 +355,13 @@ export function QueryLibraryDialog({
       onClose={onClose} 
       maxWidth="md" 
       fullWidth 
-      style={{ zIndex: 9999 }}
-      BackdropProps={{
-        style: { zIndex: 9998 }
+      PaperProps={{
+        style: { zIndex: 2002 } // Explicitly set Paper z-index
       }}
+      BackdropProps={{
+        style: { zIndex: 2001 } // Backdrop z-index lower than Paper
+      }}
+      transitionDuration={0} // Disable enter/exit transitions
     >
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
