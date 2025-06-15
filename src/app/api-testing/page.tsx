@@ -288,7 +288,7 @@ Content-Type: application/json`
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">API Type</label>
                   <div className="flex space-x-4">
-                    {['graphql', 'rest'].map((type) => (
+                    {['graphql'].map((type) => (
                       <button
                         key={type}
                         onClick={() => {
