@@ -56,7 +56,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       icon: '🧪',
       items: [
         { name: 'GraphQL Testing', href: '/api-testing', icon: '🔧', description: 'Execute GraphQL queries with authentication' },
-        { name: 'MGQL Schema Browser', href: '/schema-browser', icon: '🔍', description: 'Explore MGQL schema structure' },
+        { name: 'GraphQL Schema Browser', href: '/schema-browser', icon: '🔍', description: 'Explore GraphQL schema structure for both MGQL and MOGS' },
         { name: 'Load Testing', href: '/load-testing', icon: '⚡', description: 'Performance testing' },
         { name: 'Debug Tools', href: '/debug', icon: '🐛', description: 'OAuth & API debugging' },
       ]
