@@ -24,7 +24,8 @@ import {
   IconButton, 
   Snackbar, 
   Alert,
-  Tooltip // Added Tooltip
+  Tooltip,
+  CircularProgress // Added CircularProgress
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
@@ -732,9 +733,12 @@ export default function APITestingPage() {
               <div className="flex-grow overflow-auto"> {/* This div will handle scrolling for tab panels */}
                 <TabPanel value={responseTabValue} index={0}>
                   {loading && (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      {/* ... loading spinner ... */}
-                    </div>
+                    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" textAlign="center">
+                      <CircularProgress />
+                      <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
+                        Fetching response...
+                      </Typography>
+                    </Box>
                   )}
                   {!loading && response?.data !== undefined && response.data !== null && (() => {
                     const stringifiedData: string = safeStringify(response.data);
