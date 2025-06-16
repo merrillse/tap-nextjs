@@ -86,62 +86,85 @@ const searchState = StateField.define<SearchState>({
   }
 });
 
-// Helper function to find all matches
+// Helper function to find all matches in the entire document (for search logic, not decorations)
 function findMatches(text: string, query: string): Range<Decoration>[] {
   if (!query) return [];
-  
   const matches: Range<Decoration>[] = [];
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
   let index = 0;
-  
   while ((index = lowerText.indexOf(lowerQuery, index)) !== -1) {
-    matches.push(Decoration.mark({
-      class: 'cm-search-match'
-    }).range(index, index + query.length));
+    matches.push(Decoration.mark({ class: 'cm-search-match' }).range(index, index + query.length));
     index += 1;
   }
-  
+  return matches;
+}
+
+// Helper function to find all matches (optimized: only scan visible ranges)
+function findMatchesInRanges(view: EditorView, query: string): Range<Decoration>[] {
+  if (!query) return [];
+  const matches: Range<Decoration>[] = [];
+  const lowerQuery = query.toLowerCase();
+  // Only scan visible ranges
+  for (const { from, to } of view.visibleRanges) {
+    const text = view.state.doc.sliceString(from, to).toLowerCase();
+    let index = 0;
+    while ((index = text.indexOf(lowerQuery, index)) !== -1) {
+      matches.push(Decoration.mark({ class: 'cm-search-match' }).range(from + index, from + index + query.length));
+      index += 1;
+    }
+  }
   return matches;
 }
 
 // View plugin for search decorations (no widget, just highlights)
 const createSearchPlugin = (updateSearchState: (state: unknown) => void) => ViewPlugin.fromClass(class {
   decorations: DecorationSet;
-  
+  lastState: any;
+  debouncedUpdateReactStateTimeout: NodeJS.Timeout | null = null; // For debouncing React state updates
+
   constructor(view: EditorView) {
     this.decorations = this.buildDecorations(view);
+    this.lastState = null;
   }
-  
+
   update(update: ViewUpdate) {
-    this.decorations = this.buildDecorations(update.view);
-    // Update React state when search state changes
+    // Only update if search state or visible ranges changed
     const search = update.view.state.field(searchState);
-    updateSearchState({
-      active: search.active,
-      query: search.query,
-      currentMatch: search.currentMatch,
-      totalMatches: search.matches.length
-    });
+    const visibleRangesString = update.view.visibleRanges.map(r => `${r.from}-${r.to}`).join(','); // Create a string representation for easy comparison
+    const stateKey = `${search.query}|${search.currentMatch}|${visibleRangesString}`;
+
+    if (this.lastState !== stateKey) {
+      this.decorations = this.buildDecorations(update.view);
+      this.lastState = stateKey;
+
+      // Debounce the React state update for the search UI
+      if (this.debouncedUpdateReactStateTimeout) {
+        clearTimeout(this.debouncedUpdateReactStateTimeout);
+      }
+      this.debouncedUpdateReactStateTimeout = setTimeout(() => {
+        updateSearchState({
+          active: search.active,
+          query: search.query,
+          currentMatch: search.currentMatch,
+          totalMatches: search.matches.length
+        });
+      }, 150); // Debounce delay of 150ms
+    }
   }
-  
+
   buildDecorations(view: EditorView): DecorationSet {
     const search = view.state.field(searchState);
     const decorations: Range<Decoration>[] = [];
-    
-    // Add match highlights
-    search.matches.forEach((match, index) => {
+    // Only decorate visible matches
+    const visibleMatches = findMatchesInRanges(view, search.query);
+    visibleMatches.forEach((match, index) => {
       if (index === search.currentMatch) {
-        // Current match gets special highlighting
-        decorations.push(Decoration.mark({
-          class: 'cm-search-current-match'
-        }).range(match.from, match.to));
+        decorations.push(Decoration.mark({ class: 'cm-search-current-match' }).range(match.from, match.to));
       } else {
-        // Regular match highlighting
         decorations.push(match);
       }
     });
-    
     return Decoration.set(decorations);
   }
 }, {
