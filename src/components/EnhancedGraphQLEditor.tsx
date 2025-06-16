@@ -6,8 +6,8 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow } from '@mui/icons-material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
@@ -571,6 +571,7 @@ interface EnhancedGraphQLEditorProps {
   onGenerateRandomQuery?: () => void;
   isGeneratingQuery?: boolean;
   onSaveQuery?: () => void;
+  onDuplicateQuery?: () => void;
   onShowLibrary?: () => void;
   canSaveQuery?: boolean;
 }
@@ -586,11 +587,13 @@ export function EnhancedGraphQLEditor({
   onGenerateRandomQuery,
   isGeneratingQuery = false,
   onSaveQuery,
+  onDuplicateQuery,
   onShowLibrary,
   canSaveQuery = false
 }: EnhancedGraphQLEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSidePanelLibrary, setShowSidePanelLibrary] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [reactSearchState, setReactSearchState] = useState({
     active: false,
     query: '',
@@ -979,7 +982,7 @@ export function EnhancedGraphQLEditor({
             )}
             
             {/* Query Management Buttons */}
-            {!readOnly && (onShowLibrary || onSaveQuery) && (
+            {!readOnly && (onShowLibrary || onSaveQuery || onDuplicateQuery) && (
               <>
                 {onGenerateRandomQuery && (
                   <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
@@ -1007,11 +1010,18 @@ export function EnhancedGraphQLEditor({
                     </IconButton>
                   </Tooltip>
                 )}
+                {onDuplicateQuery && (
+                  <Tooltip title="Duplicate Query">
+                    <IconButton size="small" onClick={onDuplicateQuery} disabled={!canSaveQuery}>
+                      <FileCopy fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </>
             )}
             
             {/* Editor Actions */}
-            {((onGenerateRandomQuery || onShowLibrary || onSaveQuery) && !readOnly) && (
+            {((onGenerateRandomQuery || onShowLibrary || onSaveQuery || onDuplicateQuery) && !readOnly) && (
               <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
             )}
             {!readOnly && (
@@ -1024,6 +1034,11 @@ export function EnhancedGraphQLEditor({
             <Tooltip title="Copy to clipboard">
               <IconButton size="small" onClick={handleCopy}>
                 <ContentCopy fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Keyboard shortcuts">
+              <IconButton size="small" onClick={() => setShowKeyboardShortcuts(true)}>
+                <Help fontSize="small" />
               </IconButton>
             </Tooltip>
             <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
@@ -1212,6 +1227,134 @@ export function EnhancedGraphQLEditor({
           )}
         </Box>
       </Paper>
+      
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog 
+        open={showKeyboardShortcuts} 
+        onClose={() => setShowKeyboardShortcuts(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Keyboard Shortcuts</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="h6" gutterBottom>Search & Replace</Typography>
+            <List dense>
+              <ListItem>
+                <ListItemText 
+                  primary="Find" 
+                  secondary={<><kbd>Cmd+F</kbd> (Mac) / <kbd>Ctrl+F</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Find and Replace" 
+                  secondary={<><kbd>Cmd+Option+F</kbd> (Mac) / <kbd>Ctrl+H</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Find Next" 
+                  secondary={<><kbd>Cmd+G</kbd> (Mac) / <kbd>F3</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Find Previous" 
+                  secondary={<><kbd>Cmd+Shift+G</kbd> (Mac) / <kbd>Shift+F3</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+            </List>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="h6" gutterBottom>Editing</Typography>
+            <List dense>
+              <ListItem>
+                <ListItemText 
+                  primary="Select All" 
+                  secondary={<><kbd>Cmd+A</kbd> (Mac) / <kbd>Ctrl+A</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Undo" 
+                  secondary={<><kbd>Cmd+Z</kbd> (Mac) / <kbd>Ctrl+Z</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Redo" 
+                  secondary={<><kbd>Cmd+Shift+Z</kbd> (Mac) / <kbd>Ctrl+Y</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Comment/Uncomment Line" 
+                  secondary={<><kbd>Cmd+/</kbd> (Mac) / <kbd>Ctrl+/</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Indent Line" 
+                  secondary={<kbd>Tab</kbd>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Unindent Line" 
+                  secondary={<kbd>Shift+Tab</kbd>}
+                />
+              </ListItem>
+            </List>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="h6" gutterBottom>Navigation</Typography>
+            <List dense>
+              <ListItem>
+                <ListItemText 
+                  primary="Go to Line" 
+                  secondary={<><kbd>Cmd+G</kbd> (Mac) / <kbd>Ctrl+G</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Jump to Matching Bracket" 
+                  secondary={<><kbd>Cmd+]</kbd> (Mac) / <kbd>Ctrl+]</kbd> (Windows/Linux)</>}
+                />
+              </ListItem>
+            </List>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="h6" gutterBottom>Editor Actions</Typography>
+            <List dense>
+              <ListItem>
+                <ListItemText 
+                  primary="Format GraphQL" 
+                  secondary="Click the format icon in the toolbar"
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Toggle Fullscreen" 
+                  secondary={<><kbd>ESC</kbd> to exit</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="AutoComplete" 
+                  secondary={<><kbd>Ctrl+Space</kbd> to trigger (when schema is loaded)</>}
+                />
+              </ListItem>
+            </List>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowKeyboardShortcuts(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

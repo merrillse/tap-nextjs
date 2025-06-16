@@ -118,6 +118,7 @@ export interface SaveQueryDialogProps {
   environment: string;
   proxyClient?: string; // Added proxy client
   editingQuery?: SavedQuery | null;
+  isDuplicating?: boolean; // For duplicate mode
 }
 
 export function SaveQueryDialog({
@@ -128,7 +129,8 @@ export function SaveQueryDialog({
   variables,
   environment,
   proxyClient,
-  editingQuery
+  editingQuery,
+  isDuplicating = false
 }: SaveQueryDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -137,11 +139,17 @@ export function SaveQueryDialog({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (editingQuery) {
+    if (editingQuery && !isDuplicating) {
       setName(editingQuery.name);
       setDescription(editingQuery.description || '');
       setTags(editingQuery.tags?.join(', ') || '');
       // editingQuery.variables is Record<string, unknown>, stringify for CodeEditor
+      setCurrentVariables(editingQuery.variables ? safeStringify(editingQuery.variables) : '{}');
+    } else if (isDuplicating && editingQuery) {
+      // For duplication, prefill but clear the name and add "Copy of" prefix
+      setName(`Copy of ${editingQuery.name}`);
+      setDescription(editingQuery.description || '');
+      setTags(editingQuery.tags?.join(', ') || '');
       setCurrentVariables(editingQuery.variables ? safeStringify(editingQuery.variables) : '{}');
     } else {
       setName('');
@@ -151,7 +159,7 @@ export function SaveQueryDialog({
       setCurrentVariables(variables || '{}');
     }
     setError('');
-  }, [editingQuery, open, variables]);
+  }, [editingQuery, open, variables, isDuplicating]);
 
   const handleSave = () => {
     setError(''); // Clear previous errors at the start of a save attempt
@@ -215,7 +223,7 @@ export function SaveQueryDialog({
       transitionDuration={0} // Disable enter/exit transitions
     >
       <DialogTitle>
-        {editingQuery ? 'Update Query' : 'Save Query'}
+        {isDuplicating ? 'Duplicate Query' : editingQuery ? 'Update Query' : 'Save Query'}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
@@ -279,6 +287,25 @@ export function SaveQueryDialog({
               Query will be associated with this environment.
             </Typography>
           </Box>
+          
+          {proxyClient && !environment.includes('mogs') && (
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom component="div">
+                Proxy Client: <Chip 
+                  label={(() => {
+                    const client = PROXY_CLIENTS.find(c => c.clientId === proxyClient);
+                    return client ? client.name : proxyClient;
+                  })()} 
+                  size="small"
+                  onClick={(e) => e.stopPropagation()}
+                  color="secondary"
+                />
+              </Typography>
+              <Typography variant="caption" color="text.secondary" component="div">
+                Query will use this proxy client for MGQL requests.
+              </Typography>
+            </Box>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>

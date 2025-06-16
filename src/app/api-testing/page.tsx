@@ -138,6 +138,7 @@ export default function APITestingPage() {
   const [generatingQuery, setGeneratingQuery] = useState(false);
   const [schema, setSchema] = useState<IntrospectionResult | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [showLibraryDialog, setShowLibraryDialog] = useState(false);
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [responseTabValue, setResponseTabValue] = useState(0);
@@ -466,6 +467,16 @@ export default function APITestingPage() {
     setShowSaveDialog(true);
   };
 
+  const handleDuplicateQuery = () => {
+    if (!queryInput.trim()) {
+      setError('No query to duplicate');
+      setResponseTabValue(2);
+      return;
+    }
+    setEditingQuery(null);
+    setShowDuplicateDialog(true);
+  };
+
   const handleQuerySaved = (savedQuery: SavedQuery) => {
     console.log('Query saved:', savedQuery.name);
   };
@@ -730,6 +741,7 @@ export default function APITestingPage() {
                     onGenerateRandomQuery={handleGenerateRandomQuery}
                     isGeneratingQuery={generatingQuery}
                     onSaveQuery={selectedEndpoint === 'graphql' ? handleSaveQuery : undefined}
+                    onDuplicateQuery={selectedEndpoint === 'graphql' ? handleDuplicateQuery : undefined}
                     onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
                     canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
                   />
@@ -975,6 +987,28 @@ export default function APITestingPage() {
             environment={selectedEnvironment}
             proxyClient={selectedProxyClient}
             editingQuery={editingQuery} // Changed from existingQuery to editingQuery
+          />
+        )}
+        {showDuplicateDialog && (
+          <SaveQueryDialog
+            open={showDuplicateDialog}
+            onClose={() => setShowDuplicateDialog(false)}
+            onSave={handleQuerySaved}
+            query={queryInput}
+            variables={graphqlVariables}
+            environment={selectedEnvironment}
+            proxyClient={selectedProxyClient}
+            editingQuery={{
+              id: `temp-${Date.now()}`,
+              name: 'Current Query',
+              query: queryInput,
+              variables: graphqlVariables ? JSON.parse(graphqlVariables) : {},
+              environment: selectedEnvironment,
+              proxyClient: selectedProxyClient,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }}
+            isDuplicating={true}
           />
         )}
         {showLibraryDialog && (
