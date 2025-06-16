@@ -1,5 +1,6 @@
 import { EnvironmentConfig } from './environments';
 import { getSelectedProxyClient } from './proxy-client';
+import { getCachedToken, setCachedToken, removeCachedToken } from './token-cache';
 
 export interface AuthToken {
   access_token: string;
@@ -28,10 +29,19 @@ export class ApiClient {
   }
 
   private async getAccessToken(): Promise<string> {
-    // Check if we have a valid token
+    // First, try to get a cached token
+    const cachedToken = getCachedToken(this.config, this.environmentKey);
+    if (cachedToken) {
+      this.token = cachedToken;
+      return cachedToken.access_token;
+    }
+
+    // Check if we have a valid token in instance
     if (this.token && Date.now() < this.token.expires_at) {
       return this.token.access_token;
     }
+
+    console.log(`🔄 Requesting new access token for ${this.environmentKey}...`);
 
     // Use server-side OAuth route to avoid CORS issues
     try {
@@ -46,6 +56,8 @@ export class ApiClient {
         return token;
       } catch (fallbackError) {
         console.error('Both auth methods failed via API:', fallbackError);
+        // Remove any cached token on failure
+        removeCachedToken(this.config, this.environmentKey);
         throw fallbackError;
       }
     }
@@ -82,6 +94,9 @@ export class ApiClient {
       scope: tokenData.scope,
     };
 
+    // Cache the token for reuse across pages/environments
+    setCachedToken(this.config, this.environmentKey, this.token);
+
     return this.token.access_token;
   }
 
@@ -116,6 +131,9 @@ export class ApiClient {
       scope: tokenData.scope,
     };
 
+    // Cache the token for reuse across pages/environments
+    setCachedToken(this.config, this.environmentKey, this.token);
+
     return this.token.access_token;
   }
 
@@ -148,6 +166,9 @@ export class ApiClient {
       expires_at: Date.now() + (tokenData.expires_in * 1000) - 60000, // 1 minute buffer
       scope: tokenData.scope,
     };
+
+    // Cache the token for reuse across pages/environments
+    setCachedToken(this.config, this.environmentKey, this.token);
 
     return this.token.access_token;
   }
@@ -245,5 +266,21 @@ export class ApiClient {
 
   getEnvironmentKey(): string {
     return this.environmentKey;
+  }
+
+  /**
+   * Force token refresh on next request
+   */
+  invalidateToken(): void {
+    this.token = null;
+    removeCachedToken(this.config, this.environmentKey);
+  }
+
+  /**
+   * Check if there's a valid cached token available
+   */
+  hasCachedToken(): boolean {
+    const cached = getCachedToken(this.config, this.environmentKey);
+    return cached !== null;
   }
 }

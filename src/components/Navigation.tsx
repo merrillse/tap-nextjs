@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import EnvironmentIndicator from './EnvironmentIndicator';
+import TokenCacheManager from './TokenCacheManager';
 
 interface NavItem {
   name: string;
@@ -81,6 +82,9 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Token Cache Manager - Handles automatic cleanup of expired tokens */}
+      <TokenCacheManager />
+      
       {/* Left Sidebar */}
       <div className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg border-r border-gray-200 transition-all duration-300 flex flex-col`}>
         {/* Sidebar Header */}

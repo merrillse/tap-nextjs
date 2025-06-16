@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, type JSX, useRef } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
+import { cleanupExpiredTokens } from '@/lib/token-cache';
 import { safeStringify } from '@/lib/utils';
 import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } from '@/lib/random-query-generator';
 import { type SavedQuery } from '@/lib/query-library';
@@ -208,6 +209,9 @@ export default function APITestingPage() {
 
     const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
     setSelectedProxyClient(savedProxyClient);
+
+    // Clean up expired tokens on page load
+    cleanupExpiredTokens();
 
     // Robust loading for graphqlVariables
     let savedVars = localStorage.getItem('graphqlVariables');
@@ -927,7 +931,7 @@ export default function APITestingPage() {
                     {apiClient.getCurrentToken() && (
                       <div className="mt-3 p-3 bg-green-50 rounded-lg">
                         <div className="text-xs text-green-700">
-                          <p className="font-medium">✓ Access token acquired</p>
+                          <p className="font-medium">✓ Access token acquired {apiClient.hasCachedToken() ? '(cached)' : '(fresh)'}</p>
                           <p>Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
                         </div>
                       </div>

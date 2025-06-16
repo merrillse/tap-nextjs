@@ -38,6 +38,7 @@ import {
 import { SelectChangeEvent } from '@mui/material/Select';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
+import { cleanupExpiredTokens } from '@/lib/token-cache';
 import GraphQLPageHeader from '@/components/GraphQLPageHeader';
 
 // GraphQL Schema Types
@@ -449,6 +450,9 @@ export default function SchemaBrowserPage() {
     
     const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
     setSelectedProxyClient(savedProxyClient);
+
+    // Clean up expired tokens on page load
+    cleanupExpiredTokens();
   }, []);
 
   const handleEnvironmentChange = (event: SelectChangeEvent) => {
