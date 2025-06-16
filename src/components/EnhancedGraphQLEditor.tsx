@@ -6,11 +6,11 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
-import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
+import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
@@ -106,7 +106,7 @@ function findMatches(text: string, query: string): Range<Decoration>[] {
 }
 
 // View plugin for search decorations (no widget, just highlights)
-const createSearchPlugin = (updateSearchState: (state: any) => void) => ViewPlugin.fromClass(class {
+const createSearchPlugin = (updateSearchState: (state: unknown) => void) => ViewPlugin.fromClass(class {
   decorations: DecorationSet;
   
   constructor(view: EditorView) {
@@ -363,8 +363,8 @@ const emacsSearchKeymap = keymap.of([
         const newQuery = search.query.slice(0, -1);
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: any = { effects: setSearchQuery.of(newQuery) };
-        
+        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
+
         // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
           transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
@@ -501,8 +501,8 @@ const searchInputHandler = EditorView.domEventHandlers({
         const newQuery = search.query.slice(0, -1);
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: any = { effects: setSearchQuery.of(newQuery) };
-        
+        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
+
         // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
           transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
@@ -522,8 +522,8 @@ const searchInputHandler = EditorView.domEventHandlers({
         const newQuery = search.query + event.key;
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: any = { effects: setSearchQuery.of(newQuery) };
-        
+        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
+
         // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
           transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
@@ -545,7 +545,7 @@ interface EnhancedGraphQLEditorProps {
   placeholder?: string;
   height?: string;
   label?: string;
-  schema?: any; // GraphQL schema from introspection
+  schema?: Record<string, unknown>; // GraphQL schema from introspection
   readOnly?: boolean;
   onGenerateRandomQuery?: () => void;
   isGeneratingQuery?: boolean;
@@ -588,7 +588,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     currentMatch: -1,
     totalMatches: 0
   });
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
 
   // Debug fullscreen state changes
@@ -901,6 +901,21 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
   };
 
+  // Refactor nested ternary for outline
+  let outlineStyle = 'none';
+  if (hasFocus) {
+    outlineStyle = '2px solid #1976d2';
+  } else if (isFullscreen) {
+    outlineStyle = '5px solid red';
+  }
+  // Refactor nested ternary for outlineOffset
+  let outlineOffsetStyle = '0';
+  if (hasFocus) {
+    outlineOffsetStyle = '-2px';
+  } else if (isFullscreen) {
+    outlineOffsetStyle = '-5px';
+  }
+
   return (
     <>
       {/* Fullscreen Backdrop - Render before Paper so it appears behind */}
@@ -947,8 +962,8 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             margin: 0
           }),
           // Focus indication
-          outline: hasFocus ? '2px solid #1976d2' : (isFullscreen ? '5px solid red' : 'none'),
-          outlineOffset: hasFocus ? '-2px' : (isFullscreen ? '-5px' : '0'),
+          outline: outlineStyle,
+          outlineOffset: outlineOffsetStyle,
           transition: 'outline 0.2s ease-in-out'
         }}
       >
@@ -1425,10 +1440,6 @@ function generateJumpLabels(count: number): string[] {
 }
 
 // Ace Jump decoration
-const aceJumpLabelDecoration = Decoration.mark({
-  class: 'ace-jump-label'
-});
-
 const aceJumpHighlightDecoration = Decoration.mark({
   class: 'ace-jump-highlight'
 });
