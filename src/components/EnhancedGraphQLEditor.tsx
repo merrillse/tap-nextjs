@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help, NoteAdd } from '@mui/icons-material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
@@ -663,6 +663,7 @@ interface EnhancedGraphQLEditorProps {
   onDuplicateQuery?: () => void;
   onShowLibrary?: () => void;
   onNewQuery?: () => void;
+  onShowSchemaBrowser?: () => void;
   canSaveQuery?: boolean;
   onExecute?: () => void; // Added for Ctrl+Enter functionality
   onSwitchFocus?: () => void; // Added for Ctrl+X O functionality
@@ -683,6 +684,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   onDuplicateQuery,
   onShowLibrary,
   onNewQuery,
+  onShowSchemaBrowser,
   canSaveQuery = false,
   onExecute,
   onSwitchFocus,
@@ -965,6 +967,16 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             }
             return false;
           }
+        },
+        {
+          key: 'Ctrl-Shift-s',
+          run() {
+            if (onShowSchemaBrowser) {
+              onShowSchemaBrowser();
+              return true;
+            }
+            return false;
+          }
         }
       ]),
       searchState, // State for Emacs-style search
@@ -1126,7 +1138,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             )}
             
             {/* Query Management Buttons */}
-            {!readOnly && (onShowLibrary || onNewQuery || onSaveQuery || onDuplicateQuery) && (
+            {!readOnly && (onShowLibrary || onShowSchemaBrowser || onNewQuery || onSaveQuery || onDuplicateQuery) && (
               <>
                 {onGenerateRandomQuery && (
                   <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
@@ -1144,6 +1156,17 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                       }}
                     >
                       <LibraryBooks fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {onShowSchemaBrowser && !isFullscreen && (
+                  <Tooltip title="Schema Browser (Ctrl+Shift+S)">
+                    <IconButton 
+                      size="small" 
+                      onClick={onShowSchemaBrowser}
+                      color="default"
+                    >
+                      <Schema fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -1172,7 +1195,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             )}
             
             {/* Editor Actions */}
-            {((onGenerateRandomQuery || onShowLibrary || onNewQuery || onSaveQuery || onDuplicateQuery) && !readOnly) && (
+            {((onGenerateRandomQuery || onShowLibrary || onShowSchemaBrowser || onNewQuery || onSaveQuery || onDuplicateQuery) && !readOnly) && (
               <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
             )}
             {!readOnly && (
@@ -1503,6 +1526,12 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                 <ListItemText 
                   primary="Switch Focus" 
                   secondary={<><kbd>Ctrl+X O</kbd> - Switch between editor and response panel</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Schema Browser" 
+                  secondary={<><kbd>Ctrl+Shift+S</kbd> - Open the GraphQL schema browser</>}
                 />
               </ListItem>
               <ListItem>

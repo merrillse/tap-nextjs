@@ -8,6 +8,7 @@ import { safeStringify } from '@/lib/utils';
 import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } from '@/lib/random-query-generator';
 import { type SavedQuery } from '@/lib/query-library';
 import { SaveQueryDialog, QueryLibraryDialog } from '@/components/QueryLibraryDialog';
+import { SchemaBrowserDrawer } from '@/components/SchemaBrowserDrawer';
 import { 
   FormControl, 
   InputLabel, 
@@ -141,6 +142,7 @@ export default function APITestingPage() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [showLibraryDialog, setShowLibraryDialog] = useState(false);
+  const [showSchemaBrowserDrawer, setShowSchemaBrowserDrawer] = useState(false);
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [responseTabValue, setResponseTabValue] = useState(0);
   const [isResponsePanelFullscreen, setIsResponsePanelFullscreen] = useState(false);
@@ -573,6 +575,103 @@ export default function APITestingPage() {
     }
   };
 
+  // Schema Browser handlers
+  const handleShowSchemaBrowser = () => {
+    setShowSchemaBrowserDrawer(true);
+  };
+
+  const handleCloseSchemaBrowser = () => {
+    setShowSchemaBrowserDrawer(false);
+  };
+
+  // Insert type name at cursor position in the editor
+  const handleInsertType = (typeName: string) => {
+    const currentValue = queryInput;
+    // Insert at the end for now - could be enhanced to insert at cursor position
+    const newValue = currentValue + (currentValue.trim() ? '\n' : '') + typeName;
+    setQueryInput(newValue);
+    
+    // Show feedback
+    setCopySnackbarMessage(`Type "${typeName}" inserted`);
+    setCopySnackbarOpen(true);
+    
+    // Focus the editor
+    setTimeout(() => {
+      if (editorRef.current) {
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
+  // Insert field name and optionally build query structure
+  const handleInsertField = (fieldName: string, typeName: string) => {
+    const currentValue = queryInput;
+    // Insert field name - could be enhanced to be context-aware
+    const newValue = currentValue + (currentValue.trim() ? '\n' : '') + fieldName;
+    setQueryInput(newValue);
+    
+    // Show feedback
+    setCopySnackbarMessage(`Field "${fieldName}" inserted`);
+    setCopySnackbarOpen(true);
+    
+    // Focus the editor
+    setTimeout(() => {
+      if (editorRef.current) {
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
+  // Generate a query skeleton from a GraphQL type
+  const handleGenerateQuery = (type: any) => {
+    if (!type || !type.fields) return;
+    
+    // Generate a basic query structure
+    const typeName = type.name;
+    const rootField = typeName.toLowerCase();
+    
+    // Build field list (first few fields as example)
+    const fields = type.fields
+      .slice(0, 5) // Limit to first 5 fields
+      .map((field: any) => {
+        if (field.type.kind === 'SCALAR' || field.type.name === 'String' || field.type.name === 'Int' || field.type.name === 'Boolean') {
+          return `    ${field.name}`;
+        } else {
+          return `    ${field.name} {\n      # Add nested fields here\n    }`;
+        }
+      })
+      .join('\n');
+
+    const queryTemplate = `query Get${typeName} {
+  ${rootField} {
+${fields}
+  }
+}`;
+
+    setQueryInput(queryTemplate);
+    
+    // Show feedback
+    setCopySnackbarMessage(`Query skeleton for "${typeName}" generated`);
+    setCopySnackbarOpen(true);
+    
+    // Close the schema browser and focus the editor
+    setShowSchemaBrowserDrawer(false);
+    setTimeout(() => {
+      if (editorRef.current) {
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
   const handleSelectQuery = (query: SavedQuery) => {
     setQueryInput(query.query);
     setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}'); // Stringify variables
@@ -876,6 +975,7 @@ export default function APITestingPage() {
                     onDuplicateQuery={selectedEndpoint === 'graphql' ? handleDuplicateQuery : undefined}
                     onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
                     onNewQuery={selectedEndpoint === 'graphql' ? handleNewQuery : undefined}
+                    onShowSchemaBrowser={selectedEndpoint === 'graphql' ? handleShowSchemaBrowser : undefined}
                     canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
@@ -1181,6 +1281,18 @@ export default function APITestingPage() {
               // For now, just loads it into editor, user can click save
             }}
             currentEnvironment={selectedEnvironment} // Added missing currentEnvironment prop
+          />
+        )}
+        {showSchemaBrowserDrawer && (
+          <SchemaBrowserDrawer
+            open={showSchemaBrowserDrawer}
+            onClose={handleCloseSchemaBrowser}
+            onInsertType={handleInsertType}
+            onInsertField={handleInsertField}
+            onGenerateQuery={handleGenerateQuery}
+            schema={schema}
+            loading={loading}
+            error={error}
           />
         )}
         
