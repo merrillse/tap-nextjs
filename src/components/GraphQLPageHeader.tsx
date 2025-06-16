@@ -154,14 +154,17 @@ export default function GraphQLPageHeader({
                 renderInput={(params) => (
                   <TextField {...params} label="Proxy Client" />
                 )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.name}</span>
-                      <span className="text-xs text-gray-500 font-mono">{option.clientId}</span>
-                    </div>
-                  </li>
-                )}
+                renderOption={(props, option) => {
+                  const { key, ...otherProps } = props;
+                  return (
+                    <li key={key} {...otherProps}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.name}</span>
+                        <span className="text-xs text-gray-500 font-mono">{option.clientId}</span>
+                      </div>
+                    </li>
+                  );
+                }}
               />
             )}
             

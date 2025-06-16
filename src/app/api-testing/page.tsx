@@ -69,7 +69,6 @@ function a11yProps(index: number) {
 
 // Available proxy clients - sorted by name for easy discovery
 const proxyClients = [
-  { name: 'Primary', clientId: '0oak0jqakvevwjWrp357' },
   { name: 'CCDOPS - Church Calendar', clientId: '0oa17jzhwi9uusIoz358' },
   { name: 'CCDOPS - Church Calendar [non-prod]', clientId: '0oaki3kbszeewJmMX357' },
   { name: 'CCDOPS - Church Calendar [PROD]', clientId: '0oaki3swtbO6fOZ9x357' },
@@ -598,7 +597,7 @@ export default function APITestingPage() {
                         <p className="text-slate-500 text-sm">Define your GraphQL operation</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center">
                       {/* Environment Selector */}
                       <FormControl size="small" sx={{ minWidth: 160 }}>
                         <InputLabel id="query-environment-select-label">Environment</InputLabel>
@@ -636,7 +635,7 @@ export default function APITestingPage() {
                       
                       {/* Proxy Client Selector - Only for MGQL environments */}
                       {!selectedEnvironment.includes('mogs') && (
-                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <FormControl size="small" sx={{ minWidth: 200, ml: '8px' }}>
                           <InputLabel id="query-proxy-client-select-label">Proxy Client</InputLabel>
                           <Select
                             labelId="query-proxy-client-select-label"
@@ -677,6 +676,7 @@ export default function APITestingPage() {
                           sx={{
                             backgroundColor: 'white',
                             border: '1px solid #e5e7eb',
+                            ml: '8px',
                             '&:hover': {
                               backgroundColor: '#f9fafb',
                             }
@@ -688,26 +688,34 @@ export default function APITestingPage() {
                         </IconButton>
                       </Tooltip>
                       
-                      {/* Execute Button */}
-                      <Button
-                        variant="contained"
-                        onClick={handleTest}
-                        disabled={loading}
-                        size="medium"
-                        sx={{
-                          minWidth: 110,
-                          fontWeight: 'medium',
-                        }}
-                        startIcon={loading ? (
-                          <div className="w-4 h-4 border-2 border-inherit border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" />
-                          </svg>
-                        )}
-                      >
-                        {loading ? 'Executing...' : 'Execute'}
-                      </Button>
+                      {/* Execute Button - Play Icon */}
+                      <Tooltip title={loading ? "Executing query..." : "Execute GraphQL query"}>
+                        <IconButton
+                          onClick={handleTest}
+                          disabled={loading}
+                          size="medium"
+                          sx={{
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            ml: '8px',
+                            '&:hover': {
+                              backgroundColor: '#2563eb',
+                            },
+                            '&:disabled': {
+                              backgroundColor: '#9ca3af',
+                              color: 'white',
+                            }
+                          }}
+                        >
+                          {loading ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          )}
+                        </IconButton>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
