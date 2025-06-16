@@ -155,7 +155,8 @@ export class ApiClient {
   async executeGraphQLQuery(
     query: string, 
     variables: Record<string, unknown> = {},
-    customHeaders: Record<string, string> = {}
+    customHeaders: Record<string, string> = {},
+    proxyClient?: string
   ): Promise<GraphQLResponse> {
     const accessToken = await this.getAccessToken();
     const requestBody = JSON.stringify({ query, variables });
@@ -168,7 +169,7 @@ export class ApiClient {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Cache-Control': 'no-cache',
-      'proxy-client': getSelectedProxyClient(),
+      'proxy-client': proxyClient || getSelectedProxyClient(),
       'x-selected-environment': this.environmentKey || 'mis-gql-stage',
       ...customHeaders, // Spread custom headers here
     };

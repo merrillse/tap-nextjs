@@ -413,15 +413,36 @@ export default function APITestingPage() {
         console.log(`[Apex Debug] Executing GraphQL query for endpoint: ${selectedEndpoint}`);
         console.log(`[Apex Debug] Query: ${queryInput}`);
         
-        // Capture request details before sending
+        // Capture request details before sending - include ALL headers that will be sent
         const requestDetailsToStore = {
           query: queryInput,
           variables: parsedVariables,
         };
-        setSentRequestBody(safeStringify(requestDetailsToStore));
-        setSentRequestHeaders(parsedHeaders as Record<string, string>);
+        
+        // Build the complete headers object that will actually be sent to the proxy
+        // This includes system headers (proxy-client, environment) + user's custom headers
+        // Note: The OAuth token is sent in the request body and converted to Authorization header by the proxy
+        const completeHeaders = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+          'proxy-client': selectedProxyClient,
+          'x-selected-environment': selectedEnvironment,
+          ...parsedHeaders, // User's custom headers override defaults
+        };
+        
+        // Store the complete request details including authentication info
+        const completeRequestDetails = {
+          query: queryInput,
+          variables: parsedVariables,
+          access_token: apiClient.getCurrentToken() ? `${apiClient.getCurrentToken()!.access_token.substring(0, 20)}...` : null,
+          note: "Access token is sent in request body and converted to 'Authorization: Bearer <token>' header by the Next.js proxy"
+        };
+        
+        setSentRequestBody(safeStringify(completeRequestDetails));
+        setSentRequestHeaders(completeHeaders);
 
-        const result = await apiClient.executeGraphQLQuery(queryInput, parsedVariables, parsedHeaders as Record<string, string>);
+        const result = await apiClient.executeGraphQLQuery(queryInput, parsedVariables, parsedHeaders as Record<string, string>, selectedProxyClient);
         console.log('[Apex Debug] GraphQL execution result:', result);
         const executionTime = Date.now() - startTime;
         
@@ -849,12 +870,12 @@ export default function APITestingPage() {
               {sentRequestBody && sentRequestHeaders && (
                 <Accordion sx={{ borderRadius: '1rem', boxShadow: 'lg', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }} defaultExpanded={false}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="sent-request-content" id="sent-request-header" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Typography variant="subtitle1" fontWeight="medium">Sent Request Details</Typography>
+                    <Typography variant="subtitle1" fontWeight="medium">Sent Request Details & Authentication Flow</Typography>
                   </AccordionSummary>
                   <AccordionDetails sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Box>
                       <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                        Request Body
+                        Request Body (Sent to Next.js Proxy)
                       </Typography>
                       <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
                         <JSONViewer value={sentRequestBody} />
@@ -862,11 +883,16 @@ export default function APITestingPage() {
                     </Box>
                     <Box>
                       <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                        Request Headers
+                        Request Headers (Sent to Next.js Proxy)
                       </Typography>
                       <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
                         <JSONViewer value={safeStringify(sentRequestHeaders)} />
                       </Paper>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                        💡 <strong>Authentication Flow:</strong> The Next.js proxy extracts the access_token from the request body and forwards it to the GraphQL server as an <code>Authorization: Bearer &lt;token&gt;</code> header, along with additional headers like <code>proxy-client</code> and <code>User-Agent</code>.
+                      </Typography>
                     </Box>
                   </AccordionDetails>
                 </Accordion>
