@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, type JSX } from 'react';
+import { useState, useEffect, useMemo, type JSX, useRef } from 'react';
 import { getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 import { safeStringify } from '@/lib/utils';
@@ -150,6 +150,11 @@ export default function APITestingPage() {
   const [sentRequestBody, setSentRequestBody] = useState<string | null>(null);
   const [sentRequestHeaders, setSentRequestHeaders] = useState<Record<string, string> | null>(null);
 
+  // State for focus management (Ctrl+X O functionality)
+  const [currentFocus, setCurrentFocus] = useState<'editor' | 'response'>('editor');
+  const editorRef = useRef<HTMLDivElement>(null);
+  const responseRef = useRef<HTMLDivElement>(null);
+
   const handleResponseTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setResponseTabValue(newValue);
   };
@@ -164,6 +169,37 @@ export default function APITestingPage() {
   };
 
   const environmentOptions = getEnvironmentNames();
+
+  // Focus switching handler for Ctrl+X O
+  const handleSwitchFocus = () => {
+    if (currentFocus === 'editor') {
+      // Switch to response panel
+      setCurrentFocus('response');
+      if (responseRef.current) {
+        // Focus on the response panel - try to focus on the first focusable element
+        const focusableElements = responseRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+          (focusableElements[0] as HTMLElement).focus();
+        } else {
+          responseRef.current.focus();
+        }
+      }
+    } else {
+      // Switch back to editor
+      setCurrentFocus('editor');
+      if (editorRef.current) {
+        // Try to focus on the CodeMirror editor
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+        } else {
+          editorRef.current.focus();
+        }
+      }
+    }
+  };
 
   // Load saved environment on component mount
   useEffect(() => {
@@ -559,6 +595,31 @@ export default function APITestingPage() {
     setCopySnackbarOpen(false);
   };
 
+  // Global keyboard event handler for focus switching
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+X O: Switch focus between editor and response panel
+      if (event.ctrlKey && event.key === 'x') {
+        // We need to wait for the next key press (o)
+        const handleNextKey = (nextEvent: KeyboardEvent) => {
+          if (nextEvent.key === 'o' || nextEvent.key === 'O') {
+            nextEvent.preventDefault();
+            nextEvent.stopPropagation();
+            handleSwitchFocus();
+          }
+          document.removeEventListener('keydown', handleNextKey);
+        };
+        document.addEventListener('keydown', handleNextKey);
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [currentFocus]); // Re-add listener when currentFocus changes
+
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 ${isResponsePanelFullscreen ? 'overflow-hidden' : ''}`}>
       
@@ -733,6 +794,7 @@ export default function APITestingPage() {
                 
                 <div className="flex-grow p-0 overflow-y-auto" style={{ minHeight: '250px' }}> {/* Added overflow-y-auto here */}
                   <EnhancedGraphQLEditor
+                    ref={editorRef}
                     value={queryInput}
                     onChange={setQueryInput}
                     placeholder="Enter your GraphQL query here..."
@@ -745,6 +807,8 @@ export default function APITestingPage() {
                     onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
                     canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
+                    onSwitchFocus={handleSwitchFocus}
+                    hasFocus={currentFocus === 'editor'}
                   />
                 </div>
               </Paper>
@@ -846,8 +910,15 @@ export default function APITestingPage() {
           {/* Response Panel - Right Side */}
           <div className={`flex flex-col space-y-6 h-full ${isResponsePanelFullscreen ? 'col-span-2 w-full h-full fixed inset-0 z-[2000]' : ''}`}>
             <Paper 
+              ref={responseRef}
               elevation={isResponsePanelFullscreen ? 12 : 2} 
               className={`bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full ${isResponsePanelFullscreen ? '!rounded-none' : ''}`}
+              tabIndex={-1} // Make the panel focusable
+              sx={{
+                outline: currentFocus === 'response' ? '2px solid #1976d2' : 'none',
+                outlineOffset: '-2px',
+                transition: 'outline 0.2s ease-in-out'
+              }}
             >
               {/* Updated Header for API Response Panel */}
               <div className="bg-slate-50 p-3 border-b border-slate-200">

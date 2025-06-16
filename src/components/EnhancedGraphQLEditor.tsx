@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
@@ -664,9 +664,11 @@ interface EnhancedGraphQLEditorProps {
   onShowLibrary?: () => void;
   canSaveQuery?: boolean;
   onExecute?: () => void; // Added for Ctrl+Enter functionality
+  onSwitchFocus?: () => void; // Added for Ctrl+X O functionality
+  hasFocus?: boolean; // Added to track focus state for visual feedback
 }
 
-export function EnhancedGraphQLEditor({
+export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLEditorProps>(function EnhancedGraphQLEditor({
   value,
   onChange,
   placeholder,
@@ -680,8 +682,10 @@ export function EnhancedGraphQLEditor({
   onDuplicateQuery,
   onShowLibrary,
   canSaveQuery = false,
-  onExecute
-}: EnhancedGraphQLEditorProps) {
+  onExecute,
+  onSwitchFocus,
+  hasFocus = false
+}, ref) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSidePanelLibrary, setShowSidePanelLibrary] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -938,13 +942,23 @@ export function EnhancedGraphQLEditor({
       Prec.high(keymap.of(completionKeymap)), // Ensure completion keymap has high precedence
       Prec.high(searchInputHandler), // Add the searchInputHandler with high precedence
       Prec.high(emacsSearchKeymap), // High precedence for Emacs-style search and completion navigation
-      // Custom keymap for Ctrl+Enter execute
+      // Custom keymap for Ctrl+Enter execute and Ctrl+X O focus switching
       keymap.of([
         {
           key: 'Ctrl-Enter',
           run() {
             if (onExecute) {
               onExecute();
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          key: 'Ctrl-x o',
+          run() {
+            if (onSwitchFocus) {
+              onSwitchFocus();
               return true;
             }
             return false;
@@ -1014,6 +1028,7 @@ export function EnhancedGraphQLEditor({
       )}
       
       <Paper 
+        ref={ref}
         elevation={isFullscreen ? 24 : 1}
         data-testid="graphql-editor-paper"
         sx={{ 
@@ -1038,7 +1053,11 @@ export function EnhancedGraphQLEditor({
             outlineOffset: '-5px',
             padding: 0,
             margin: 0
-          })
+          }),
+          // Focus indication
+          outline: hasFocus ? '2px solid #1976d2' : (isFullscreen ? '5px solid red' : 'none'),
+          outlineOffset: hasFocus ? '-2px' : (isFullscreen ? '-5px' : '0'),
+          transition: 'outline 0.2s ease-in-out'
         }}
       >
         {/* Main Content Area */}
@@ -1473,6 +1492,12 @@ export function EnhancedGraphQLEditor({
               </ListItem>
               <ListItem>
                 <ListItemText 
+                  primary="Switch Focus" 
+                  secondary={<><kbd>Ctrl+X O</kbd> - Switch between editor and response panel</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
                   primary="Format GraphQL" 
                   secondary="Click the format icon in the toolbar"
                 />
@@ -1510,7 +1535,7 @@ export function EnhancedGraphQLEditor({
       </Dialog>
     </>
   );
-}
+});
 
 // Ace Jump functionality
 interface AceJumpState {
