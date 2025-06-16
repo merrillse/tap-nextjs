@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help } from '@mui/icons-material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, PlayArrow, FileCopy, Help, NoteAdd } from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec, EditorState } from '@codemirror/state';
@@ -662,6 +662,7 @@ interface EnhancedGraphQLEditorProps {
   onSaveQuery?: () => void;
   onDuplicateQuery?: () => void;
   onShowLibrary?: () => void;
+  onNewQuery?: () => void;
   canSaveQuery?: boolean;
   onExecute?: () => void; // Added for Ctrl+Enter functionality
   onSwitchFocus?: () => void; // Added for Ctrl+X O functionality
@@ -681,6 +682,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   onSaveQuery,
   onDuplicateQuery,
   onShowLibrary,
+  onNewQuery,
   canSaveQuery = false,
   onExecute,
   onSwitchFocus,
@@ -1124,7 +1126,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             )}
             
             {/* Query Management Buttons */}
-            {!readOnly && (onShowLibrary || onSaveQuery || onDuplicateQuery) && (
+            {!readOnly && (onShowLibrary || onNewQuery || onSaveQuery || onDuplicateQuery) && (
               <>
                 {onGenerateRandomQuery && (
                   <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
@@ -1142,6 +1144,13 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                       }}
                     >
                       <LibraryBooks fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {onNewQuery && (
+                  <Tooltip title="New Query">
+                    <IconButton size="small" onClick={onNewQuery}>
+                      <NoteAdd fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -1163,7 +1172,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             )}
             
             {/* Editor Actions */}
-            {((onGenerateRandomQuery || onShowLibrary || onSaveQuery || onDuplicateQuery) && !readOnly) && (
+            {((onGenerateRandomQuery || onShowLibrary || onNewQuery || onSaveQuery || onDuplicateQuery) && !readOnly) && (
               <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
             )}
             {!readOnly && (

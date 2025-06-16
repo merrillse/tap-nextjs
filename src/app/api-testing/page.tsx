@@ -213,6 +213,15 @@ export default function APITestingPage() {
     // Clean up expired tokens on page load
     cleanupExpiredTokens();
 
+    // Load saved query input
+    const savedQuery = localStorage.getItem('queryInput');
+    if (savedQuery) {
+      setQueryInput(savedQuery);
+    } else {
+      // Only set default query if no saved query exists
+      setQueryInput(sampleQueries[selectedEndpoint as keyof typeof sampleQueries]);
+    }
+
     // Robust loading for graphqlVariables
     let savedVars = localStorage.getItem('graphqlVariables');
     try {
@@ -240,6 +249,13 @@ export default function APITestingPage() {
     setHttpHeaders(savedHeaders);
 
   }, []);
+
+  // Save query input to local storage whenever it changes
+  useEffect(() => {
+    if (queryInput) {
+      localStorage.setItem('queryInput', queryInput);
+    }
+  }, [queryInput]);
 
   // Save variables and headers to local storage
   useEffect(() => {
@@ -341,13 +357,6 @@ export default function APITestingPage() {
 }`
   }), []);
 
-  // Set initial query
-  useEffect(() => {
-    if (!queryInput) {
-      setQueryInput(sampleQueries[selectedEndpoint as keyof typeof sampleQueries]);
-    }
-  }, [selectedEndpoint, queryInput, sampleQueries]);
-
   const handleTest = async () => {
     console.log('[Apex Debug] handleTest called');
 
@@ -425,7 +434,7 @@ export default function APITestingPage() {
         
         // Build the complete headers object that will actually be sent to the proxy
         // This includes system headers (proxy-client, environment) + user's custom headers
-        // Note: The OAuth token is sent in the request body and converted to Authorization header by the proxy
+        // Note: The OAuth token is sent in the request body and converted to 'Authorization' header by the proxy
         const completeHeaders = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -542,11 +551,47 @@ export default function APITestingPage() {
     console.log('Query saved:', savedQuery.name);
   };
 
+  const handleNewQuery = () => {
+    const confirmed = confirm('Start a new query? This will clear the current editor content.');
+    if (confirmed) {
+      setQueryInput('');
+      setGraphqlVariables('{}');
+      localStorage.removeItem('queryInput'); // Clear saved query
+      // Show feedback
+      setCopySnackbarMessage('Started new query');
+      setCopySnackbarOpen(true);
+      
+      // Focus the editor
+      setTimeout(() => {
+        if (editorRef.current) {
+          const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+          if (cmEditor) {
+            (cmEditor as HTMLElement).focus();
+          }
+        }
+      }, 100);
+    }
+  };
+
   const handleSelectQuery = (query: SavedQuery) => {
     setQueryInput(query.query);
     setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}'); // Stringify variables
     // We don't save/load HTTP headers with queries for now
     setShowLibraryDialog(false);
+    
+    // Show feedback that query was loaded
+    setCopySnackbarMessage(`Query "${query.name}" loaded successfully`);
+    setCopySnackbarOpen(true);
+    
+    // Focus the editor after a brief delay to allow dialog to close
+    setTimeout(() => {
+      if (editorRef.current) {
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+        }
+      }
+    }, 100);
     
     if (query.environment !== selectedEnvironment) {
       const switchEnv = confirm(
@@ -830,6 +875,7 @@ export default function APITestingPage() {
                     onSaveQuery={selectedEndpoint === 'graphql' ? handleSaveQuery : undefined}
                     onDuplicateQuery={selectedEndpoint === 'graphql' ? handleDuplicateQuery : undefined}
                     onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
+                    onNewQuery={selectedEndpoint === 'graphql' ? handleNewQuery : undefined}
                     canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
@@ -914,7 +960,7 @@ export default function APITestingPage() {
                         <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
+                        </svg>
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">Authentication Status</h3>
