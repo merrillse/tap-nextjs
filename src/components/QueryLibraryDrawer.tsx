@@ -1,17 +1,15 @@
 /**
- * Query Library Component
- * UI for managing saved GraphQL queries
+ * Query Library Drawer Component
+ * Slide-out drawer for managing saved GraphQL queries with enhanced IDE features
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
+  Drawer,
+  Box,
+  Typography,
   TextField,
   List,
   ListItem,
@@ -19,8 +17,6 @@ import {
   ListItemSecondaryAction,
   IconButton,
   Chip,
-  Box,
-  Typography,
   Tab,
   Tabs,
   InputAdornment,
@@ -28,7 +24,13 @@ import {
   Menu,
   MenuItem,
   Alert,
-  Divider
+  Divider,
+  Toolbar,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -38,7 +40,10 @@ import {
   Download as ExportIcon,
   MoreVert as MoreIcon,
   Folder as FolderIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Close,
+  LibraryBooks,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { QueryLibrary, SavedQuery } from '@/lib/query-library';
 import { safeStringify } from '@/lib/utils';
@@ -100,13 +105,14 @@ function getProxyClientName(clientId: string): string {
   return client ? client.name : clientId;
 }
 
-export interface QueryLibraryDialogProps {
+export interface QueryLibraryDrawerProps {
   open: boolean;
   onClose: () => void;
   onSelectQuery: (query: SavedQuery) => void;
   onRunQuery: (query: SavedQuery) => void;
   onEditQuery: (query: SavedQuery) => void;
   currentEnvironment: string;
+  width?: number;
 }
 
 export interface SaveQueryDialogProps {
@@ -318,20 +324,24 @@ export function SaveQueryDialog({
   );
 }
 
-export function QueryLibraryDialog({
+export function QueryLibraryDrawer({
   open,
   onClose,
   onSelectQuery,
   onRunQuery,
   onEditQuery,
-  currentEnvironment
-}: QueryLibraryDialogProps) {
+  currentEnvironment,
+  width = 700
+}: QueryLibraryDrawerProps) {
   const [queries, setQueries] = useState<SavedQuery[]>([]);
   const [filteredQueries, setFilteredQueries] = useState<SavedQuery[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedQueryForMenu, setSelectedQueryForMenu] = useState<SavedQuery | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
+  const listRef = useRef<HTMLUListElement>(null);
 
   const loadQueries = () => {
     const allQueries = QueryLibrary.getQueries(); // Corrected method name
@@ -435,137 +445,275 @@ export function QueryLibraryDialog({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // handleMenuClose(); // Not from item menu
+    setShowExportDialog(false);
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
-      fullWidth 
-      PaperProps={{
-        style: { zIndex: 2002 } // Explicitly set Paper z-index
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      variant="temporary"
+      sx={{
+        '& .MuiDrawer-paper': {
+          width: width,
+          maxWidth: '90vw',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column'
+        }
       }}
-      BackdropProps={{
-        style: { zIndex: 2001 } // Backdrop z-index lower than Paper
-      }}
-      transitionDuration={0} // Disable enter/exit transitions
     >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header */}
+      <Toolbar sx={{ 
+        borderBottom: 1, 
+        borderColor: 'divider',
+        background: 'linear-gradient(135deg, #5e72e4 0%, #825ee4 100%)',
+        color: 'white',
+        minHeight: '64px !important'
+      }}>
+        <LibraryBooks sx={{ mr: 2 }} />
+        <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
           Query Library
-          <Button onClick={handleExportAll} startIcon={<ExportIcon />} size="small">
-            Export All Queries
-          </Button>
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: '60vh' }}>
-        <TextField
-          fullWidth
-          placeholder="Search queries by name, description, tags, or proxy client..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={selectedTab} onChange={handleTabChange} aria-label="query filter tabs">
+        </Typography>
+        <Typography variant="body2" sx={{ mr: 2, opacity: 0.9 }}>
+          {filteredQueries.length} queries
+        </Typography>
+        <Tooltip title="Export All Queries">
+          <IconButton 
+            onClick={() => setShowExportDialog(true)}
+            sx={{ color: 'white', mr: 1 }}
+            aria-label="Export all queries"
+          >
+            <ExportIcon />
+          </IconButton>
+        </Tooltip>
+        <IconButton 
+          onClick={onClose} 
+          sx={{ color: 'white' }}
+          aria-label="Close query library"
+        >
+          <Close />
+        </IconButton>
+      </Toolbar>
+
+      {/* Content */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Search and Filter Controls */}
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <TextField
+            fullWidth
+            placeholder="Search queries by name, description, tags, or proxy client..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 2 }}
+          />
+          
+          <Tabs 
+            value={selectedTab} 
+            onChange={handleTabChange} 
+            aria-label="query filter tabs"
+            variant="fullWidth"
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: '40px',
+                fontSize: '0.875rem'
+              }
+            }}
+          >
             <Tab label="All Queries" />
-            <Tab label={`Current Env (${currentEnvironment})`} />
-            <Tab label="Other Environments" />
+            <Tab label={`Current (${currentEnvironment})`} />
+            <Tab label="Other Envs" />
           </Tabs>
         </Box>
-        {filteredQueries.length === 0 ? (
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="subtitle1" color="text.secondary">
-              No queries found matching your criteria.
-            </Typography>
-          </Box>
-        ) : (
-          <List sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(60vh - 150px)' }}>
-            {filteredQueries.map((query) => (
-              <ListItem 
-                key={query.id} 
-                divider 
-                sx={{
-                  cursor: 'pointer',
-                  '&:hover': { backgroundColor: 'action.hover' },
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'flex-start' 
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                  <ListItemText
-                    primary={<Typography variant="h6">{query.name}</Typography>}
-                    secondary={query.description || 'No description'}
-                    onClick={() => onSelectQuery(query)}
-                    sx={{ flexGrow: 1, pr: 1 }}
-                  />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Tooltip title="Run Query">
-                      <IconButton edge="end" aria-label="run" onClick={() => onRunQuery(query)} size="small">
-                        <RunIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="More Actions">
-                      <IconButton edge="end" aria-label="more" onClick={(e) => handleMenuOpen(e, query)} size="small">
-                        <MoreIcon />
-                      </IconButton>
-                    </Tooltip>
+
+        {/* Query List */}
+        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          {filteredQueries.length === 0 ? (
+            <Box sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 2,
+              px: 3,
+              textAlign: 'center'
+            }}>
+              <LibraryBooks sx={{ fontSize: 64, color: 'text.disabled' }} />
+              <Typography variant="h6" color="text.secondary">
+                No queries found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {searchTerm 
+                  ? "Try adjusting your search criteria" 
+                  : "Start by saving your first GraphQL query"
+                }
+              </Typography>
+            </Box>
+          ) : (
+            <List 
+              ref={listRef}
+              sx={{ 
+                flex: 1, 
+                overflowY: 'auto',
+                px: 1,
+                py: 0
+              }}
+            >
+              {filteredQueries.map((query) => (
+                <ListItem 
+                  key={query.id} 
+                  divider 
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: 'action.hover' },
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'flex-start',
+                    py: 2,
+                    borderRadius: 1,
+                    mb: 0.5
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          {query.name}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {query.description || 'No description'}
+                        </Typography>
+                      }
+                      onClick={() => onSelectQuery(query)}
+                      sx={{ flexGrow: 1, pr: 1, cursor: 'pointer' }}
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                      <Tooltip title="Run Query">
+                        <IconButton 
+                          edge="end" 
+                          aria-label="run" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRunQuery(query);
+                          }} 
+                          size="small"
+                          sx={{ 
+                            color: 'success.main',
+                            '&:hover': { backgroundColor: 'success.light', color: 'success.dark' }
+                          }}
+                        >
+                          <RunIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="More Actions">
+                        <IconButton 
+                          edge="end" 
+                          aria-label="more" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMenuOpen(e, query);
+                          }} 
+                          size="small"
+                        >
+                          <MoreIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-                  <Chip 
-                    icon={<FolderIcon fontSize="small"/>} 
-                    label={query.environment} 
-                    size="small" 
-                    variant="outlined" 
-                    color={query.environment === currentEnvironment ? "primary" : "default"}
-                  />
-                  {query.proxyClient && (
+                  
+                  {/* Metadata row */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap', width: '100%' }}>
                     <Chip 
-                      label={`Proxy: ${getProxyClientName(query.proxyClient)}`}
+                      icon={<FolderIcon fontSize="small"/>} 
+                      label={query.environment} 
                       size="small" 
                       variant="outlined" 
-                      color="secondary"
-                      sx={{ fontSize: '0.7rem' }}
+                      color={query.environment === currentEnvironment ? "primary" : "default"}
                     />
+                    {query.proxyClient && (
+                      <Chip 
+                        label={`Proxy: ${getProxyClientName(query.proxyClient)}`}
+                        size="small" 
+                        variant="outlined" 
+                        color="secondary"
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {query.tags?.map(tag => (
+                      <Chip key={tag} label={tag} size="small" variant="outlined" />
+                    ))}
+                  </Box>
+                  
+                  {/* Variables info */}
+                  {query.variables && Object.keys(query.variables).length > 0 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                      Variables: {Object.keys(query.variables).join(', ')}
+                    </Typography>
                   )}
-                  {query.tags?.map(tag => (
-                    <Chip key={tag} label={tag} size="small" variant="outlined" />
-                  ))}
-                </Box>
-                {query.variables && Object.keys(query.variables).length > 0 && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
-                    Variables: {Object.keys(query.variables).join(', ')}
-                  </Typography>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        )}
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Box>
+
+        {/* Context Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
+          PaperProps={{
+            sx: { minWidth: 200 }
+          }}
         >
-          <MenuItem onClick={handleEdit}><EditIcon sx={{ mr: 1 }}/> Edit Query</MenuItem>
-          {/* Duplicate removed for now as QueryLibrary.duplicateQuery doesn't exist */}
-          <MenuItem onClick={handleExportSelected}><ExportIcon sx={{ mr: 1 }}/> Export Selected Query</MenuItem>
+          <MenuItem onClick={handleEdit}>
+            <EditIcon sx={{ mr: 1 }}/> 
+            Edit Query
+          </MenuItem>
+          <MenuItem onClick={handleExportSelected}>
+            <ExportIcon sx={{ mr: 1 }}/> 
+            Export Selected Query
+          </MenuItem>
           <Divider />
-          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}><DeleteIcon sx={{ mr: 1 }}/> Delete Query</MenuItem>
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+            <DeleteIcon sx={{ mr: 1 }}/> 
+            Delete Query
+          </MenuItem>
         </Menu>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+
+        {/* Export All Confirmation Dialog */}
+        <Dialog
+          open={showExportDialog}
+          onClose={() => setShowExportDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Export All Queries</DialogTitle>
+          <DialogContent>
+            <Typography>
+              This will export all {queries.length} saved queries to a JSON file. 
+              You can import this file later to restore your queries.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowExportDialog(false)}>Cancel</Button>
+            <Button onClick={handleExportAll} variant="contained" startIcon={<ExportIcon />}>
+              Export All
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Drawer>
   );
 }

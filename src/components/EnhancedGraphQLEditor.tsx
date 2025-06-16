@@ -18,7 +18,6 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { graphql } from 'cm6-graphql';
 import { buildClientSchema } from 'graphql';
 import { formatGraphQLQuery } from '@/lib/graphql-formatter';
-import { QueryLibrary, type SavedQuery } from '@/lib/query-library';
 import { 
   moveCompletionSelection,
   currentCompletions,
@@ -550,105 +549,6 @@ const searchInputHandler = EditorView.domEventHandlers({
   }
 });
 
-// Side Panel Library Component for Fullscreen Mode
-interface SidePanelLibraryProps {
-  onSelectQuery: (query: SavedQuery) => void;
-  onRunQuery: (query: SavedQuery) => void;
-}
-
-function SidePanelLibrary({ onSelectQuery, onRunQuery }: SidePanelLibraryProps) {
-  const [queries, setQueries] = useState<SavedQuery[]>([]);
-
-  useEffect(() => {
-    const loadQueries = () => {
-      const allQueries = QueryLibrary.getQueries();
-      setQueries(allQueries);
-    };
-
-    loadQueries();
-    // Refresh queries when the component mounts
-    window.addEventListener('storage', loadQueries);
-    return () => window.removeEventListener('storage', loadQueries);
-  }, []);
-
-  if (queries.length === 0) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          No saved queries yet
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Save a query to see it here
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <List sx={{ p: 0 }}>
-      {queries.map((query) => (
-        <ListItem 
-          key={query.id}
-          sx={{ 
-            borderBottom: 1, 
-            borderColor: 'divider',
-            '&:hover': { bgcolor: 'action.hover' }
-          }}
-        >
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-                  {query.name}
-                </Typography>
-                <Chip 
-                  label={query.environment} 
-                  size="small" 
-                  variant="outlined"
-                  sx={{ fontSize: '0.7rem', height: '20px' }}
-                />
-              </Box>
-            }
-            secondary={
-              <Box>
-                {query.description && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    {query.description}
-                  </Typography>
-                )}
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(query.updatedAt).toLocaleDateString()}
-                </Typography>
-              </Box>
-            }
-          />
-          <ListItemSecondaryAction>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Load Query">
-                <IconButton 
-                  size="small" 
-                  onClick={() => onSelectQuery(query)}
-                  sx={{ fontSize: '0.8rem' }}
-                >
-                  <span>📝</span>
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Run Query">
-                <IconButton 
-                  size="small" 
-                  onClick={() => onRunQuery(query)}
-                >
-                  <PlayArrow fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </ListItemSecondaryAction>
-        </ListItem>
-      ))}
-    </List>
-  );
-}
-
 interface EnhancedGraphQLEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -691,7 +591,6 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   hasFocus = false
 }, ref) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showSidePanelLibrary, setShowSidePanelLibrary] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [reactSearchState, setReactSearchState] = useState({
     active: false,
@@ -776,12 +675,6 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     setIsFullscreen(newState);
     console.log('🔍 DEBUG: Setting fullscreen to:', newState);
     
-    // Close side panel when entering fullscreen
-    if (newState) {
-      setShowSidePanelLibrary(false);
-      console.log('🔍 DEBUG: Closed side panel for fullscreen');
-    }
-    
     // Prevent body scroll and add fullscreen class when in fullscreen
     if (newState) {
       document.body.style.overflow = 'hidden';
@@ -810,18 +703,13 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     { tag: t.variableName, color: isDark ? '#ffab70' : '#e36209' }, // Variables
   ]);
 
-  // Handle Escape key to close side panel or exit fullscreen
+  // Handle Escape key to exit fullscreen
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        console.log('🔍 DEBUG: Escape key pressed, fullscreen:', isFullscreen, 'sidePanelLibrary:', showSidePanelLibrary);
-        if (showSidePanelLibrary && isFullscreen) {
-          // Close side panel first
-          event.preventDefault();
-          setShowSidePanelLibrary(false);
-          console.log('🔍 DEBUG: Closing side panel');
-        } else if (isFullscreen) {
-          // Exit fullscreen if no side panel is open
+        console.log('🔍 DEBUG: Escape key pressed, fullscreen:', isFullscreen);
+        if (isFullscreen) {
+          // Exit fullscreen
           event.preventDefault();
           console.log('🔍 DEBUG: Exiting fullscreen via Escape');
           setIsFullscreen(false);
@@ -835,7 +723,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [showSidePanelLibrary, isFullscreen]);
+  }, [isFullscreen]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1143,17 +1031,11 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                 {onGenerateRandomQuery && (
                   <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
                 )}
-                {onShowLibrary && !isFullscreen && (
+                {onShowLibrary && (
                   <Tooltip title="Query Library">
                     <IconButton 
                       size="small" 
-                      onClick={() => {
-                        if (isFullscreen) {
-                          setShowSidePanelLibrary(!showSidePanelLibrary);
-                        } else {
-                          onShowLibrary();
-                        }
-                      }}
+                      onClick={onShowLibrary}
                     >
                       <LibraryBooks fontSize="small" />
                     </IconButton>
@@ -1339,66 +1221,6 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           </Box>
         )}
           </Box>
-          
-          {/* Side Panel Library (Disabled in fullscreen mode for true fullscreen experience) */}
-          {false && isFullscreen && (
-            <Box sx={{
-              position: 'fixed',
-              top: 0,
-              right: showSidePanelLibrary ? 0 : '-400px',
-              bottom: 0,
-              width: '400px',
-              bgcolor: 'background.paper',
-              borderLeft: 1,
-              borderColor: 'divider',
-              zIndex: 10000,
-              transition: 'right 0.3s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: showSidePanelLibrary ? '0 0 20px rgba(0,0,0,0.1)' : 'none'
-            }}>
-              {/* Side Panel Header */}
-              <Box sx={{
-                p: 2,
-                borderBottom: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                bgcolor: 'grey.50'
-              }}>
-                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                  Query Library
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  onClick={() => setShowSidePanelLibrary(false)}
-                  sx={{ ml: 1 }}
-                >
-                  <span style={{ fontSize: '18px' }}>×</span>
-                </IconButton>
-              </Box>
-              
-              {/* Side Panel Content */}
-              <Box sx={{ flex: 1, overflow: 'auto' }}>
-                <SidePanelLibrary 
-                  onSelectQuery={(query) => {
-                    if (onChange) {
-                      onChange(query.query);
-                    }
-                    setShowSidePanelLibrary(false);
-                  }}
-                  onRunQuery={(query) => {
-                    if (onChange) {
-                      onChange(query.query);
-                    }
-                    setShowSidePanelLibrary(false);
-                    // TODO: Trigger query execution
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
         </Box>
       </Paper>
       

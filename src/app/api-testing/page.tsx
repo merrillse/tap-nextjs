@@ -7,7 +7,7 @@ import { cleanupExpiredTokens } from '@/lib/token-cache';
 import { safeStringify } from '@/lib/utils';
 import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } from '@/lib/random-query-generator';
 import { type SavedQuery } from '@/lib/query-library';
-import { SaveQueryDialog, QueryLibraryDialog } from '@/components/QueryLibraryDialog';
+import { SaveQueryDialog, QueryLibraryDrawer } from '@/components/QueryLibraryDrawer';
 import { SchemaBrowserDrawer } from '@/components/SchemaBrowserDrawer';
 import { 
   FormControl, 
@@ -1267,12 +1267,12 @@ ${fields}
           />
         )}
         {showLibraryDialog && (
-          <QueryLibraryDialog
+          <QueryLibraryDrawer
             open={showLibraryDialog}
             onClose={() => setShowLibraryDialog(false)}
             onSelectQuery={handleSelectQuery}
             onRunQuery={handleRunSavedQuery}
-            onEditQuery={(query) => {
+            onEditQuery={(query: SavedQuery) => {
               setEditingQuery(query);
               setQueryInput(query.query);
               setGraphqlVariables(query.variables ? safeStringify(query.variables) : '{}');
