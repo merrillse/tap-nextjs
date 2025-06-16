@@ -243,16 +243,6 @@ const emacsSearchKeymap = keymap.of([
     }
   },
   {
-    key: 'Ctrl-j',
-    run(view) {
-      const completions = currentCompletions(view.state);
-      if (completions.length > 0) {
-        return moveCompletionSelection(true)(view);
-      }
-      return false;
-    }
-  },
-  {
     key: 'Ctrl-k',
     run(view) {
       // Kill to end of line (traditional Emacs/Unix behavior)
