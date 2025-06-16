@@ -665,17 +665,17 @@ export default function APITestingPage() {
         />
       )}
       
-      <div className={`max-w-full mx-auto px-6 py-6 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : ''}`}>
+      <div className={`max-w-full mx-auto px-6 py-4 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : 'min-h-screen'}`}>
 
-        {/* Main Content Grid - Full Width Side by Side */}
-        <div className={`grid lg:grid-cols-2 gap-8 ${isResponsePanelFullscreen ? 'flex-grow contents' : 'h-[calc(100vh-200px)]'}`}>
+        {/* Main Content - Flexible Layout */}
+        <div className={`flex ${isResponsePanelFullscreen ? 'flex-grow contents' : 'gap-6 min-h-0 flex-1'}`}>
           
           {/* Request Panel - Left Side (conditionally hidden in fullscreen) */}
           {!isResponsePanelFullscreen && (
-            <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
+            <div className="flex-1 min-w-0 flex flex-col space-y-4">
               
-              {/* Query Editor with Enhanced Header */}
-              <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden">
+              {/* Query Editor with Enhanced Header - Fixed Height */}
+              <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col" style={{ height: '60vh', minHeight: '400px' }}>
                 {/* Updated Header for GraphQL Query Panel */}
                 <div className="bg-slate-50 p-3 border-b border-slate-200">
                   <div className="flex items-center justify-between">
@@ -813,7 +813,7 @@ export default function APITestingPage() {
                   </div>
                 </div>
                 
-                <div className="flex-grow p-0 overflow-y-auto" style={{ minHeight: '250px' }}> {/* Added overflow-y-auto here */}
+                <div className="flex-1 min-h-0 overflow-hidden"> {/* Changed to flex-1 and min-h-0 for proper flex sizing */}
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
@@ -834,116 +834,123 @@ export default function APITestingPage() {
                 </div>
               </Paper>
 
-              {/* GraphQL Variables Editor */}
-              <Accordion sx={{ borderRadius: '1rem', boxShadow: 'lg', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="variables-content" id="variables-header" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                  <Typography variant="subtitle1" fontWeight="medium">GraphQL Variables (JSON)</Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 0 }}>
-                  <CodeEditor
-                    value={graphqlVariables}
-                    onChange={setGraphqlVariables}
-                    language="json"
-                    height="150px"
-                    placeholder='{ "key": "value" }'
-                  />
-                </AccordionDetails>
-              </Accordion>
-
-              {/* HTTP Headers Editor */}
-              <Accordion sx={{ borderRadius: '1rem', boxShadow: 'lg', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="headers-content" id="headers-header" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                  <Typography variant="subtitle1" fontWeight="medium">HTTP Headers (JSON)</Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 0 }}>
-                  <CodeEditor
-                    value={httpHeaders}
-                    onChange={setHttpHeaders}
-                    language="json"
-                    height="150px"
-                    placeholder='{ "Authorization": "Bearer YOUR_TOKEN" }'
-                  />
-                </AccordionDetails>
-              </Accordion>
               
-              {/* Sent Request Details Viewer */}
-              {sentRequestBody && sentRequestHeaders && (
-                <Accordion sx={{ borderRadius: '1rem', boxShadow: 'lg', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }} defaultExpanded={false}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="sent-request-content" id="sent-request-header" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Typography variant="subtitle1" fontWeight="medium">Sent Request Details & Authentication Flow</Typography>
+              {/* Collapsible Accordions Section - Separate scrollable area */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 max-h-80 border-t border-gray-200 pt-4"> {/* Added border-t and reduced space-y */}
+                
+                {/* GraphQL Variables Editor */}
+                <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="variables-content" id="variables-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                    <Typography variant="body2" fontWeight="medium">GraphQL Variables (JSON)</Typography>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box>
-                      <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                        Request Body (Sent to Next.js Proxy)
-                      </Typography>
-                      <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
-                        <JSONViewer value={sentRequestBody} />
-                      </Paper>
-                    </Box>
-                    <Box>
-                      <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                        Request Headers (Sent to Next.js Proxy)
-                      </Typography>
-                      <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
-                        <JSONViewer value={safeStringify(sentRequestHeaders)} />
-                      </Paper>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-                        💡 <strong>Authentication Flow:</strong> The Next.js proxy extracts the access_token from the request body and forwards it to the GraphQL server as an <code>Authorization: Bearer &lt;token&gt;</code> header, along with additional headers like <code>proxy-client</code> and <code>User-Agent</code>.
-                      </Typography>
-                    </Box>
+                  <AccordionDetails sx={{ p: 0 }}>
+                    <CodeEditor
+                      value={graphqlVariables}
+                      onChange={setGraphqlVariables}
+                      language="json"
+                      height="120px"
+                      placeholder='{ "key": "value" }'
+                    />
                   </AccordionDetails>
                 </Accordion>
-              )}
-              
-              {/* Authentication Status - Compact Card */}
-              {apiClient && (
-                <Paper elevation={2} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
+
+                {/* HTTP Headers Editor */}
+                <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="headers-content" id="headers-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                    <Typography variant="body2" fontWeight="medium">HTTP Headers (JSON)</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 0 }}>
+                    <CodeEditor
+                      value={httpHeaders}
+                      onChange={setHttpHeaders}
+                      language="json"
+                      height="120px"
+                      placeholder='{ "Authorization": "Bearer YOUR_TOKEN" }'
+                    />
+                  </AccordionDetails>
+                </Accordion>
+                
+                {/* Sent Request Details Viewer */}
+                {sentRequestBody && sentRequestHeaders && (
+                  <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }} defaultExpanded={false}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="sent-request-content" id="sent-request-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                      <Typography variant="body2" fontWeight="medium">Sent Request Details & Authentication Flow</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box>
+                        <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
+                          Request Body (Sent to Next.js Proxy)
+                        </Typography>
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
+                          <JSONViewer value={sentRequestBody} />
+                        </Paper>
+                      </Box>
+                      <Box>
+                        <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
+                          Request Headers (Sent to Next.js Proxy)
+                        </Typography>
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
+                          <JSONViewer value={safeStringify(sentRequestHeaders)} />
+                        </Paper>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                          💡 <strong>Authentication Flow:</strong> The Next.js proxy extracts the access_token from the request body and forwards it to the GraphQL server as an <code>Authorization: Bearer &lt;token&gt;</code> header, along with additional headers like <code>proxy-client</code> and <code>User-Agent</code>.
+                        </Typography>
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                )}
+                
+                {/* Authentication Status - Compact Card */}
+                {apiClient && (
+                  <Paper elevation={2} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">Authentication Status</h3>
+                          <p className="text-sm text-gray-600">OAuth Client Configured & Active</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Authentication Status</h3>
-                        <p className="text-sm text-gray-600">OAuth Client Configured & Active</p>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full animate-pulse ${apiClient.getCurrentToken() ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                        <span className={`text-sm font-medium ${apiClient.getCurrentToken() ? 'text-green-600' : 'text-yellow-600'}`}>
+                          {apiClient.getCurrentToken() ? 'Connected' : 'Acquiring Token...'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 rounded-full animate-pulse ${apiClient.getCurrentToken() ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                      <span className={`text-sm font-medium ${apiClient.getCurrentToken() ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {apiClient.getCurrentToken() ? 'Connected' : 'Acquiring Token...'}
-                      </span>
-                    </div>
-                  </div>
-                  {apiClient.getCurrentToken() && (
-                    <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                      <div className="text-xs text-green-700">
-                        <p className="font-medium">✓ Access token acquired</p>
-                        <p>Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
+                    {apiClient.getCurrentToken() && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                        <div className="text-xs text-green-700">
+                          <p className="font-medium">✓ Access token acquired</p>
+                          <p>Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </Paper>
-              )}
+                    )}
+                  </Paper>
+                )}
+              </div>
             </div>
           )}
           
           {/* Response Panel - Right Side */}
-          <div className={`flex flex-col space-y-6 h-full ${isResponsePanelFullscreen ? 'col-span-2 w-full h-full fixed inset-0 z-[2000]' : ''}`}>
+          <div className={`flex-1 min-w-0 flex flex-col ${isResponsePanelFullscreen ? 'w-full h-full fixed inset-0 z-[2000]' : ''}`}>
             <Paper 
               ref={responseRef}
               elevation={isResponsePanelFullscreen ? 12 : 2} 
-              className={`bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full ${isResponsePanelFullscreen ? '!rounded-none' : ''}`}
+              className={`bg-white rounded-lg shadow-md flex flex-col flex-1 overflow-hidden ${isResponsePanelFullscreen ? '!rounded-none' : ''}`}
               tabIndex={-1} // Make the panel focusable
               sx={{
                 outline: currentFocus === 'response' ? '2px solid #1976d2' : 'none',
                 outlineOffset: '-2px',
-                transition: 'outline 0.2s ease-in-out'
+                transition: 'outline 0.2s ease-in-out',
+                height: isResponsePanelFullscreen ? '100vh' : 'auto',
+                minHeight: isResponsePanelFullscreen ? 'auto' : '60vh'
               }}
             >
               {/* Updated Header for API Response Panel */}
