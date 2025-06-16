@@ -744,6 +744,7 @@ export default function APITestingPage() {
                     onDuplicateQuery={selectedEndpoint === 'graphql' ? handleDuplicateQuery : undefined}
                     onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
                     canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
+                    onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                   />
                 </div>
               </Paper>

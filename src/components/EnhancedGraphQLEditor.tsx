@@ -218,21 +218,27 @@ const emacsSearchKeymap = keymap.of([
     }
   },
   {
-    key: 'Alt-n',
+    key: 'Ctrl-j',
     run(view) {
-      const completions = currentCompletions(view.state);
-      if (completions.length > 0) {
-        return moveCompletionSelection(true)(view);
-      }
-      return false;
+      // Start Ace Jump mode
+      view.dispatch({ effects: startAceJump.of(true) });
+      return true;
     }
   },
   {
-    key: 'Alt-p',
+    key: 'Escape',
     run(view) {
-      const completions = currentCompletions(view.state);
-      if (completions.length > 0) {
-        return moveCompletionSelection(false)(view);
+      const search = view.state.field(searchState);
+      const aceJump = view.state.field(aceJumpState);
+      
+      if (aceJump.active) {
+        view.dispatch({ effects: exitAceJump.of(true) });
+        return true;
+      }
+      
+      if (search.active) {
+        view.dispatch({ effects: exitSearch.of(true) });
+        return true;
       }
       return false;
     }
@@ -250,11 +256,26 @@ const emacsSearchKeymap = keymap.of([
   {
     key: 'Ctrl-k',
     run(view) {
-      const completions = currentCompletions(view.state);
-      if (completions.length > 0) {
-        return moveCompletionSelection(false)(view);
+      // Kill to end of line (traditional Emacs/Unix behavior)
+      const selection = view.state.selection.main;
+      const line = view.state.doc.lineAt(selection.head);
+      const from = selection.head;
+      const to = line.to;
+      
+      if (from < to) {
+        // Delete from cursor to end of line
+        view.dispatch({
+          changes: { from, to },
+          selection: { anchor: from, head: from }
+        });
+      } else if (from === to && from < view.state.doc.length) {
+        // If at end of line, delete the line break
+        view.dispatch({
+          changes: { from, to: from + 1 },
+          selection: { anchor: from, head: from }
+        });
       }
-      return false;
+      return true;
     }
   },
   {
@@ -264,6 +285,24 @@ const emacsSearchKeymap = keymap.of([
       if (completions.length > 0) {
         return moveCompletionSelection(true)(view);
       }
+      
+      // Move cursor to next line (traditional behavior)
+      const { state } = view;
+      const selection = state.selection.main;
+      const line = state.doc.lineAt(selection.head);
+      
+      if (line.number < state.doc.lines) {
+        const nextLine = state.doc.line(line.number + 1);
+        const col = selection.head - line.from;
+        const newPos = Math.min(nextLine.from + col, nextLine.to);
+        
+        view.dispatch({
+          selection: { anchor: newPos, head: newPos },
+          scrollIntoView: true
+        });
+        return true;
+      }
+      
       return false;
     }
   },
@@ -274,6 +313,24 @@ const emacsSearchKeymap = keymap.of([
       if (completions.length > 0) {
         return moveCompletionSelection(false)(view);
       }
+      
+      // Move cursor to previous line (traditional behavior)  
+      const { state } = view;
+      const selection = state.selection.main;
+      const line = state.doc.lineAt(selection.head);
+      
+      if (line.number > 1) {
+        const prevLine = state.doc.line(line.number - 1);
+        const col = selection.head - line.from;
+        const newPos = Math.min(prevLine.from + col, prevLine.to);
+        
+        view.dispatch({
+          selection: { anchor: newPos, head: newPos },
+          scrollIntoView: true
+        });
+        return true;
+      }
+      
       return false;
     }
   },
@@ -347,46 +404,78 @@ const emacsSearchKeymap = keymap.of([
       }
       return false;
     }
-  },
-  {
-    key: 'Escape',
-    run(view) {
-      const search = view.state.field(searchState);
-      if (search.active) {
-        // Exit search mode
-        view.dispatch({ effects: exitSearch.of(true) });
-        return true;
-      }
-      return false;
-    }
   }
 ]);
 
-// Custom input handler for incremental search and autocomplete navigation
+// Custom input handler for incremental search, autocomplete navigation, and Ace Jump
 const searchInputHandler = EditorView.domEventHandlers({
   keydown(event, view) {
     // Handle navigation key combinations for autocomplete
     const isAltN = event.altKey && (event.key === 'n' || event.code === 'KeyN');
     const isAltP = event.altKey && (event.key === 'p' || event.code === 'KeyP');
-    const isCtrlJ = event.ctrlKey && (event.key === 'j' || event.code === 'KeyJ');
-    const isCtrlK = event.ctrlKey && (event.key === 'k' || event.code === 'KeyK');
+    const isCtrlN = event.ctrlKey && (event.key === 'n' || event.code === 'KeyN');
+    const isCtrlP = event.ctrlKey && (event.key === 'p' || event.code === 'KeyP');
     const isCtrlDown = event.ctrlKey && event.key === 'ArrowDown';
     const isCtrlUp = event.ctrlKey && event.key === 'ArrowUp';
     
-    if (isAltN || isAltP || isCtrlJ || isCtrlK || isCtrlDown || isCtrlUp) {
+    // Check Ace Jump state first
+    const aceJump = view.state.field(aceJumpState);
+    
+    if (aceJump.active) {
+      if (aceJump.waitingForTarget) {
+        // Waiting for target character
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          view.dispatch({ effects: setAceJumpTarget.of(event.key) });
+          return true;
+        }
+      } else if (aceJump.waitingForJump) {
+        // Waiting for jump label
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Find matching jump label
+          const targetLabel = aceJump.jumpLabels.find(label => 
+            label.label.toLowerCase().startsWith(event.key.toLowerCase())
+          );
+          
+          if (targetLabel) {
+            // Jump to the position
+            view.dispatch({
+              effects: jumpToPosition.of(targetLabel.from),
+              selection: { anchor: targetLabel.from, head: targetLabel.from },
+              scrollIntoView: true
+            });
+            return true;
+          }
+        }
+      }
+      
+      return false; // Let escape key be handled by keymap
+    }
+    
+    if (isAltN || isAltP || isCtrlN || isCtrlP || isCtrlDown || isCtrlUp) {
       const completions = currentCompletions(view.state);
       
       if (completions.length > 0) {
         event.preventDefault();
         event.stopPropagation();
         
-        const isNext = isAltN || isCtrlJ || isCtrlDown;
+        const isNext = isAltN || isCtrlN || isCtrlDown;
         moveCompletionSelection(isNext)(view);
         return true;
       }
       
       // For Ctrl+Arrow keys, only handle when completions are active
       if ((isCtrlDown || isCtrlUp) && completions.length === 0) {
+        return false;
+      }
+      
+      // For Ctrl+N and Ctrl+P, let the keymap handle them when no completions
+      if ((isCtrlN || isCtrlP) && completions.length === 0) {
         return false;
       }
       
@@ -406,7 +495,7 @@ const searchInputHandler = EditorView.domEventHandlers({
         }
         
         // Handle other specific control keys that should exit search
-        const exitKeys = ['f', 'b', 'a', 'e', 'k', 'n', 'p', 'v', 'l', 'd', 'h', 'w', 'u', 'i', 'o', 't', 'y', 'x', 'c', 'z'];
+        const exitKeys = ['f', 'b', 'a', 'e', 'n', 'p', 'v', 'l', 'd', 'h', 'w', 'u', 'i', 'o', 't', 'y', 'x', 'c', 'z'];
         if (exitKeys.includes(key)) {
           view.dispatch({ effects: exitSearch.of(true) });
           // Don't prevent default - let the control key do its normal action
@@ -574,6 +663,7 @@ interface EnhancedGraphQLEditorProps {
   onDuplicateQuery?: () => void;
   onShowLibrary?: () => void;
   canSaveQuery?: boolean;
+  onExecute?: () => void; // Added for Ctrl+Enter functionality
 }
 
 export function EnhancedGraphQLEditor({
@@ -589,7 +679,8 @@ export function EnhancedGraphQLEditor({
   onSaveQuery,
   onDuplicateQuery,
   onShowLibrary,
-  canSaveQuery = false
+  canSaveQuery = false,
+  onExecute
 }: EnhancedGraphQLEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSidePanelLibrary, setShowSidePanelLibrary] = useState(false);
@@ -825,12 +916,44 @@ export function EnhancedGraphQLEditor({
         // Search match styling (for Emacs-style search)
         ".cm-search-match": { backgroundColor: "yellow", color: "black" },
         ".cm-search-current-match": { backgroundColor: "orange", color: "black" },
+        // Ace Jump styling
+        ".ace-jump-highlight": { 
+          backgroundColor: isDark ? "#4a90e2" : "#87ceeb", 
+          color: isDark ? "#fff" : "#000"
+        },
+        ".ace-jump-label-widget": {
+          backgroundColor: isDark ? "#ff6b6b" : "#ff4444",
+          color: "#fff",
+          padding: "1px 4px",
+          borderRadius: "2px",
+          fontSize: "10px",
+          fontWeight: "bold",
+          marginLeft: "2px",
+          display: "inline-block",
+          minWidth: "14px",
+          textAlign: "center"
+        },
       }),
       syntaxHighlighting(graphQLHighlight), // Use the defined graphQLHighlight
       Prec.high(keymap.of(completionKeymap)), // Ensure completion keymap has high precedence
       Prec.high(searchInputHandler), // Add the searchInputHandler with high precedence
-      emacsSearchKeymap, // Keep Emacs-style search
+      Prec.high(emacsSearchKeymap), // High precedence for Emacs-style search and completion navigation
+      // Custom keymap for Ctrl+Enter execute
+      keymap.of([
+        {
+          key: 'Ctrl-Enter',
+          run() {
+            if (onExecute) {
+              onExecute();
+              return true;
+            }
+            return false;
+          }
+        }
+      ]),
       searchState, // State for Emacs-style search
+      aceJumpState, // State for Ace Jump
+      aceJumpPlugin, // Plugin for Ace Jump decorations
       createSearchPlugin(setReactSearchState), // Instantiate the search plugin
       search(), // Added for standard search panel functionality
       keymap.of(searchKeymap), // Added for standard search keybindings (Cmd/Ctrl-F)
@@ -1306,6 +1429,12 @@ export function EnhancedGraphQLEditor({
                   secondary={<kbd>Shift+Tab</kbd>}
                 />
               </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Kill to End of Line" 
+                  secondary={<><kbd>Ctrl+K</kbd> - Delete from cursor to end of line</>}
+                />
+              </ListItem>
             </List>
             
             <Divider sx={{ my: 2 }} />
@@ -1324,12 +1453,24 @@ export function EnhancedGraphQLEditor({
                   secondary={<><kbd>Cmd+]</kbd> (Mac) / <kbd>Ctrl+]</kbd> (Windows/Linux)</>}
                 />
               </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Ace Jump" 
+                  secondary={<><kbd>Ctrl+J</kbd> - Jump to any character on screen</>}
+                />
+              </ListItem>
             </List>
             
             <Divider sx={{ my: 2 }} />
             
             <Typography variant="h6" gutterBottom>Editor Actions</Typography>
             <List dense>
+              <ListItem>
+                <ListItemText 
+                  primary="Execute Query" 
+                  secondary={<><kbd>Ctrl+Enter</kbd> - Run the current GraphQL query</>}
+                />
+              </ListItem>
               <ListItem>
                 <ListItemText 
                   primary="Format GraphQL" 
@@ -1348,6 +1489,18 @@ export function EnhancedGraphQLEditor({
                   secondary={<><kbd>Ctrl+Space</kbd> to trigger (when schema is loaded)</>}
                 />
               </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Next Line / AutoComplete Down" 
+                  secondary={<><kbd>Ctrl+N</kbd> - Move to next line, or navigate autocomplete down</>}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="Previous Line / AutoComplete Up" 
+                  secondary={<><kbd>Ctrl+P</kbd> - Move to previous line, or navigate autocomplete up</>}
+                />
+              </ListItem>
             </List>
           </Box>
         </DialogContent>
@@ -1358,3 +1511,199 @@ export function EnhancedGraphQLEditor({
     </>
   );
 }
+
+// Ace Jump functionality
+interface AceJumpState {
+  active: boolean;
+  targetChar: string;
+  jumpLabels: { from: number; to: number; label: string }[];
+  waitingForTarget: boolean;
+  waitingForJump: boolean;
+}
+
+// Effects for managing Ace Jump state
+const setAceJumpTarget = StateEffect.define<string>();
+const startAceJump = StateEffect.define<boolean>();
+const exitAceJump = StateEffect.define<boolean>();
+const jumpToPosition = StateEffect.define<number>();
+
+// Generate jump labels (a-z, aa-zz, etc.)
+function generateJumpLabels(count: number): string[] {
+  const labels: string[] = [];
+  const chars = 'abcdefghijklmnopqrstuvwxyz';
+  
+  // Single character labels (a-z)
+  for (let i = 0; i < Math.min(count, 26); i++) {
+    labels.push(chars[i]);
+  }
+  
+  // Double character labels (aa-zz)
+  if (count > 26) {
+    for (let i = 0; i < 26 && labels.length < count; i++) {
+      for (let j = 0; j < 26 && labels.length < count; j++) {
+        labels.push(chars[i] + chars[j]);
+      }
+    }
+  }
+  
+  return labels;
+}
+
+// Ace Jump decoration
+const aceJumpLabelDecoration = Decoration.mark({
+  class: 'ace-jump-label'
+});
+
+const aceJumpHighlightDecoration = Decoration.mark({
+  class: 'ace-jump-highlight'
+});
+
+// State field for Ace Jump
+const aceJumpState = StateField.define<AceJumpState>({
+  create() {
+    return {
+      active: false,
+      targetChar: '',
+      jumpLabels: [],
+      waitingForTarget: false,
+      waitingForJump: false
+    };
+  },
+  update(state, tr) {
+    const newState = { ...state };
+    
+    for (const effect of tr.effects) {
+      if (effect.is(startAceJump)) {
+        newState.active = true;
+        newState.waitingForTarget = true;
+        newState.waitingForJump = false;
+        newState.targetChar = '';
+        newState.jumpLabels = [];
+      } else if (effect.is(setAceJumpTarget)) {
+        newState.targetChar = effect.value;
+        newState.waitingForTarget = false;
+        newState.waitingForJump = true;
+        
+        // Find all occurrences of the target character in the document
+        // For better performance, we could limit this to visible range in the future
+        const doc = tr.state.doc;
+        const from = 0;
+        const to = doc.length;
+        const text = doc.sliceString(from, to);
+        const matches: { from: number; to: number; label: string }[] = [];
+        
+        // Limit the number of matches to prevent too many labels
+        const maxMatches = 52; // a-z + aa-zz
+        let matchCount = 0;
+        
+        for (let i = 0; i < text.length && matchCount < maxMatches; i++) {
+          if (text[i].toLowerCase() === effect.value.toLowerCase()) {
+            matches.push({
+              from: from + i,
+              to: from + i + 1,
+              label: ''
+            });
+            matchCount++;
+          }
+        }
+        
+        // Sort matches by position (should already be sorted, but ensure it)
+        matches.sort((a, b) => a.from - b.from);
+        
+        // Assign jump labels
+        const labels = generateJumpLabels(matches.length);
+        newState.jumpLabels = matches.map((match, index) => ({
+          ...match,
+          label: labels[index] || 'z'
+        }));
+        
+      } else if (effect.is(jumpToPosition)) {
+        newState.active = false;
+        newState.waitingForTarget = false;
+        newState.waitingForJump = false;
+        newState.targetChar = '';
+        newState.jumpLabels = [];
+      } else if (effect.is(exitAceJump)) {
+        newState.active = false;
+        newState.waitingForTarget = false;
+        newState.waitingForJump = false;
+        newState.targetChar = '';
+        newState.jumpLabels = [];
+      }
+    }
+    
+    return newState;
+  }
+});
+
+// View plugin for Ace Jump decorations
+const aceJumpPlugin = ViewPlugin.fromClass(class {
+  decorations: DecorationSet;
+  
+  constructor(view: EditorView) {
+    this.decorations = this.buildDecorations(view);
+  }
+  
+  update(update: ViewUpdate) {
+    if (update.docChanged || update.state.field(aceJumpState) !== update.startState.field(aceJumpState)) {
+      this.decorations = this.buildDecorations(update.view);
+    }
+  }
+  
+  buildDecorations(view: EditorView): DecorationSet {
+    const state = view.state.field(aceJumpState);
+    if (!state.active || !state.waitingForJump) {
+      return Decoration.none;
+    }
+    
+    // Sort jump labels by position
+    const sortedJumpLabels = [...state.jumpLabels].sort((a, b) => a.from - b.from);
+    
+    if (sortedJumpLabels.length === 0) {
+      return Decoration.none;
+    }
+    
+    const decorations: Range<Decoration>[] = [];
+    
+    // Process each jump label
+    for (const jumpLabel of sortedJumpLabels) {
+      // Add highlight decoration
+      decorations.push(aceJumpHighlightDecoration.range(jumpLabel.from, jumpLabel.to));
+      
+      // Add widget decoration with side: 1 to ensure it comes after the highlight
+      const labelWidget = Decoration.widget({
+        widget: new class extends WidgetType {
+          toDOM() {
+            const span = document.createElement('span');
+            span.className = 'ace-jump-label-widget';
+            span.textContent = jumpLabel.label;
+            return span;
+          }
+        }(),
+        side: 1  // Place widget after the character
+      });
+      
+      decorations.push(labelWidget.range(jumpLabel.to)); // Place widget at the end of the character
+    }
+    
+    // Decorations should already be sorted by position since we process sorted labels
+    // But let's ensure they are properly sorted
+    decorations.sort((a, b) => {
+      if (a.from !== b.from) return a.from - b.from;
+      if (a.to !== b.to) return a.to - b.to;
+      
+      // Ensure marks come before widgets when at same position
+      const aIsWidget = a.value.spec && 'widget' in a.value.spec;
+      const bIsWidget = b.value.spec && 'widget' in b.value.spec;
+      
+      if (!aIsWidget && bIsWidget) return -1;
+      if (aIsWidget && !bIsWidget) return 1;
+      
+      return 0;
+    });
+    
+    return Decoration.set(decorations);
+  }
+}, {
+  decorations: v => v.decorations
+});
