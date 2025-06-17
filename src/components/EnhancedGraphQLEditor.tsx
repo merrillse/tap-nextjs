@@ -612,6 +612,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     totalMatches: 0
   });
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
   const theme = useTheme();
 
   // Debug fullscreen state changes
@@ -900,7 +901,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
 
     return extensions;
-  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState]); // Add dependencies
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, onShowSchemaBrowser]); // Add dependencies
 
   const editorProps = {
     value,
@@ -972,7 +973,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           height: isFullscreen ? '100vh' : 'auto',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden',
+          overflow: isFullscreen ? 'hidden' : 'visible', // Allow overflow for sticky to work in non-fullscreen
           backgroundColor: isFullscreen ? 'background.paper' : 'inherit',
           ...(isFullscreen && {
             borderRadius: 0,
@@ -996,7 +997,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           sx={{ 
             display: 'flex', 
             flex: 1, 
-            overflow: 'hidden',
+            overflow: isFullscreen ? 'hidden' : 'visible', // Allow overflow for sticky positioning
             position: 'relative',
             ...(isFullscreen && {
               padding: 0,
@@ -1009,23 +1010,26 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             flex: 1, 
             display: 'flex', 
             flexDirection: 'column',
-            // Remove margin in fullscreen mode - side panel is disabled
-            transition: 'none',
-            marginRight: '0px',
+            minHeight: 0, // Allow shrinking
+            position: 'relative', // Add relative positioning for sticky header
             ...(isFullscreen && {
               padding: 0,
               margin: 0
             })
           }}>
-            {/* Header */}
+            {/* Header - Sticky positioned relative to the editor section */}
             <Box sx={{ 
-              display: 'flex', 
+              position: 'sticky',
+              top: 0,
+              zIndex: 1000, // Ensure it stays above content
+              display: 'flex',
               alignItems: 'center', 
               justifyContent: 'space-between', 
               p: isFullscreen ? 1 : 2, 
               borderBottom: 1, 
               borderColor: 'divider',
-              bgcolor: 'grey.50'
+              bgcolor: 'background.paper', // Use theme background for better consistency
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', // Add subtle shadow for better separation
             }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
@@ -1144,13 +1148,14 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           </Box>
         </Box>
 
-        {/* Editor */}
+        {/* Editor - The main scrollable content */}
         <Box sx={{ 
           flex: 1, 
-          overflow: 'auto',
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
+          minHeight: 0, // Important: allows flex child to shrink below content size
+          overflow: 'hidden', // Prevent overflow on this container
           '& .cm-editor': {
             height: isFullscreen ? '100%' : height,
             flex: isFullscreen ? 1 : 'none',

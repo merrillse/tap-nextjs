@@ -961,13 +961,14 @@ ${fields}
                   </div>
                 </div>
                 
-                <div className="flex-1 min-h-0 overflow-hidden"> {/* Changed to flex-1 and min-h-0 for proper flex sizing */}
+                {/* Editor Container - This needs to be the scrollable container */}
+                <div className="flex-1 min-h-0 overflow-auto"> {/* Changed to overflow-auto to make this the scrolling container */}
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
                     onChange={setQueryInput}
                     placeholder="Enter your GraphQL query here..."
-                    schema={schema}
+                    schema={schema as unknown as Record<string, unknown> | undefined}
                     height="100%" // Will fill the parent
                     onGenerateRandomQuery={handleGenerateRandomQuery}
                     isGeneratingQuery={generatingQuery}
