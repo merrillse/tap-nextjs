@@ -9,6 +9,7 @@ import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } f
 import { type SavedQuery } from '@/lib/query-library';
 import { SaveQueryDialog, QueryLibraryDrawer } from '@/components/QueryLibraryDrawer';
 import { SchemaBrowserDrawer } from '@/components/SchemaBrowserDrawer';
+import SettingsDrawer from '@/components/SettingsDrawer';
 import { 
   FormControl, 
   InputLabel, 
@@ -37,7 +38,7 @@ import {
   ListItemText,
   Divider
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Casino, LibraryBooks, Schema, NoteAdd, Save, FileCopy, AutoFixHigh, ContentCopy, Help, Fullscreen } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Casino, LibraryBooks, Schema, NoteAdd, Save, FileCopy, AutoFixHigh, ContentCopy, Help, Fullscreen, Settings } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { CodeEditor, JSONViewer } from '@/components/CodeEditor'; // JSONViewer might be CodeEditor with readOnly
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
@@ -151,6 +152,7 @@ export default function APITestingPage() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [showLibraryDialog, setShowLibraryDialog] = useState(false);
   const [showSchemaBrowserDrawer, setShowSchemaBrowserDrawer] = useState(false);
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [responseTabValue, setResponseTabValue] = useState(0);
   const [isResponsePanelFullscreen, setIsResponsePanelFullscreen] = useState(false);
@@ -659,6 +661,33 @@ query ThirdQuery {
     setShowSchemaBrowserDrawer(false);
   };
 
+  // Settings Drawer handlers
+  const handleShowSettings = () => {
+    setShowSettingsDrawer(true);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettingsDrawer(false);
+  };
+  
+  // Wrapper functions for Settings Drawer to handle type conversion
+  const handleSettingsEnvironmentChange = (environment: string) => {
+    setSelectedEnvironment(environment);
+    // Reinitialize API client with new environment
+    const config = getEnvironmentConfig(environment);
+    if (config) {
+      const client = new ApiClient(config);
+      setApiClient(client);
+      setError(null);
+      setSchema(null); // Clear old schema
+    }
+  };
+  
+  const handleSettingsProxyClientChange = (client: string) => {
+    setSelectedProxyClient(client);
+    localStorage.setItem('selectedProxyClient', client);
+  };
+
   // Insert type name at cursor position in the editor
   const handleInsertType = (typeName: string) => {
     const currentValue = queryInput;
@@ -893,76 +922,6 @@ ${fields}
                       </div>
                     </div>
                     <div className="flex items-center">
-                      {/* Environment Selector */}
-                      <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <InputLabel id="query-environment-select-label">Environment</InputLabel>
-                        <Select
-                          labelId="query-environment-select-label"
-                          value={selectedEnvironment}
-                          label="Environment"
-                          onChange={handleEnvironmentChange}
-                          sx={{
-                            backgroundColor: 'white',
-                            borderRadius: '8px',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#e5e7eb',
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#d1d5db',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#3b82f6',
-                            }
-                          }}
-                        >
-                          {environmentOptions.map(env => (
-                            <MenuItem key={env.key} value={env.key}>
-                              <div className="flex items-center space-x-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                                  {env.key.includes('mogs') ? 'MOGS' : 'MGQL'}
-                                </span>
-                                <span>{env.name}</span>
-                              </div>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      
-                      {/* Proxy Client Selector - Only for MGQL environments */}
-                      {!selectedEnvironment.includes('mogs') && (
-                        <FormControl size="small" sx={{ minWidth: 200, ml: '8px' }}>
-                          <InputLabel id="query-proxy-client-select-label">Proxy Client</InputLabel>
-                          <Select
-                            labelId="query-proxy-client-select-label"
-                            value={selectedProxyClient}
-                            label="Proxy Client"
-                            onChange={(e) => handleProxyClientChange(e.target.value)}
-                            sx={{
-                              backgroundColor: 'white',
-                              borderRadius: '8px',
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#e5e7eb',
-                              },
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#d1d5db',
-                              },
-                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#3b82f6',
-                              }
-                            }}
-                          >
-                            {proxyClients.map(client => (
-                              <MenuItem key={client.clientId} value={client.clientId}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{client.name}</span>
-                                  <span className="text-xs text-gray-500 font-mono">{client.clientId}</span>
-                                </div>
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-                      
                       {/* Refresh Schema Button */}
                       <Tooltip title="Refresh schema">
                         <IconButton
@@ -971,7 +930,6 @@ ${fields}
                           sx={{
                             backgroundColor: 'white',
                             border: '1px solid #e5e7eb',
-                            ml: '8px',
                             '&:hover': {
                               backgroundColor: '#f9fafb',
                             }
@@ -1073,6 +1031,24 @@ ${fields}
                               }}
                             >
                               <Schema fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Settings */}
+                          <Tooltip title="API Settings">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleShowSettings}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <Settings fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           
@@ -1529,6 +1505,21 @@ ${fields}
             schema={schema}
             loading={loading}
             error={error}
+          />
+        )}
+        
+        {/* Settings Drawer */}
+        {showSettingsDrawer && (
+          <SettingsDrawer
+            open={showSettingsDrawer}
+            onClose={handleCloseSettings}
+            selectedEnvironment={selectedEnvironment}
+            onEnvironmentChange={handleSettingsEnvironmentChange}
+            selectedProxyClient={selectedProxyClient}
+            onProxyClientChange={handleSettingsProxyClientChange}
+            environmentOptions={environmentOptions}
+            proxyClients={proxyClients}
+            onRefreshSchema={refreshSchema}
           />
         )}
         
