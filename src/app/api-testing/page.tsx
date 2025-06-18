@@ -27,12 +27,21 @@ import {
   Snackbar, 
   Alert,
   Tooltip,
-  CircularProgress // Added CircularProgress
+  CircularProgress, // Added CircularProgress
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Casino, LibraryBooks, Schema, NoteAdd, Save, FileCopy, AutoFixHigh, ContentCopy, Help, Fullscreen } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { CodeEditor, JSONViewer } from '@/components/CodeEditor'; // JSONViewer might be CodeEditor with readOnly
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
+import { formatGraphQLQuery } from '@/lib/graphql-formatter';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -147,6 +156,8 @@ export default function APITestingPage() {
   const [isResponsePanelFullscreen, setIsResponsePanelFullscreen] = useState(false);
   const [copySnackbarOpen, setCopySnackbarOpen] = useState(false);
   const [copySnackbarMessage, setCopySnackbarMessage] = useState('');
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
 
   // State for sent request details
   const [sentRequestBody, setSentRequestBody] = useState<string | null>(null);
@@ -1000,6 +1011,195 @@ ${fields}
                           )}
                         </IconButton>
                       </Tooltip>
+                      
+                      {/* Action Icons moved from EnhancedGraphQLEditor */}
+                      {selectedEndpoint === 'graphql' && !loading && (
+                        <>
+                          {/* Divider */}
+                          <Box sx={{ width: '1px', height: '24px', bgcolor: 'divider', mx: 1 }} />
+                          
+                          {/* Generate Random Query */}
+                          <Tooltip title="Generate Random Query">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleGenerateRandomQuery} 
+                              disabled={generatingQuery}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              {generatingQuery ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                              ) : (
+                                <Casino fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Query Library */}
+                          <Tooltip title="Query Library">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => setShowLibraryDialog(true)}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <LibraryBooks fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Schema Browser */}
+                          <Tooltip title="Schema Browser (Ctrl+Shift+S)">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleShowSchemaBrowser}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <Schema fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* New Query */}
+                          <Tooltip title="New Query">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleNewQuery}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <NoteAdd fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Save Query */}
+                          <Tooltip title="Save Query">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleSaveQuery} 
+                              disabled={!queryInput.trim()}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <Save fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Duplicate Query */}
+                          <Tooltip title="Duplicate Query">
+                            <IconButton 
+                              size="small" 
+                              onClick={handleDuplicateQuery} 
+                              disabled={!queryInput.trim()}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <FileCopy fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Editor Actions Divider */}
+                          <Box sx={{ width: '1px', height: '24px', bgcolor: 'divider', mx: 1 }} />
+                          
+                          {/* Format GraphQL */}
+                          <Tooltip title="Format GraphQL">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => {
+                                try {
+                                  const formatted = formatGraphQLQuery(queryInput);
+                                  setQueryInput(formatted);
+                                } catch (error) {
+                                  console.error('Failed to format GraphQL:', error);
+                                }
+                              }}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <AutoFixHigh fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Copy to clipboard */}
+                          <Tooltip title="Copy to clipboard">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => {
+                                navigator.clipboard.writeText(queryInput);
+                                setCopySnackbarMessage('Query copied to clipboard');
+                                setCopySnackbarOpen(true);
+                              }}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <ContentCopy fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          
+                          {/* Keyboard shortcuts */}
+                          <Tooltip title="Keyboard shortcuts">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => setShowKeyboardShortcuts(true)}
+                              sx={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                ml: '4px',
+                                '&:hover': {
+                                  backgroundColor: '#f9fafb',
+                                }
+                              }}
+                            >
+                              <Help fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1013,14 +1213,6 @@ ${fields}
                     placeholder="Enter your GraphQL query here..."
                     schema={schema as unknown as Record<string, unknown> | undefined}
                     height="100%" // Will fill the parent
-                    onGenerateRandomQuery={handleGenerateRandomQuery}
-                    isGeneratingQuery={generatingQuery}
-                    onSaveQuery={selectedEndpoint === 'graphql' ? handleSaveQuery : undefined}
-                    onDuplicateQuery={selectedEndpoint === 'graphql' ? handleDuplicateQuery : undefined}
-                    onShowLibrary={selectedEndpoint === 'graphql' ? () => setShowLibraryDialog(true) : undefined}
-                    onNewQuery={selectedEndpoint === 'graphql' ? handleNewQuery : undefined}
-                    onShowSchemaBrowser={selectedEndpoint === 'graphql' ? handleShowSchemaBrowser : undefined}
-                    canSaveQuery={selectedEndpoint === 'graphql' && queryInput.trim().length > 0}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
                     hasFocus={currentFocus === 'editor'}
@@ -1339,6 +1531,134 @@ ${fields}
             error={error}
           />
         )}
+        
+        {/* Keyboard Shortcuts Dialog */}
+        <Dialog 
+          open={showKeyboardShortcuts} 
+          onClose={() => setShowKeyboardShortcuts(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="h6" gutterBottom>Search & Replace</Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemText 
+                    primary="Find" 
+                    secondary={<><kbd>Cmd+F</kbd> (Mac) / <kbd>Ctrl+F</kbd> (Windows/Linux)</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Find and Replace" 
+                    secondary={<><kbd>Cmd+Shift+H</kbd> (Mac) / <kbd>Ctrl+H</kbd> (Windows/Linux)</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Incremental Search (Emacs-style)" 
+                    secondary={<><kbd>Ctrl+S</kbd> - type to search forward, <kbd>Ctrl+R</kbd> - search backward, <kbd>Ctrl+G</kbd> or <kbd>Esc</kbd> - exit</>}
+                  />
+                </ListItem>
+              </List>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography variant="h6" gutterBottom>Navigation</Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemText 
+                    primary="Move cursor up/down" 
+                    secondary={<><kbd>Ctrl+P</kbd> / <kbd>Ctrl+N</kbd> (Emacs-style) or arrow keys</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Beginning/End of line" 
+                    secondary={<><kbd>Ctrl+A</kbd> / <kbd>Ctrl+E</kbd> (Emacs-style)</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Beginning/End of document" 
+                    secondary={<><kbd>Cmd+Home</kbd> / <kbd>Cmd+End</kbd> (Mac) or <kbd>Ctrl+Home</kbd> / <kbd>Ctrl+End</kbd></>}
+                  />
+                </ListItem>
+              </List>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography variant="h6" gutterBottom>Editing</Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemText 
+                    primary="Delete line" 
+                    secondary={<><kbd>Ctrl+K</kbd> (Emacs-style)</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Backspace" 
+                    secondary={<><kbd>Backspace</kbd> or <kbd>Ctrl+H</kbd> (Emacs-style)</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Auto-complete" 
+                    secondary={<><kbd>Ctrl+Space</kbd></>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Format GraphQL" 
+                    secondary={<><kbd>Shift+Alt+F</kbd></>}
+                  />
+                </ListItem>
+              </List>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography variant="h6" gutterBottom>Application</Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemText 
+                    primary="Execute Query" 
+                    secondary={<><kbd>Ctrl+Enter</kbd></>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Switch Focus (Editor ↔ Response)" 
+                    secondary={<><kbd>Ctrl+X</kbd> then <kbd>O</kbd></>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Schema Browser" 
+                    secondary={<><kbd>Ctrl+Shift+S</kbd></>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Ace Jump (Quick Navigation)" 
+                    secondary={<><kbd>Ctrl+;</kbd> then type characters to jump</>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Fullscreen Editor" 
+                    secondary={<><kbd>F11</kbd> or click fullscreen button, <kbd>Esc</kbd> to exit</>}
+                  />
+                </ListItem>
+              </List>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowKeyboardShortcuts(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
         
         <Snackbar open={copySnackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity={copySnackbarMessage.startsWith('Failed') || copySnackbarMessage.startsWith('No content') ? "error" : "success"} sx={{ width: '100%' }}>

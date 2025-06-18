@@ -590,14 +590,6 @@ interface EnhancedGraphQLEditorProps {
   label?: string;
   schema?: Record<string, unknown>; // GraphQL schema from introspection
   readOnly?: boolean;
-  onGenerateRandomQuery?: () => void;
-  isGeneratingQuery?: boolean;
-  onSaveQuery?: () => void;
-  onDuplicateQuery?: () => void;
-  onShowLibrary?: () => void;
-  onNewQuery?: () => void;
-  onShowSchemaBrowser?: () => void;
-  canSaveQuery?: boolean;
   onExecute?: () => void; // Added for Ctrl+Enter functionality
   onSwitchFocus?: () => void; // Added for Ctrl+X O functionality
   hasFocus?: boolean; // Added to track focus state for visual feedback
@@ -611,14 +603,6 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   label = 'GraphQL Query',
   schema,
   readOnly = false,
-  onGenerateRandomQuery,
-  isGeneratingQuery = false,
-  onSaveQuery,
-  onDuplicateQuery,
-  onShowLibrary,
-  onNewQuery,
-  onShowSchemaBrowser,
-  canSaveQuery = false,
   onExecute,
   onSwitchFocus,
   hasFocus = false
@@ -890,16 +874,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             return false;
           }
         },
-        {
-          key: 'Ctrl-Shift-s',
-          run() {
-            if (onShowSchemaBrowser) {
-              onShowSchemaBrowser();
-              return true;
-            }
-            return false;
-          }
-        }
+
       ]),
       searchState, // State for Emacs-style search
       aceJumpState, // State for Ace Jump
@@ -921,7 +896,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
 
     return extensions;
-  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, onShowSchemaBrowser]); // Add dependencies
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus]); // Add dependencies
 
   const editorProps = {
     value,
@@ -1031,25 +1006,32 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             display: 'flex', 
             flexDirection: 'column',
             minHeight: 0, // Allow shrinking
-            position: 'relative', // Add relative positioning for sticky header
+            position: 'relative',
             ...(isFullscreen && {
               padding: 0,
               margin: 0
             })
           }}>
-            {/* Header - Sticky positioned relative to the editor section */}
+            {/* Header - Smart header with glass morphism effect */}
             <Box sx={{ 
               position: 'sticky',
               top: 0,
-              zIndex: 1000, // Ensure it stays above content
+              zIndex: 1000,
               display: 'flex',
               alignItems: 'center', 
               justifyContent: 'space-between', 
               p: isFullscreen ? 1 : 2, 
               borderBottom: 1, 
               borderColor: 'divider',
-              bgcolor: 'background.paper', // Use theme background for better consistency
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', // Add subtle shadow for better separation
+              bgcolor: isDark ? 'rgba(30, 30, 30, 0.90)' : 'rgba(255, 255, 255, 0.90)', // Theme-aware transparency
+              backdropFilter: 'blur(12px)', // Stronger blur effect
+              WebkitBackdropFilter: 'blur(12px)', // Safari support
+              boxShadow: isDark ? '0 1px 3px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+              flexShrink: 0,
+              transition: 'background-color 0.2s ease-in-out',
+              '&:hover': {
+                bgcolor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', // More opaque on hover
+              }
             }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
@@ -1072,121 +1054,17 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               </Box>
             )}
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {!readOnly && onGenerateRandomQuery && (
-              <Tooltip title="Generate Random Query">
-                <IconButton size="small" onClick={onGenerateRandomQuery} disabled={isGeneratingQuery}>
-                  {isGeneratingQuery ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                  ) : (
-                    <Casino fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
-            
-            {/* Query Management Buttons */}
-            {!readOnly && (onShowLibrary || onShowSchemaBrowser || onNewQuery || onSaveQuery || onDuplicateQuery) && (
-              <>
-                {onGenerateRandomQuery && (
-                  <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-                )}
-                {onShowLibrary && (
-                  <Tooltip title="Query Library">
-                    <IconButton 
-                      size="small" 
-                      onClick={onShowLibrary}
-                    >
-                      <LibraryBooks fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {onShowSchemaBrowser && !isFullscreen && (
-                  <Tooltip title="Schema Browser (Ctrl+Shift+S)">
-                    <IconButton 
-                      size="small" 
-                      onClick={onShowSchemaBrowser}
-                      color="default"
-                    >
-                      <Schema fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {onNewQuery && (
-                  <Tooltip title="New Query">
-                    <IconButton size="small" onClick={onNewQuery}>
-                      <NoteAdd fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {onSaveQuery && (
-                  <Tooltip title="Save Query">
-                    <IconButton size="small" onClick={onSaveQuery} disabled={!canSaveQuery}>
-                      <Save fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {onDuplicateQuery && (
-                  <Tooltip title="Duplicate Query">
-                    <IconButton size="small" onClick={onDuplicateQuery} disabled={!canSaveQuery}>
-                      <FileCopy fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </>
-            )}
-            
-            {/* Editor Actions */}
-            {((onGenerateRandomQuery || onShowLibrary || onShowSchemaBrowser || onNewQuery || onSaveQuery || onDuplicateQuery) && !readOnly) && (
-              <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-            )}
-            {!readOnly && (
-              <Tooltip title="Format GraphQL">
-                <IconButton size="small" onClick={handleFormat}>
-                  <AutoFixHigh fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Tooltip title="Copy to clipboard">
-              <IconButton size="small" onClick={handleCopy}>
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Keyboard shortcuts">
-              <IconButton size="small" onClick={() => setShowKeyboardShortcuts(true)}>
-                <Help fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-            <Tooltip title={isFullscreen ? "Exit fullscreen (ESC)" : "Enter fullscreen"}>
-              <IconButton 
-                size="small" 
-                onClick={handleFullscreenToggle}
-                sx={{
-                  backgroundColor: isFullscreen ? 'primary.main' : 'transparent',
-                  color: isFullscreen ? 'primary.contrastText' : 'inherit',
-                  '&:hover': {
-                    backgroundColor: isFullscreen ? 'primary.dark' : 'action.hover'
-                  }
-                }}
-              >
-                {isFullscreen ? <FullscreenExit fontSize="small" /> : <Fullscreen fontSize="small" />}
-              </IconButton>
-            </Tooltip>
-          </Box>
         </Box>
 
-        {/* Editor - The main scrollable content */}
+        {/* Editor - Scrollable content */}
         <Box sx={{ 
-          flex: 1, 
           position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0, // Important: allows flex child to shrink below content size
-          overflow: 'hidden', // Prevent overflow on this container
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto', 
+          marginTop: '-1px', // Slight overlap to hide the border gap
           '& .cm-editor': {
-            height: isFullscreen ? '100%' : height,
-            flex: isFullscreen ? 1 : 'none',
+            height: '100%',
             '&.cm-focused': {
               position: 'relative',
             }
