@@ -147,6 +147,7 @@ export default function APITestingPage() {
   const [error, setError] = useState<string | null>(null);
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
   const [generatingQuery, setGeneratingQuery] = useState(false);
+  const [schemaLoading, setSchemaLoading] = useState(false);
   const [schema, setSchema] = useState<IntrospectionResult | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -324,6 +325,7 @@ export default function APITestingPage() {
     const loadSchemaForAutocomplete = async () => {
       if (!apiClient || schema) return; // Don't reload if already have schema
       
+      setSchemaLoading(true);
       try {
         console.log('Loading schema for autocomplete...');
         const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
@@ -332,6 +334,8 @@ export default function APITestingPage() {
       } catch (err) {
         console.warn('Failed to load schema for autocomplete:', err);
         // Don't show error to user - autocomplete will just be limited
+      } finally {
+        setSchemaLoading(false);
       }
     };
 
@@ -344,6 +348,7 @@ export default function APITestingPage() {
   const refreshSchema = async () => {
     if (!apiClient) return;
     
+    setSchemaLoading(true);
     try {
       console.log('Refreshing schema...');
       const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
@@ -351,6 +356,9 @@ export default function APITestingPage() {
       console.log('Schema refreshed successfully');
     } catch (err) {
       console.warn('Failed to refresh schema:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh schema');
+    } finally {
+      setSchemaLoading(false);
     }
   };
 
@@ -587,9 +595,11 @@ query ThirdQuery {
       let currentSchema = schema;
       if (!currentSchema) {
         console.log('Fetching schema...');
+        setSchemaLoading(true);
         const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
         currentSchema = schemaResult as IntrospectionResult;
         setSchema(currentSchema);
+        setSchemaLoading(false);
       }
 
       const generator = new RandomQueryGenerator(currentSchema);
@@ -600,6 +610,7 @@ query ThirdQuery {
     } catch (err) {
       console.error('Random query generation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate random query');
+      setSchemaLoading(false); // Make sure to clear loading state on error
       setResponseTabValue(2);
     } finally {
       setGeneratingQuery(false);
@@ -1264,36 +1275,138 @@ ${fields}
                   </Accordion>
                 )}
                 
-                {/* Authentication Status - Compact Card */}
+                {/* Enhanced Authentication & Schema Status - Prominent Section */}
                 {apiClient && (
-                  <Paper elevation={2} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-4">
-                    <div className="flex items-center justify-between">
+                  <Paper 
+                    elevation={schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() ? 6 : 2} 
+                    className={`backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-6 transition-all duration-300 ${
+                      schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() 
+                        ? 'bg-blue-50/90 border-blue-200/50 shadow-blue-100' 
+                        : 'bg-white/80'
+                    }`}
+                    sx={{
+                      transform: schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    {/* Authentication Status */}
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 ${
+                          apiClient.getCurrentToken() ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+                        }`}>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
+                          </svg>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">Authentication Status</h3>
-                          <p className="text-sm text-gray-600">OAuth Client Configured & Active</p>
+                          <h3 className="text-lg font-semibold text-gray-900">API Connection Status</h3>
+                          <p className="text-sm text-gray-600">Authentication & Schema Management</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full animate-pulse ${apiClient.getCurrentToken() ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full animate-pulse ${apiClient.getCurrentToken() ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
                         <span className={`text-sm font-medium ${apiClient.getCurrentToken() ? 'text-green-600' : 'text-yellow-600'}`}>
-                          {apiClient.getCurrentToken() ? 'Connected' : 'Acquiring Token...'}
+                          {apiClient.getCurrentToken() ? 'Connected' : 'Connecting...'}
                         </span>
                       </div>
                     </div>
+
+                    {/* Authentication Details */}
                     {apiClient.getCurrentToken() && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                        <div className="text-xs text-green-700">
-                          <p className="font-medium">✓ Access token acquired {apiClient.hasCachedToken() ? '(cached)' : '(fresh)'}</p>
-                          <p>Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
+                      <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                        <div className="text-sm text-green-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              OAuth Token Active {apiClient.hasCachedToken() ? '(cached)' : '(fresh)'}
+                            </p>
+                          </div>
+                          <p className="text-xs opacity-75">Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
                         </div>
                       </div>
                     )}
+
+                    {/* Schema Status */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-300 ${
+                            schemaLoading ? 'bg-blue-100 text-blue-600' : 
+                            schema ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {schemaLoading ? (
+                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">GraphQL Schema</h4>
+                            <p className="text-xs text-gray-600">For autocomplete and validation</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {schemaLoading && (
+                            <span className="text-sm font-medium text-blue-600 animate-pulse">Loading...</span>
+                          )}
+                          {!schemaLoading && schema && (
+                            <span className="text-sm font-medium text-green-600">Ready</span>
+                          )}
+                          {!schemaLoading && !schema && (
+                            <span className="text-sm font-medium text-gray-500">Not Loaded</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Schema Loading Progress */}
+                      {schemaLoading && (
+                        <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-blue-700">Loading GraphQL Schema...</p>
+                              <p className="text-xs text-blue-600">Introspecting API to enable autocomplete and validation</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Schema Success */}
+                      {!schemaLoading && schema && (
+                        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-sm font-medium text-green-700 flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Schema loaded successfully
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">Autocomplete, validation, and schema browser are now available</p>
+                        </div>
+                      )}
+
+                      {/* Other Loading States */}
+                      {(loading || generatingQuery) && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-blue-700">
+                                {loading && 'Executing GraphQL Query...'}
+                                {generatingQuery && 'Generating Random Query...'}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {loading && 'Sending request to API server'}
+                                {generatingQuery && 'Creating query from schema definition'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </Paper>
                 )}
               </div>
