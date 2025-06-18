@@ -1063,6 +1063,14 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                 </Typography>
               </Box>
             )}
+            {!builtSchema && !readOnly && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <Typography variant="caption" sx={{ color: 'warning.main' }}>
+                  Schema not loaded - autocomplete limited to syntax only
+                </Typography>
+              </Box>
+            )}
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {!readOnly && onGenerateRandomQuery && (
@@ -1255,24 +1263,6 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             </Box>
           )}
         </Box>
-
-        {/* Schema Status */}
-        {!builtSchema && !readOnly && (
-          <Box sx={{ 
-            p: 2, 
-            borderTop: 1, 
-            borderColor: 'divider',
-            bgcolor: 'warning.50',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}>
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <Typography variant="caption" sx={{ color: 'warning.main' }}>
-              Schema not loaded - autocomplete limited to syntax only
-            </Typography>
-          </Box>
-        )}
           </Box>
         </Box>
       </Paper>
