@@ -249,7 +249,30 @@ export default function APITestingPage() {
     }
     setHttpHeaders(savedHeaders);
 
-  }, []);
+    // Focus the editor after a short delay to ensure it's fully rendered
+    const focusTimer = setTimeout(() => {
+      if (editorRef.current) {
+        // Try to focus on the CodeMirror editor
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+          // Also try to set cursor to the beginning
+          const cmView = editorRef.current.querySelector('.cm-editor');
+          if (cmView && (cmView as any).view) {
+            const view = (cmView as any).view;
+            view.dispatch({
+              selection: { anchor: 0, head: 0 },
+              scrollIntoView: true
+            });
+          }
+        } else {
+          editorRef.current.focus();
+        }
+      }
+    }, 100); // Small delay to ensure the editor is fully mounted
+
+    return () => clearTimeout(focusTimer);
+  }, [selectedEndpoint]); // Add selectedEndpoint as dependency
 
   // Save query input to local storage whenever it changes
   useEffect(() => {
