@@ -1197,14 +1197,16 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             </Box>
 
             {/* Tab Content */}
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
               
               {/* Editor Tab */}
               {activeTab === 0 && (
                 <Box sx={{ 
                   height: '100%',
                   position: 'relative',
-                  overflow: 'auto',
+                  overflowY: 'auto',
+                  flex: 1,
+                  minHeight: 0,
                   '& .cm-editor': {
                     height: '100%',
                     border: 'none !important',
@@ -1304,7 +1306,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 
               {/* Variables Tab */}
               {activeTab === 1 && (
-                <Box sx={{ height: '100%', p: 3 }}>
+                <Box sx={{ height: '100%', p: 3, overflowY: 'auto', flex: 1, minHeight: 0 }}>
                   <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontSize: '14px', fontWeight: 500 }}>
                     GraphQL Variables
                   </Typography>
@@ -1338,7 +1340,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 
               {/* Headers Tab */}
               {activeTab === 2 && (
-                <Box sx={{ height: '100%', p: 2 }}>
+                <Box sx={{ height: '100%', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 }}>
                   <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
                     HTTP Headers (JSON)
                   </Typography>
@@ -1372,7 +1374,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 
               {/* Status Tab */}
               {activeTab === 3 && (
-                <Box sx={{ height: '100%', p: 3, overflow: 'auto' }}>
+                <Box sx={{ height: '100%', p: 3, overflowY: 'auto', flex: 1, minHeight: 0 }}>
                   {/* Authentication Status */}
                   {apiClient && (
                     <Box sx={{ mb: 4 }}>

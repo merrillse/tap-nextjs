@@ -894,29 +894,17 @@ ${fields}
             <div className="flex-1 min-w-0 flex flex-col">
               
               {/* Modern Editor Card */}
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden" style={{ height: '65vh', minHeight: '500px' }}>
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col" style={{ height: '65vh', minHeight: '500px', overflowY: 'auto' }}>
                 
                 {/* Minimal Header Bar */}
                 <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-3 flex items-center justify-between">
                   
-                  {/* Context Breadcrumb */}
+                  {/* Query Name Only */}
                   <div className="flex items-center space-x-2 text-sm min-w-0 flex-1">
                     <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <span className="font-medium text-gray-900 truncate">
                         {editingQuery?.name || 'Unnamed Query'}
-                      </span>
-                    </div>
-                    <div className="text-gray-300">•</div>
-                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-700 truncate">{selectedEnvironment}</span>
-                    </div>
-                    <div className="text-gray-300">•</div>
-                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-gray-700 truncate text-xs">
-                        {proxyClients.find(pc => pc.clientId === selectedProxyClient)?.name?.split(' ')[0] || 'Client'}
                       </span>
                     </div>
                   </div>
@@ -1085,7 +1073,7 @@ ${fields}
                 </div>
                 
                 {/* Modern Editor Container */}
-                <div className="flex-1 min-h-0 bg-white h-[65vh] max-h-[65vh]">
+                <div className="flex-1 min-h-0 bg-white h-[65vh]" style={{ overflowY: 'auto' }}>
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
@@ -1143,11 +1131,12 @@ ${fields}
           <div className={`flex-1 min-w-0 ${isResponsePanelFullscreen ? 'w-full h-full fixed inset-0 z-[2000]' : ''}`}>
             <div 
               ref={responseRef}
-              className={`bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden ${
-                isResponsePanelFullscreen ? '!rounded-none h-full' : 'h-full min-h-[65vh] max-h-[65vh]'
+              className={`bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col ${
+                isResponsePanelFullscreen ? '!rounded-none h-full' : 'h-[65vh]'
               }`}
               tabIndex={-1}
               style={{
+                overflowY: 'auto',
                 outline: currentFocus === 'response' ? '2px solid #3b82f6' : 'none',
                 outlineOffset: '-2px',
               }}
@@ -1273,10 +1262,10 @@ ${fields}
               </div>
               
               {/* Tab Content */}
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 min-h-0" style={{ overflowY: 'auto' }}>
                 {/* Response Tab */}
                 {responseTabValue === 0 && (
-                  <div className="h-full p-4">
+                  <div className="h-full p-4" style={{ overflowY: 'auto' }}>
                     {loading && (
                       <div className="flex flex-col items-center justify-center h-full text-center">
                         <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -1305,7 +1294,7 @@ ${fields}
                 
                 {/* Headers Tab */}
                 {responseTabValue === 1 && (
-                  <div className="h-full p-4">
+                  <div className="h-full p-4" style={{ overflowY: 'auto' }}>
                     {response?.headers ? (
                       <JSONViewer value={safeStringify(response.headers)} />
                     ) : (
@@ -1318,7 +1307,7 @@ ${fields}
                 
                 {/* Errors Tab */}
                 {responseTabValue === 2 && (
-                  <div className="h-full p-4">
+                  <div className="h-full p-4" style={{ overflowY: 'auto' }}>
                     {error && (
                       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                         <div className="flex">
