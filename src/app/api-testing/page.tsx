@@ -33,7 +33,6 @@ import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscree
 import { SelectChangeEvent } from '@mui/material/Select';
 import { CodeEditor, JSONViewer } from '@/components/CodeEditor'; // JSONViewer might be CodeEditor with readOnly
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
-import GraphQLPageHeader from '@/components/GraphQLPageHeader';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -833,27 +832,6 @@ ${fields}
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 ${isResponsePanelFullscreen ? 'overflow-hidden' : ''}`}>
-      
-      {/* Enhanced Header (conditionally hidden in fullscreen) */}
-      {!isResponsePanelFullscreen && (
-        <GraphQLPageHeader
-          title="GraphQL Testing Platform"
-          description="Execute GraphQL queries with real-time authentication and schema validation for both MGQL and MOGS systems"
-          icon={
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-          }
-          selectedEnvironment={selectedEnvironment}
-          environmentOptions={environmentOptions}
-          onEnvironmentChange={handleEnvironmentChange}
-          selectedProxyClient={selectedProxyClient}
-          proxyClients={proxyClients}
-          onProxyClientChange={handleProxyClientChange}
-          onRefresh={refreshSchema}
-          showControls={false}
-        />
-      )}
       
       <div className={`max-w-full mx-auto px-6 py-4 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : 'min-h-screen'}`}>
 
