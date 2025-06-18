@@ -9,7 +9,6 @@ import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } f
 import { type SavedQuery } from '@/lib/query-library';
 import { SaveQueryDialog, QueryLibraryDrawer } from '@/components/QueryLibraryDrawer';
 import { SchemaBrowserDrawer } from '@/components/SchemaBrowserDrawer';
-import SettingsDrawer from '@/components/SettingsDrawer';
 import { 
   FormControl, 
   InputLabel, 
@@ -38,7 +37,7 @@ import {
   ListItemText,
   Divider
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Casino, LibraryBooks, Schema, NoteAdd, Save, FileCopy, AutoFixHigh, ContentCopy, Help, Fullscreen, Settings } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, ContentCopy as ContentCopyIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Casino, LibraryBooks, Schema, NoteAdd, Save, FileCopy, AutoFixHigh, ContentCopy, Help, Fullscreen } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { CodeEditor, JSONViewer } from '@/components/CodeEditor'; // JSONViewer might be CodeEditor with readOnly
 import { EnhancedGraphQLEditor } from '@/components/EnhancedGraphQLEditor';
@@ -153,7 +152,6 @@ export default function APITestingPage() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [showLibraryDialog, setShowLibraryDialog] = useState(false);
   const [showSchemaBrowserDrawer, setShowSchemaBrowserDrawer] = useState(false);
-  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [responseTabValue, setResponseTabValue] = useState(0);
   const [isResponsePanelFullscreen, setIsResponsePanelFullscreen] = useState(false);
@@ -673,32 +671,7 @@ query ThirdQuery {
     setShowSchemaBrowserDrawer(false);
   };
 
-  // Settings Drawer handlers
-  const handleShowSettings = () => {
-    setShowSettingsDrawer(true);
-  };
-
-  const handleCloseSettings = () => {
-    setShowSettingsDrawer(false);
-  };
-  
-  // Wrapper functions for Settings Drawer to handle type conversion
-  const handleSettingsEnvironmentChange = (environment: string) => {
-    setSelectedEnvironment(environment);
-    // Reinitialize API client with new environment
-    const config = getEnvironmentConfig(environment);
-    if (config) {
-      const client = new ApiClient(config);
-      setApiClient(client);
-      setError(null);
-      setSchema(null); // Clear old schema
-    }
-  };
-  
-  const handleSettingsProxyClientChange = (client: string) => {
-    setSelectedProxyClient(client);
-    localStorage.setItem('selectedProxyClient', client);
-  };
+  // Focus switching and other handlers
 
   // Insert type name at cursor position in the editor
   const handleInsertType = (typeName: string) => {
@@ -1034,16 +1007,6 @@ ${fields}
                           </button>
                         </Tooltip>
                         
-                        {/* Settings */}
-                        <Tooltip title="Settings">
-                          <button 
-                            onClick={handleShowSettings}
-                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
-                          >
-                            <Settings className="h-4 w-4 text-gray-600" />
-                          </button>
-                        </Tooltip>
-                        
                         <div className="w-px h-6 bg-gray-200"></div>
                         
                         {/* File Actions */}
@@ -1192,7 +1155,7 @@ ${fields}
               {/* Modern Response Header */}
               <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-3 flex items-center justify-between">
                 
-                {/* Status Information */}
+                {/* Left: Status Information */}
                 <div className="flex items-center space-x-3">
                   {response && (
                     <>
@@ -1213,7 +1176,42 @@ ${fields}
                   )}
                 </div>
 
-                {/* Actions */}
+                {/* Center: Environment and Proxy Controls */}
+                <div className="flex items-center space-x-3">
+                  {/* Environment Selector */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 font-medium">Environment:</span>
+                    <select
+                      value={selectedEnvironment}
+                      onChange={(e) => setSelectedEnvironment(e.target.value)}
+                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {environmentOptions.map((env) => (
+                        <option key={env.key} value={env.key}>
+                          {env.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Proxy Client Selector */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 font-medium">Proxy:</span>
+                    <select
+                      value={selectedProxyClient}
+                      onChange={(e) => setSelectedProxyClient(e.target.value)}
+                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {proxyClients.map((client) => (
+                        <option key={client.clientId} value={client.clientId}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right: Actions */}
                 <div className="flex items-center space-x-1 bg-white rounded-lg shadow-sm border border-gray-200 p-1">
                   <Tooltip title="Copy current tab content">
                     <button 
@@ -1435,21 +1433,6 @@ ${fields}
             schema={schema}
             loading={loading}
             error={error}
-          />
-        )}
-        
-        {/* Settings Drawer */}
-        {showSettingsDrawer && (
-          <SettingsDrawer
-            open={showSettingsDrawer}
-            onClose={handleCloseSettings}
-            selectedEnvironment={selectedEnvironment}
-            onEnvironmentChange={handleSettingsEnvironmentChange}
-            selectedProxyClient={selectedProxyClient}
-            onProxyClientChange={handleSettingsProxyClientChange}
-            environmentOptions={environmentOptions}
-            proxyClients={proxyClients}
-            onRefreshSchema={refreshSchema}
           />
         )}
         
