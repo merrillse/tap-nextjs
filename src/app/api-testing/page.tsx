@@ -916,290 +916,235 @@ ${fields}
           {!isResponsePanelFullscreen && (
             <div className="flex-1 min-w-0 flex flex-col space-y-4">
               
-              {/* Query Editor with Enhanced Header - Fixed Height */}
+              {/* Query Editor with Action Header - Full Height */}
               <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col" style={{ height: '60vh', minHeight: '400px' }}>
-                {/* Updated Header for GraphQL Query Panel */}
-                <div className="bg-slate-50 p-3 border-b border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                {/* Action Header - Always Visible */}
+                <div className="bg-white border-b border-gray-200 p-2 flex items-center justify-between space-x-1 flex-shrink-0">
+                  {/* Left Side - Query Context Information */}
+                  <div className="flex items-center space-x-3 text-sm text-gray-600 min-w-0 flex-1">
+                    {editingQuery && (
+                      <div className="flex items-center space-x-1">
+                        <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
+                        <span className="font-medium text-blue-700 truncate">{editingQuery.name}</span>
                       </div>
-                      <div>
-                        <h2 className="text-lg font-semibold text-slate-700">GraphQL Query</h2>
-                        <p className="text-slate-500 text-sm">Define your GraphQL operation</p>
-                      </div>
+                    )}
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      <span className="text-green-700 truncate">{selectedEnvironment}</span>
                     </div>
-                    <div className="flex items-center">
-                      {/* Refresh Schema Button */}
-                      <Tooltip title="Refresh schema">
-                        <IconButton
-                          onClick={refreshSchema}
-                          size="small"
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3 text-purple-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span className="text-purple-700 truncate">
+                        {proxyClients.find(pc => pc.clientId === selectedProxyClient)?.name || 'Unknown Client'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Right Side - Action Icons */}
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                  {/* Refresh Schema Button */}
+                  <Tooltip title="Refresh schema">
+                    <IconButton
+                      onClick={refreshSchema}
+                      size="small"
+                      disabled={schemaLoading}
+                      sx={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        '&:hover': { backgroundColor: '#f9fafb' }
+                      }}
+                    >
+                      {schemaLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                      ) : (
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  
+                  {/* Execute Button - Play Icon */}
+                  <Tooltip title={loading ? "Executing query..." : "Execute GraphQL query"}>
+                    <IconButton
+                      onClick={handleTest}
+                      disabled={loading}
+                      size="small"
+                      sx={{
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        ml: '4px',
+                        '&:hover': { backgroundColor: '#2563eb' },
+                        '&:disabled': { backgroundColor: '#9ca3af', color: 'white' }
+                      }}
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  
+                  {/* Action Icons */}
+                  {selectedEndpoint === 'graphql' && !loading && (
+                    <>
+                      {/* Divider */}
+                      <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
+                      
+                      {/* Generate Random Query */}
+                      <Tooltip title="Generate Random Query">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleGenerateRandomQuery} 
+                          disabled={generatingQuery}
                           sx={{
                             backgroundColor: 'white',
                             border: '1px solid #e5e7eb',
-                            '&:hover': {
-                              backgroundColor: '#f9fafb',
-                            }
+                            '&:hover': { backgroundColor: '#f9fafb' }
                           }}
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Execute Button - Play Icon */}
-                      <Tooltip title={loading ? "Executing query..." : "Execute GraphQL query"}>
-                        <IconButton
-                          onClick={handleTest}
-                          disabled={loading}
-                          size="medium"
-                          sx={{
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            ml: '8px',
-                            '&:hover': {
-                              backgroundColor: '#2563eb',
-                            },
-                            '&:disabled': {
-                              backgroundColor: '#9ca3af',
-                              color: 'white',
-                            }
-                          }}
-                        >
-                          {loading ? (
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          {generatingQuery ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
                           ) : (
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
+                            <Casino sx={{ fontSize: 16 }} />
                           )}
                         </IconButton>
                       </Tooltip>
                       
-                      {/* Action Icons moved from EnhancedGraphQLEditor */}
-                      {selectedEndpoint === 'graphql' && !loading && (
-                        <>
-                          {/* Divider */}
-                          <Box sx={{ width: '1px', height: '24px', bgcolor: 'divider', mx: 1 }} />
-                          
-                          {/* Generate Random Query */}
-                          <Tooltip title="Generate Random Query">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleGenerateRandomQuery} 
-                              disabled={generatingQuery}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              {generatingQuery ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                              ) : (
-                                <Casino fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Query Library */}
-                          <Tooltip title="Query Library">
-                            <IconButton 
-                              size="small" 
-                              onClick={() => setShowLibraryDialog(true)}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <LibraryBooks fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Schema Browser */}
-                          <Tooltip title="Schema Browser (Ctrl+Shift+S)">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleShowSchemaBrowser}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <Schema fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Settings */}
-                          <Tooltip title="API Settings">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleShowSettings}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <Settings fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* New Query */}
-                          <Tooltip title="New Query">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleNewQuery}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <NoteAdd fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Save Query */}
-                          <Tooltip title="Save Query">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleSaveQuery} 
-                              disabled={!queryInput.trim()}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <Save fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Duplicate Query */}
-                          <Tooltip title="Duplicate Query">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleDuplicateQuery} 
-                              disabled={!queryInput.trim()}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <FileCopy fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Editor Actions Divider */}
-                          <Box sx={{ width: '1px', height: '24px', bgcolor: 'divider', mx: 1 }} />
-                          
-                          {/* Format GraphQL */}
-                          <Tooltip title="Format GraphQL">
-                            <IconButton 
-                              size="small" 
-                              onClick={() => {
-                                try {
-                                  const formatted = formatGraphQLQuery(queryInput);
-                                  setQueryInput(formatted);
-                                } catch (error) {
-                                  console.error('Failed to format GraphQL:', error);
-                                }
-                              }}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <AutoFixHigh fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Copy to clipboard */}
-                          <Tooltip title="Copy to clipboard">
-                            <IconButton 
-                              size="small" 
-                              onClick={() => {
-                                navigator.clipboard.writeText(queryInput);
-                                setCopySnackbarMessage('Query copied to clipboard');
-                                setCopySnackbarOpen(true);
-                              }}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <ContentCopy fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          {/* Keyboard shortcuts */}
-                          <Tooltip title="Keyboard shortcuts">
-                            <IconButton 
-                              size="small" 
-                              onClick={() => setShowKeyboardShortcuts(true)}
-                              sx={{
-                                backgroundColor: 'white',
-                                border: '1px solid #e5e7eb',
-                                ml: '4px',
-                                '&:hover': {
-                                  backgroundColor: '#f9fafb',
-                                }
-                              }}
-                            >
-                              <Help fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
-                    </div>
+                      {/* Query Library */}
+                      <Tooltip title="Query Library">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setShowLibraryDialog(true)}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <LibraryBooks sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Schema Browser */}
+                      <Tooltip title="Schema Browser (Ctrl+Shift+S)">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleShowSchemaBrowser}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <Schema sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Settings */}
+                      <Tooltip title="API Settings">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleShowSettings}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <Settings sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* New Query */}
+                      <Tooltip title="New Query">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleNewQuery}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <NoteAdd sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Save Query */}
+                      <Tooltip title="Save Query">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleSaveQuery} 
+                          disabled={!queryInput.trim()}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <Save sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Duplicate Query */}
+                      <Tooltip title="Duplicate Query">
+                        <IconButton 
+                          size="small" 
+                          onClick={handleDuplicateQuery} 
+                          disabled={!queryInput.trim()}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <FileCopy sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Format GraphQL */}
+                      <Tooltip title="Format GraphQL">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => {
+                            try {
+                              const formatted = formatGraphQLQuery(queryInput);
+                              setQueryInput(formatted);
+                            } catch (error) {
+                              console.error('Failed to format GraphQL:', error);
+                            }
+                          }}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <AutoFixHigh sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Copy to clipboard */}
+                      <Tooltip title="Copy to clipboard">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(queryInput);
+                            setCopySnackbarMessage('Query copied to clipboard');
+                            setCopySnackbarOpen(true);
+                          }}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <ContentCopy sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Help */}
+                      <Tooltip title="Keyboard shortcuts">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setShowKeyboardShortcuts(true)}
+                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
+                        >
+                          <Help sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
                   </div>
                 </div>
                 
-                {/* Editor Container - This needs to be the scrollable container */}
-                <div className="flex-1 min-h-0 overflow-auto"> {/* Changed to overflow-auto to make this the scrolling container */}
+                {/* Editor Container - Full Height */}
+                <div className="flex-1 min-h-0 overflow-auto">
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
                     onChange={setQueryInput}
-                    placeholder="Enter your GraphQL query here..."
+                    placeholder={selectedEndpoint === 'graphql' ? sampleQueries.graphql : 'Enter your query here...'}
                     schema={schema as unknown as Record<string, unknown> | undefined}
-                    height="100%" // Will fill the parent
+                    height="100%"
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
                     hasFocus={currentFocus === 'editor'}

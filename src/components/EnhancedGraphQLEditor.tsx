@@ -1012,57 +1012,14 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               margin: 0
             })
           }}>
-            {/* Header - Smart header with glass morphism effect */}
-            <Box sx={{ 
-              position: 'sticky',
-              top: 0,
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              p: isFullscreen ? 1 : 2, 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              bgcolor: isDark ? 'rgba(30, 30, 30, 0.90)' : 'rgba(255, 255, 255, 0.90)', // Theme-aware transparency
-              backdropFilter: 'blur(12px)', // Stronger blur effect
-              WebkitBackdropFilter: 'blur(12px)', // Safari support
-              boxShadow: isDark ? '0 1px 3px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
-              flexShrink: 0,
-              transition: 'background-color 0.2s ease-in-out',
-              '&:hover': {
-                bgcolor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', // More opaque on hover
-              }
-            }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-              {label}
-            </Typography>
-            {builtSchema && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'medium' }}>
-                  Schema Loaded
-                </Typography>
-              </Box>
-            )}
-            {!builtSchema && !readOnly && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <Typography variant="caption" sx={{ color: 'warning.main' }}>
-                  Schema not loaded - autocomplete limited to syntax only
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
 
-        {/* Editor - Scrollable content */}
+
+        {/* Editor - Full height content */}
         <Box sx={{ 
           position: 'relative',
           flex: 1,
           minHeight: 0,
-          overflow: 'auto', 
-          marginTop: '-1px', // Slight overlap to hide the border gap
+          overflow: 'auto',
           '& .cm-editor': {
             height: '100%',
             '&.cm-focused': {
