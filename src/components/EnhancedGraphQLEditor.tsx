@@ -8,7 +8,7 @@
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
-import CodeMirror from '@uiw/react-codemirror';
+import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
@@ -400,15 +400,16 @@ const emacsSearchKeymap = keymap.of([
         const newQuery = search.query.slice(0, -1);
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
+        // Build the transaction spec properly
+        const transactionSpec: any = { effects: setSearchQuery.of(newQuery) };
 
         // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
-          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
-          transaction.scrollIntoView = true;
+          transactionSpec.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transactionSpec.scrollIntoView = true;
         }
         
-        view.dispatch(transaction);
+        view.dispatch(transactionSpec);
         return true;
       }
       return false;
@@ -538,15 +539,16 @@ const searchInputHandler = EditorView.domEventHandlers({
         const newQuery = search.query.slice(0, -1);
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
+        // Build the transaction spec properly
+        const transactionSpec: any = { effects: setSearchQuery.of(newQuery) };
 
         // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
-          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
-          transaction.scrollIntoView = true;
+          transactionSpec.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
+          transactionSpec.scrollIntoView = true;
         }
         
-        view.dispatch(transaction);
+        view.dispatch(transactionSpec);
         return true;
       }
       
@@ -559,15 +561,19 @@ const searchInputHandler = EditorView.domEventHandlers({
         const newQuery = search.query + event.key;
         const newMatches = findMatches(view.state.doc.toString(), newQuery);
         
-        const transaction: { effects: unknown } = { effects: setSearchQuery.of(newQuery) };
-
-        // If we have matches, move cursor to the first one
         if (newMatches.length > 0) {
-          transaction.selection = { anchor: newMatches[0].from, head: newMatches[0].from };
-          transaction.scrollIntoView = true;
+          // If we have matches, move cursor to the first one
+          view.dispatch({
+            effects: setSearchQuery.of(newQuery),
+            selection: { anchor: newMatches[0].from, head: newMatches[0].from },
+            scrollIntoView: true
+          });
+        } else {
+          // No matches, just update the search query
+          view.dispatch({
+            effects: setSearchQuery.of(newQuery)
+          });
         }
-        
-        view.dispatch(transaction);
         return true;
       }
     }
@@ -625,7 +631,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     currentMatch: -1,
     totalMatches: 0
   });
-  const editorRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<ReactCodeMirrorRef | null>(null);
   const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
   const theme = useTheme();
 
