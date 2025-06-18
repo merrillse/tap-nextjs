@@ -1122,7 +1122,7 @@ ${fields}
                 </div>
                 
                 {/* Modern Editor Container */}
-                <div className="flex-1 min-h-0 bg-white">
+                <div className="flex-1 min-h-0 bg-white h-[65vh] max-h-[65vh]">
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
@@ -1133,6 +1133,8 @@ ${fields}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
                     hasFocus={currentFocus === 'editor'}
+                    variables={graphqlVariables}
+                    onVariablesChange={setGraphqlVariables}
                     headers={httpHeaders}
                     onHeadersChange={setHttpHeaders}
                     apiClient={apiClient}
@@ -1146,28 +1148,6 @@ ${fields}
               {/* Modern Collapsible Panels */}
               <div className="flex flex-col space-y-3 max-h-[35vh] min-h-0">
                 
-                {/* Variables Panel */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
-                    onClick={() => {/* Toggle logic */}}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">Variables</span>
-                      <ExpandMoreIcon className="text-gray-400" />
-                    </div>
-                  </button>
-                  <div className="border-t border-gray-100">
-                    <CodeEditor
-                      value={graphqlVariables}
-                      onChange={setGraphqlVariables}
-                      language="json"
-                      height="120px"
-                      placeholder='{ "key": "value" }'
-                    />
-                  </div>
-                </div>
-
                 {/* Status Panel - Modern Design */}
                 {(apiClient && (schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken())) && (
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -1201,7 +1181,7 @@ ${fields}
             <div 
               ref={responseRef}
               className={`bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden ${
-                isResponsePanelFullscreen ? '!rounded-none h-full' : 'h-full min-h-[65vh]'
+                isResponsePanelFullscreen ? '!rounded-none h-full' : 'h-full min-h-[65vh] max-h-[65vh]'
               }`}
               tabIndex={-1}
               style={{

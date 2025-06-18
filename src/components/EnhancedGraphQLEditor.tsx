@@ -595,6 +595,8 @@ interface EnhancedGraphQLEditorProps {
   hasFocus?: boolean; // Added to track focus state for visual feedback
   
   // Tab content props
+  variables?: string; // JSON string for GraphQL variables
+  onVariablesChange?: (value: string) => void;
   headers?: string; // JSON string for headers
   onHeadersChange?: (value: string) => void;
   
@@ -616,6 +618,8 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   onExecute,
   onSwitchFocus,
   hasFocus = false,
+  variables = '{}',
+  onVariablesChange,
   headers = '{}',
   onHeadersChange,
   apiClient,
@@ -625,7 +629,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 }, ref) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-  const [activeTab, setActiveTab] = useState(0); // 0: Editor, 1: Headers, 2: Status
+  const [activeTab, setActiveTab] = useState(0); // 0: Editor, 1: Variables, 2: Headers, 3: Status
   const [reactSearchState, setReactSearchState] = useState({
     active: false,
     query: '',
@@ -1059,10 +1063,12 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                     padding: '12px 16px',
                     fontSize: '14px',
                     fontWeight: 500,
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
                     borderBottom: activeTab === 0 ? '2px solid #3b82f6' : '2px solid transparent',
                     color: activeTab === 0 ? '#3b82f6' : '#6b7280',
                     backgroundColor: 'transparent',
-                    border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
@@ -1087,10 +1093,12 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                     padding: '12px 16px',
                     fontSize: '14px',
                     fontWeight: 500,
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
                     borderBottom: activeTab === 1 ? '2px solid #3b82f6' : '2px solid transparent',
                     color: activeTab === 1 ? '#3b82f6' : '#6b7280',
                     backgroundColor: 'transparent',
-                    border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
@@ -1107,7 +1115,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                     }
                   }}
                 >
-                  Headers
+                  Variables
                 </button>
                 <button
                   onClick={() => setActiveTab(2)}
@@ -1115,15 +1123,14 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                     padding: '12px 16px',
                     fontSize: '14px',
                     fontWeight: 500,
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
                     borderBottom: activeTab === 2 ? '2px solid #3b82f6' : '2px solid transparent',
                     color: activeTab === 2 ? '#3b82f6' : '#6b7280',
                     backgroundColor: 'transparent',
-                    border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
                   }}
                   onMouseEnter={(e) => {
                     if (activeTab !== 2) {
@@ -1133,6 +1140,39 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                   }}
                   onMouseLeave={(e) => {
                     if (activeTab !== 2) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.borderBottomColor = 'transparent';
+                    }
+                  }}
+                >
+                  Headers
+                </button>
+                <button
+                  onClick={() => setActiveTab(3)}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    borderBottom: activeTab === 3 ? '2px solid #3b82f6' : '2px solid transparent',
+                    color: activeTab === 3 ? '#3b82f6' : '#6b7280',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== 3) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.borderBottomColor = '#d1d5db';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== 3) {
                       e.currentTarget.style.color = '#6b7280';
                       e.currentTarget.style.borderBottomColor = 'transparent';
                     }
@@ -1262,8 +1302,42 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                 </Box>
               )}
 
-              {/* Headers Tab */}
+              {/* Variables Tab */}
               {activeTab === 1 && (
+                <Box sx={{ height: '100%', p: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontSize: '14px', fontWeight: 500 }}>
+                    GraphQL Variables
+                  </Typography>
+                  <Box sx={{ 
+                    height: 'calc(100% - 40px)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <CodeMirror
+                      value={variables}
+                      onChange={(val) => onVariablesChange?.(val)}
+                      placeholder='{ "key": "value" }'
+                      extensions={[
+                        EditorView.lineWrapping,
+                        EditorView.theme({
+                          "&": { fontSize: "13px", height: "100%" },
+                          ".cm-content": { 
+                            fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace',
+                            border: 'none !important'
+                          },
+                          ".cm-scroller": { border: 'none !important' },
+                          ".cm-editor": { border: 'none !important' }
+                        })
+                      ]}
+                      style={{ height: '100%' }}
+                    />
+                  </Box>
+                </Box>
+              )}
+
+              {/* Headers Tab */}
+              {activeTab === 2 && (
                 <Box sx={{ height: '100%', p: 2 }}>
                   <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
                     HTTP Headers (JSON)
@@ -1297,7 +1371,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               )}
 
               {/* Status Tab */}
-              {activeTab === 2 && (
+              {activeTab === 3 && (
                 <Box sx={{ height: '100%', p: 3, overflow: 'auto' }}>
                   {/* Authentication Status */}
                   {apiClient && (
