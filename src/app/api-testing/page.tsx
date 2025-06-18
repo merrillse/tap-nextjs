@@ -908,240 +908,221 @@ ${fields}
   }, [currentFocus]); // Re-add listener when currentFocus changes
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 ${isResponsePanelFullscreen ? 'overflow-hidden' : ''}`}>
+    <div className={`min-h-screen bg-gray-50 ${isResponsePanelFullscreen ? 'overflow-hidden' : ''}`}>
       
-      <div className={`max-w-full mx-auto px-6 py-4 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : 'min-h-screen'}`}>
+      {/* Modern Container with Perfect Spacing */}
+      <div className={`max-w-[2000px] mx-auto p-6 ${isResponsePanelFullscreen ? 'h-screen flex flex-col' : 'min-h-screen'}`}>
 
-        {/* Main Content - Flexible Layout */}
-        <div className={`flex ${isResponsePanelFullscreen ? 'flex-grow contents' : 'gap-6 min-h-0 flex-1'}`}>
+        {/* Seamless Two-Panel Layout */}
+        <div className={`flex ${isResponsePanelFullscreen ? 'flex-grow contents' : 'gap-4 min-h-0 flex-1'}`}>
           
-          {/* Request Panel - Left Side (conditionally hidden in fullscreen) */}
+          {/* LEFT PANEL - GraphQL Editor */}
           {!isResponsePanelFullscreen && (
-            <div className="flex-1 min-w-0 flex flex-col space-y-4">
+            <div className="flex-1 min-w-0 flex flex-col">
               
-              {/* Query Editor with Action Header - Full Height */}
-              <Paper elevation={2} className="bg-white rounded-lg shadow-md flex flex-col" style={{ height: '60vh', minHeight: '400px' }}>
-                {/* Action Header - Always Visible */}
-                <div className="bg-white border-b border-gray-200 p-2 flex items-center justify-between space-x-1 flex-shrink-0">
-                  {/* Left Side - Query Context Information */}
-                  <div className="flex items-center space-x-3 text-sm text-gray-600 min-w-0 flex-1">
-                    {/* Query Name - Always visible */}
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="font-medium text-blue-700 truncate">
-                        {editingQuery?.name || 'Unnamed'}
+              {/* Modern Editor Card */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden" style={{ height: '65vh', minHeight: '500px' }}>
+                
+                {/* Minimal Header Bar */}
+                <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+                  
+                  {/* Context Breadcrumb */}
+                  <div className="flex items-center space-x-2 text-sm min-w-0 flex-1">
+                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium text-gray-900 truncate">
+                        {editingQuery?.name || 'Unnamed Query'}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                      </svg>
-                      <span className="text-green-700 truncate">{selectedEnvironment}</span>
+                    <div className="text-gray-300">•</div>
+                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-700 truncate">{selectedEnvironment}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-purple-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <span className="text-purple-700 truncate">
-                        {proxyClients.find(pc => pc.clientId === selectedProxyClient)?.name || 'Unknown Client'}
+                    <div className="text-gray-300">•</div>
+                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-700 truncate text-xs">
+                        {proxyClients.find(pc => pc.clientId === selectedProxyClient)?.name?.split(' ')[0] || 'Client'}
                       </span>
                     </div>
                   </div>
                   
-                  {/* Right Side - Action Icons */}
-                  <div className="flex items-center space-x-1 flex-shrink-0">
-                  {/* Refresh Schema Button */}
-                  <Tooltip title="Refresh schema">
-                    <IconButton
-                      onClick={refreshSchema}
-                      size="small"
-                      disabled={schemaLoading}
-                      sx={{
-                        backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
-                        '&:hover': { backgroundColor: '#f9fafb' }
-                      }}
-                    >
-                      {schemaLoading ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                      ) : (
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                      )}
-                    </IconButton>
-                  </Tooltip>
+                  {/* Action Toolbar */}
+                  <div className="flex items-center space-x-1 bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                    {/* Execute Button - Primary Action */}
+                    <Tooltip title={loading ? "Executing query..." : "Execute GraphQL query"}>
+                      <button
+                        onClick={handleTest}
+                        disabled={loading}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          loading 
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                        }`}
+                      >
+                        {loading ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Running</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1.5">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            <span>Run</span>
+                          </div>
+                        )}
+                      </button>
+                    </Tooltip>
+                    
+                    <div className="w-px h-6 bg-gray-200"></div>
+                    
+                    {/* Schema Refresh */}
+                    <Tooltip title="Refresh schema">
+                      <button
+                        onClick={refreshSchema}
+                        disabled={schemaLoading}
+                        className="p-1.5 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50"
+                      >
+                        {schemaLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                        ) : (
+                          <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        )}
+                      </button>
+                    </Tooltip>
                   
-                  {/* Execute Button - Play Icon */}
-                  <Tooltip title={loading ? "Executing query..." : "Execute GraphQL query"}>
-                    <IconButton
-                      onClick={handleTest}
-                      disabled={loading}
-                      size="small"
-                      sx={{
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        ml: '4px',
-                        '&:hover': { backgroundColor: '#2563eb' },
-                        '&:disabled': { backgroundColor: '#9ca3af', color: 'white' }
-                      }}
-                    >
-                      {loading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  
-                  {/* Action Icons */}
-                  {selectedEndpoint === 'graphql' && !loading && (
-                    <>
-                      {/* Divider */}
-                      <Box sx={{ width: '1px', height: '20px', bgcolor: 'divider', mx: 0.5 }} />
-                      
-                      {/* Generate Random Query */}
-                      <Tooltip title="Generate Random Query">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleGenerateRandomQuery} 
-                          disabled={generatingQuery}
-                          sx={{
-                            backgroundColor: 'white',
-                            border: '1px solid #e5e7eb',
-                            '&:hover': { backgroundColor: '#f9fafb' }
-                          }}
-                        >
-                          {generatingQuery ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
-                          ) : (
-                            <Casino sx={{ fontSize: 16 }} />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Query Library */}
-                      <Tooltip title="Query Library">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => setShowLibraryDialog(true)}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <LibraryBooks sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Schema Browser */}
-                      <Tooltip title="Schema Browser (Ctrl+Shift+S)">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleShowSchemaBrowser}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <Schema sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Settings */}
-                      <Tooltip title="API Settings">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleShowSettings}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <Settings sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* New Query */}
-                      <Tooltip title="New Query">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleNewQuery}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <NoteAdd sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Save Query */}
-                      <Tooltip title="Save Query">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleSaveQuery} 
-                          disabled={!queryInput.trim()}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <Save sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Duplicate Query */}
-                      <Tooltip title="Duplicate Query">
-                        <IconButton 
-                          size="small" 
-                          onClick={handleDuplicateQuery} 
-                          disabled={!queryInput.trim()}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <FileCopy sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Format GraphQL */}
-                      <Tooltip title="Format GraphQL">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => {
-                            try {
-                              const formatted = formatGraphQLQuery(queryInput);
-                              setQueryInput(formatted);
-                            } catch (error) {
-                              console.error('Failed to format GraphQL:', error);
-                            }
-                          }}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <AutoFixHigh sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Copy to clipboard */}
-                      <Tooltip title="Copy to clipboard">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => {
-                            navigator.clipboard.writeText(queryInput);
-                            setCopySnackbarMessage('Query copied to clipboard');
-                            setCopySnackbarOpen(true);
-                          }}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <ContentCopy sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Help */}
-                      <Tooltip title="Keyboard shortcuts">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => setShowKeyboardShortcuts(true)}
-                          sx={{ backgroundColor: 'white', border: '1px solid #e5e7eb', '&:hover': { backgroundColor: '#f9fafb' } }}
-                        >
-                          <Help sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  )}
+                    {/* Action Icons */}
+                    {selectedEndpoint === 'graphql' && !loading && (
+                      <>
+                        {/* Generate Random Query */}
+                        <Tooltip title="Generate Random Query">
+                          <button 
+                            onClick={handleGenerateRandomQuery} 
+                            disabled={generatingQuery}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50"
+                          >
+                            {generatingQuery ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                            ) : (
+                              <Casino className="h-4 w-4 text-gray-600" />
+                            )}
+                          </button>
+                        </Tooltip>
+                        
+                        {/* Query Library */}
+                        <Tooltip title="Query Library">
+                          <button 
+                            onClick={() => setShowLibraryDialog(true)}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <LibraryBooks className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        {/* Schema Browser */}
+                        <Tooltip title="Schema Browser">
+                          <button 
+                            onClick={handleShowSchemaBrowser}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <Schema className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        {/* Settings */}
+                        <Tooltip title="Settings">
+                          <button 
+                            onClick={handleShowSettings}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <Settings className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <div className="w-px h-6 bg-gray-200"></div>
+                        
+                        {/* File Actions */}
+                        <Tooltip title="New Query">
+                          <button 
+                            onClick={handleNewQuery}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <NoteAdd className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <Tooltip title="Save Query">
+                          <button 
+                            onClick={handleSaveQuery} 
+                            disabled={!queryInput.trim()}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-30"
+                          >
+                            <Save className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <Tooltip title="Duplicate Query">
+                          <button 
+                            onClick={handleDuplicateQuery} 
+                            disabled={!queryInput.trim()}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-30"
+                          >
+                            <FileCopy className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <div className="w-px h-6 bg-gray-200"></div>
+                        
+                        {/* Editor Actions */}
+                        <Tooltip title="Format GraphQL">
+                          <button 
+                            onClick={() => {
+                              try {
+                                const formatted = formatGraphQLQuery(queryInput);
+                                setQueryInput(formatted);
+                              } catch (error) {
+                                console.error('Failed to format GraphQL:', error);
+                              }
+                            }}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <AutoFixHigh className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <Tooltip title="Copy to clipboard">
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(queryInput);
+                              setCopySnackbarMessage('Query copied to clipboard');
+                              setCopySnackbarOpen(true);
+                            }}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <ContentCopy className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        
+                        <Tooltip title="Keyboard shortcuts">
+                          <button 
+                            onClick={() => setShowKeyboardShortcuts(true)}
+                            className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            <Help className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                      </>
+                    )}
                   </div>
                 </div>
                 
-                {/* Editor Container - Full Height */}
-                <div className="flex-1 min-h-0 overflow-auto">
+                {/* Modern Editor Container */}
+                <div className="flex-1 min-h-0 bg-white">
                   <EnhancedGraphQLEditor
                     ref={editorRef}
                     value={queryInput}
@@ -1154,18 +1135,23 @@ ${fields}
                     hasFocus={currentFocus === 'editor'}
                   />
                 </div>
-              </Paper>
+              </div>
 
-              
-              {/* Collapsible Accordions Section - Separate scrollable area */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 max-h-80 border-t border-gray-200 pt-4"> {/* Added border-t and reduced space-y */}
+              {/* Modern Collapsible Panels */}
+              <div className="flex flex-col space-y-3 max-h-[35vh] min-h-0">
                 
-                {/* GraphQL Variables Editor */}
-                <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="variables-content" id="variables-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight="medium">GraphQL Variables (JSON)</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ p: 0 }}>
+                {/* Variables Panel */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <button 
+                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
+                    onClick={() => {/* Toggle logic */}}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">Variables</span>
+                      <ExpandMoreIcon className="text-gray-400" />
+                    </div>
+                  </button>
+                  <div className="border-t border-gray-100">
                     <CodeEditor
                       value={graphqlVariables}
                       onChange={setGraphqlVariables}
@@ -1173,15 +1159,21 @@ ${fields}
                       height="120px"
                       placeholder='{ "key": "value" }'
                     />
-                  </AccordionDetails>
-                </Accordion>
+                  </div>
+                </div>
 
-                {/* HTTP Headers Editor */}
-                <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="headers-content" id="headers-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight="medium">HTTP Headers (JSON)</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ p: 0 }}>
+                {/* Headers Panel */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <button 
+                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
+                    onClick={() => {/* Toggle logic */}}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">Headers</span>
+                      <ExpandMoreIcon className="text-gray-400" />
+                    </div>
+                  </button>
+                  <div className="border-t border-gray-100">
                     <CodeEditor
                       value={httpHeaders}
                       onChange={setHttpHeaders}
@@ -1189,307 +1181,232 @@ ${fields}
                       height="120px"
                       placeholder='{ "Authorization": "Bearer YOUR_TOKEN" }'
                     />
-                  </AccordionDetails>
-                </Accordion>
-                
-                {/* Sent Request Details Viewer */}
-                {sentRequestBody && sentRequestHeaders && (
-                  <Accordion sx={{ borderRadius: '0.75rem', boxShadow: 'md', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }} defaultExpanded={false}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="sent-request-content" id="sent-request-header" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
-                      <Typography variant="body2" fontWeight="medium">Sent Request Details & Authentication Flow</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box>
-                        <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                          Request Body (Sent to Next.js Proxy)
-                        </Typography>
-                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
-                          <JSONViewer value={sentRequestBody} />
-                        </Paper>
-                      </Box>
-                      <Box>
-                        <Typography variant="overline" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
-                          Request Headers (Sent to Next.js Proxy)
-                        </Typography>
-                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.03)'}}>
-                          <JSONViewer value={safeStringify(sentRequestHeaders)} />
-                        </Paper>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-                          💡 <strong>Authentication Flow:</strong> The Next.js proxy extracts the access_token from the request body and forwards it to the GraphQL server as an <code>Authorization: Bearer &lt;token&gt;</code> header, along with additional headers like <code>proxy-client</code> and <code>User-Agent</code>.
-                        </Typography>
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-                
-                {/* Enhanced Authentication & Schema Status - Prominent Section */}
-                {apiClient && (
-                  <Paper 
-                    elevation={schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() ? 6 : 2} 
-                    className={`backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-6 transition-all duration-300 ${
-                      schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() 
-                        ? 'bg-blue-50/90 border-blue-200/50 shadow-blue-100' 
-                        : 'bg-white/80'
-                    }`}
-                    sx={{
-                      transform: schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken() ? 'scale(1.02)' : 'scale(1)',
-                    }}
-                  >
-                    {/* Authentication Status */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 ${
-                          apiClient.getCurrentToken() ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
-                        }`}>
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">API Connection Status</h3>
-                          <p className="text-sm text-gray-600">Authentication & Schema Management</p>
-                        </div>
+                  </div>
+                </div>
+
+                {/* Status Panel - Modern Design */}
+                {(apiClient && (schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken())) && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded-full animate-pulse ${apiClient.getCurrentToken() ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                        <span className={`text-sm font-medium ${apiClient.getCurrentToken() ? 'text-green-600' : 'text-yellow-600'}`}>
-                          {apiClient.getCurrentToken() ? 'Connected' : 'Connecting...'}
-                        </span>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {schemaLoading && 'Loading Schema...'}
+                          {loading && 'Executing Query...'}
+                          {generatingQuery && 'Generating Query...'}
+                          {!apiClient.getCurrentToken() && 'Connecting...'}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {schemaLoading && 'Fetching GraphQL schema for autocomplete'}
+                          {loading && 'Sending request to API endpoint'}
+                          {generatingQuery && 'Creating random query from schema'}
+                          {!apiClient.getCurrentToken() && 'Authenticating with OAuth'}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Authentication Details */}
-                    {apiClient.getCurrentToken() && (
-                      <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
-                        <div className="text-sm text-green-700">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium flex items-center">
-                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              OAuth Token Active {apiClient.hasCachedToken() ? '(cached)' : '(fresh)'}
-                            </p>
-                          </div>
-                          <p className="text-xs opacity-75">Expires: {new Date(apiClient.getCurrentToken()!.expires_at).toLocaleString()}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Schema Status */}
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-300 ${
-                            schemaLoading ? 'bg-blue-100 text-blue-600' : 
-                            schema ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {schemaLoading ? (
-                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                              </svg>
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">GraphQL Schema</h4>
-                            <p className="text-xs text-gray-600">For autocomplete and validation</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {schemaLoading && (
-                            <span className="text-sm font-medium text-blue-600 animate-pulse">Loading...</span>
-                          )}
-                          {!schemaLoading && schema && (
-                            <span className="text-sm font-medium text-green-600">Ready</span>
-                          )}
-                          {!schemaLoading && !schema && (
-                            <span className="text-sm font-medium text-gray-500">Not Loaded</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Schema Loading Progress */}
-                      {schemaLoading && (
-                        <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-blue-700">Loading GraphQL Schema...</p>
-                              <p className="text-xs text-blue-600">Introspecting API to enable autocomplete and validation</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Schema Success */}
-                      {!schemaLoading && schema && (
-                        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-sm font-medium text-green-700 flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Schema loaded successfully
-                          </p>
-                          <p className="text-xs text-green-600 mt-1">Autocomplete, validation, and schema browser are now available</p>
-                        </div>
-                      )}
-
-                      {/* Other Loading States */}
-                      {(loading || generatingQuery) && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-blue-700">
-                                {loading && 'Executing GraphQL Query...'}
-                                {generatingQuery && 'Generating Random Query...'}
-                              </p>
-                              <p className="text-xs text-blue-600">
-                                {loading && 'Sending request to API server'}
-                                {generatingQuery && 'Creating query from schema definition'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Paper>
+                  </div>
                 )}
               </div>
             </div>
           )}
           
-          {/* Response Panel - Right Side */}
-          <div className={`flex-1 min-w-0 flex flex-col ${isResponsePanelFullscreen ? 'w-full h-full fixed inset-0 z-[2000]' : ''}`}>
-            <Paper 
+          {/* RIGHT PANEL - Response Viewer */}
+          <div className={`flex-1 min-w-0 ${isResponsePanelFullscreen ? 'w-full h-full fixed inset-0 z-[2000]' : ''}`}>
+            <div 
               ref={responseRef}
-              elevation={isResponsePanelFullscreen ? 12 : 2} 
-              className={`bg-white rounded-lg shadow-md flex flex-col flex-1 overflow-hidden ${isResponsePanelFullscreen ? '!rounded-none' : ''}`}
-              tabIndex={-1} // Make the panel focusable
-              sx={{
-                outline: currentFocus === 'response' ? '2px solid #1976d2' : 'none',
+              className={`bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden ${
+                isResponsePanelFullscreen ? '!rounded-none h-full' : 'h-full min-h-[65vh]'
+              }`}
+              tabIndex={-1}
+              style={{
+                outline: currentFocus === 'response' ? '2px solid #3b82f6' : 'none',
                 outlineOffset: '-2px',
-                transition: 'outline 0.2s ease-in-out',
-                height: isResponsePanelFullscreen ? '100vh' : 'auto',
-                minHeight: isResponsePanelFullscreen ? 'auto' : '60vh'
               }}
             >
-              {/* Compact Header for API Response Panel */}
-              <div className="bg-white border-b border-gray-200 p-2 flex items-center justify-between flex-shrink-0">
-                {/* Left side - Status and execution time */}
+              {/* Modern Response Header */}
+              <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+                
+                {/* Status Information */}
                 <div className="flex items-center space-x-3">
                   {response && (
                     <>
-                      <div className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+                      <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${
                         response.status >= 200 && response.status < 300 && !response.error
-                          ? 'bg-green-100 text-green-700 border border-green-200' 
-                          : 'bg-red-100 text-red-700 border border-red-200'
+                          ? 'bg-green-50 text-green-700 border border-green-200' 
+                          : 'bg-red-50 text-red-700 border border-red-200'
                       }`}>
-                        {response.status} {response.status >= 200 && response.status < 300 && !response.error ? 'SUCCESS' : 'ERROR'}
+                        {response.status} {response.status >= 200 && response.status < 300 && !response.error ? 'Success' : 'Error'}
                       </div>
-                      <div className="text-slate-600 text-sm font-medium">
-                        <span role="img" aria-label="lightning">⚡</span> {response.executionTime}
+                      <div className="text-sm text-gray-600 font-mono">
+                        {response.executionTime}
                       </div>
                     </>
                   )}
+                  {!response && (
+                    <span className="text-sm text-gray-500">Ready to execute</span>
+                  )}
                 </div>
 
-                {/* Right side - Action buttons */}
-                <div className="flex items-center space-x-1 flex-shrink-0">
-                    <Tooltip title="Copy current tab content">
-                      <span> {/* Span for Tooltip when button is disabled */}
-                        <IconButton 
-                          onClick={handleCopyResponseContent} 
-                          size="small"
-                          disabled={!((responseTabValue === 0 && response?.data) || (responseTabValue === 1 && response?.headers) || (responseTabValue === 2 && (error || response?.error)))}
-                        >
-                          <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title={isResponsePanelFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
-                      <IconButton onClick={toggleResponsePanelFullscreen} size="small">
-                        {isResponsePanelFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
-                      </IconButton>
-                    </Tooltip>
-                  </div>
+                {/* Actions */}
+                <div className="flex items-center space-x-1 bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                  <Tooltip title="Copy current tab content">
+                    <button 
+                      onClick={handleCopyResponseContent} 
+                      disabled={!((responseTabValue === 0 && response?.data) || (responseTabValue === 1 && response?.headers) || (responseTabValue === 2 && (error || response?.error)))}
+                      className="p-1.5 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-30"
+                    >
+                      <ContentCopyIcon className="h-4 w-4 text-gray-600" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip title={isResponsePanelFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+                    <button 
+                      onClick={toggleResponsePanelFullscreen}
+                      className="p-1.5 hover:bg-gray-50 rounded-md transition-colors"
+                    >
+                      {isResponsePanelFullscreen ? 
+                        <FullscreenExitIcon className="h-4 w-4 text-gray-600" /> : 
+                        <FullscreenIcon className="h-4 w-4 text-gray-600" />
+                      }
+                    </button>
+                  </Tooltip>
                 </div>
-              
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}> {/* Changed bgcolor for tabs */}
-                <Tabs value={responseTabValue} onChange={handleResponseTabChange} aria-label="response tabs" variant="fullWidth">
-                  <Tab label="Body" {...a11yProps(0)} />
-                  <Tab label="Headers" {...a11yProps(1)} />
-                  <Tab label="Error" {...a11yProps(2)} />
-                </Tabs>
-              </Box>
-              <div className="flex-grow overflow-auto"> {/* This div will handle scrolling for tab panels */}
-                <TabPanel value={responseTabValue} index={0}>
-                  {loading && (
-                    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" textAlign="center">
-                      <CircularProgress />
-                      <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
-                        Fetching response...
-                      </Typography>
-                    </Box>
-                  )}
-                  {!loading && response?.data !== undefined && response.data !== null && (() => {
-                    const stringifiedData: string = safeStringify(response.data);
-                    return <JSONViewer value={stringifiedData} />;
-                  })()}
-                  {!loading && !response?.data && !response?.error && !error && (
-                     <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                        <Typography variant="body1" color="textSecondary">Execute a query to see the response body.</Typography>
-                     </Box>
-                  )}
-                </TabPanel>
-                <TabPanel value={responseTabValue} index={1}>
-                  {response?.headers ? (() => {
-                    const stringifiedHeaders: string = safeStringify(response.headers);
-                    return <JSONViewer value={stringifiedHeaders} />;
-                  })() : (
-                     <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                        <Typography variant="body1" color="textSecondary">No headers to display.</Typography>
-                     </Box>
-                  )}
-                </TabPanel>
-                <TabPanel value={responseTabValue} index={2}>
-                  {error && (
-                    <div className="p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 text-red-400 mr-3">
-                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-red-800 font-medium">{error}</p>
-                      </div>
-                    </div>
-                  )}
-                  {response?.error && (
-                     <div className="p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg mt-4">
-                       <div className="flex items-center">
-                         <div className="w-6 h-6 text-red-400 mr-3">
-                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                           </svg>
-                         </div>
-                         <Typography variant="body2" color="error" component="pre" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                           {typeof response.error === 'string' ? response.error : safeStringify(response.error)}
-                         </Typography>
-                       </div>
-                     </div>
-                  )}
-                  {!error && !response?.error && (
-                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                        <Typography variant="body1" color="textSecondary">No errors to display.</Typography>
-                    </Box>
-                  )}
-                </TabPanel>
               </div>
-            </Paper>
+              
+              {/* Modern Tab Navigation */}
+              <div className="border-b border-gray-100">
+                <nav className="flex">
+                  <button
+                    onClick={() => setResponseTabValue(0)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      responseTabValue === 0
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Response
+                  </button>
+                  <button
+                    onClick={() => setResponseTabValue(1)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      responseTabValue === 1
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Headers
+                  </button>
+                  <button
+                    onClick={() => setResponseTabValue(2)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      responseTabValue === 2
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Errors
+                  </button>
+                </nav>
+              </div>
+              
+              {/* Tab Content */}
+              <div className="flex-1 overflow-auto">
+                {/* Response Tab */}
+                {responseTabValue === 0 && (
+                  <div className="h-full p-4">
+                    {loading && (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-600">Executing query...</p>
+                      </div>
+                    )}
+                    {!loading && response?.data !== undefined && response.data !== null && (
+                      <div className="h-full">
+                        <JSONViewer value={safeStringify(response.data)} />
+                      </div>
+                    )}
+                    {!loading && !response?.data && !response?.error && !error && (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-500">Execute a query to see the response</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Headers Tab */}
+                {responseTabValue === 1 && (
+                  <div className="h-full p-4">
+                    {response?.headers ? (
+                      <JSONViewer value={safeStringify(response.headers)} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">No headers to display</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Errors Tab */}
+                {responseTabValue === 2 && (
+                  <div className="h-full p-4">
+                    {error && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-red-800">Request Error</h3>
+                            <div className="mt-2 text-sm text-red-700">
+                              <p>{error}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {response?.error && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg mt-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-red-800">API Error</h3>
+                            <div className="mt-2 text-sm text-red-700 font-mono whitespace-pre-wrap">
+                              {typeof response.error === 'string' ? response.error : safeStringify(response.error)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {!error && !response?.error && (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-500">No errors to display</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

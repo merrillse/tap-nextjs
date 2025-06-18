@@ -798,15 +798,24 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           fontSize: "13px",
           height: "100%",
           backgroundColor: isDark ? '#282c34' : '#ffffff',
+          border: 'none !important',
+        },
+        "&.cm-focused": {
+          border: 'none !important',
+          outline: 'none !important',
         },
         ".cm-content": {
           caretColor: isDark ? "#ffffff" : "#000000",
           fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace',
+          border: 'none !important',
         },
         ".cm-gutters": {
           backgroundColor: isDark ? '#282c34' : '#f0f0f0',
           color: isDark ? "#888" : "#666",
           borderRight: isDark ? "1px solid #333" : "1px solid #ddd",
+        },
+        ".cm-scroller": {
+          border: 'none !important',
         },
         ".cm-activeLineGutter": {
           backgroundColor: isDark ? '#333a4a' : '#e0e0e0',
@@ -1022,9 +1031,26 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           overflow: 'auto',
           '& .cm-editor': {
             height: '100%',
+            border: 'none !important',
+            outline: 'none !important',
             '&.cm-focused': {
               position: 'relative',
+              border: 'none !important',
+              outline: 'none !important'
             }
+          },
+          '& .cm-scroller': {
+            border: 'none !important'
+          },
+          '& .cm-content': {
+            border: 'none !important'
+          },
+          '& .cm-wrap': {
+            border: 'none !important'
+          },
+          '& .cm-editor.cm-focused': {
+            border: 'none !important',
+            outline: 'none !important'
           }
         }}>
           <CodeMirror {...editorProps} />
