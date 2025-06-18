@@ -1377,25 +1377,12 @@ ${fields}
                 minHeight: isResponsePanelFullscreen ? 'auto' : '60vh'
               }}
             >
-              {/* Updated Header for API Response Panel */}
-              <div className="bg-slate-50 p-3 border-b border-slate-200">
-                <div className="flex items-center justify-between">
-                  {/* ITEM 1: Left side (title/description) */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-slate-700">API Response</h2>
-                      <p className="text-slate-500 text-sm">Query results and diagnostics</p>
-                    </div>
-                  </div>
-
-                  {/* ITEM 2: Middle part (status and execution time) */}
-                  {response && ( 
-                    <div className="flex items-center space-x-3">
+              {/* Compact Header for API Response Panel */}
+              <div className="bg-white border-b border-gray-200 p-2 flex items-center justify-between flex-shrink-0">
+                {/* Left side - Status and execution time */}
+                <div className="flex items-center space-x-3">
+                  {response && (
+                    <>
                       <div className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                         response.status >= 200 && response.status < 300 && !response.error
                           ? 'bg-green-100 text-green-700 border border-green-200' 
@@ -1406,11 +1393,12 @@ ${fields}
                       <div className="text-slate-600 text-sm font-medium">
                         <span role="img" aria-label="lightning">⚡</span> {response.executionTime}
                       </div>
-                    </div>
+                    </>
                   )}
+                </div>
 
-                  {/* ITEM 3: Right side (Copy and Fullscreen icons) */}
-                  <div className="flex items-center flex-shrink-0"> {/* Added flex-shrink-0 */}
+                {/* Right side - Action buttons */}
+                <div className="flex items-center space-x-1 flex-shrink-0">
                     <Tooltip title="Copy current tab content">
                       <span> {/* Span for Tooltip when button is disabled */}
                         <IconButton 
@@ -1429,7 +1417,6 @@ ${fields}
                     </Tooltip>
                   </div>
                 </div>
-              </div>
               
               <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}> {/* Changed bgcolor for tabs */}
                 <Tabs value={responseTabValue} onChange={handleResponseTabChange} aria-label="response tabs" variant="fullWidth">
