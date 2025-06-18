@@ -293,6 +293,13 @@ const emacsSearchKeymap = keymap.of([
   {
     key: 'Ctrl-n',
     run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Exit search mode
+        view.dispatch({ effects: exitSearch.of(true) });
+        return true;
+      }
+      
       const completions = currentCompletions(view.state);
       if (completions.length > 0) {
         return moveCompletionSelection(true)(view);
@@ -321,6 +328,13 @@ const emacsSearchKeymap = keymap.of([
   {
     key: 'Ctrl-p',
     run(view) {
+      const search = view.state.field(searchState);
+      if (search.active) {
+        // Exit search mode
+        view.dispatch({ effects: exitSearch.of(true) });
+        return true;
+      }
+      
       const completions = currentCompletions(view.state);
       if (completions.length > 0) {
         return moveCompletionSelection(false)(view);
