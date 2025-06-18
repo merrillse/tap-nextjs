@@ -277,7 +277,7 @@ export function JSONViewer({
   ]);
 
   return (
-    <Box sx={{ height, position: 'relative', border: `1px solid ${theme.palette.divider}`, borderRadius: '4px', overflow: 'hidden' }}>
+    <Box sx={{ height, position: 'relative', border: `1px solid ${theme.palette.divider}`, borderRadius: '4px', overflowY: 'auto' }}>
       {label && (
         <Typography 
           variant="caption" 

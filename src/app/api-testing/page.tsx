@@ -1136,7 +1136,6 @@ ${fields}
               }`}
               tabIndex={-1}
               style={{
-                overflowY: 'auto',
                 outline: currentFocus === 'response' ? '2px solid #3b82f6' : 'none',
                 outlineOffset: '-2px',
               }}
@@ -1273,7 +1272,7 @@ ${fields}
                       </div>
                     )}
                     {!loading && response?.data !== undefined && response.data !== null && (
-                      <div className="h-full">
+                      <div className="h-full" style={{ overflowY: 'auto' }}>
                         <JSONViewer value={safeStringify(response.data)} />
                       </div>
                     )}
@@ -1296,7 +1295,9 @@ ${fields}
                 {responseTabValue === 1 && (
                   <div className="h-full p-4" style={{ overflowY: 'auto' }}>
                     {response?.headers ? (
-                      <JSONViewer value={safeStringify(response.headers)} />
+                      <div style={{ overflowY: 'auto' }}>
+                        <JSONViewer value={safeStringify(response.headers)} />
+                      </div>
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <p className="text-gray-500">No headers to display</p>
