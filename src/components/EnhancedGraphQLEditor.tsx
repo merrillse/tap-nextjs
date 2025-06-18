@@ -754,13 +754,13 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 
   // Build GraphQL schema for autocomplete
   const builtSchema = useMemo(() => {
-    if (!schema?.data?.__schema) {
+    if (!schema || !('data' in schema) || !(schema as any).data?.__schema) {
       return null;
     }
 
     try {
       // Convert introspection result to executable schema
-      return buildClientSchema(schema.data);
+      return buildClientSchema((schema as any).data);
     } catch (error) {
       console.warn('Failed to build GraphQL schema for autocomplete:', error);
       return null;
@@ -884,7 +884,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
       searchState, // State for Emacs-style search
       aceJumpState, // State for Ace Jump
       aceJumpPlugin, // Plugin for Ace Jump decorations
-      createSearchPlugin(setReactSearchState), // Instantiate the search plugin
+      createSearchPlugin((state: any) => setReactSearchState(state)), // Instantiate the search plugin
       search(), // Added for standard search panel functionality
       keymap.of(searchKeymap), // Added for standard search keybindings (Cmd/Ctrl-F)
     ];

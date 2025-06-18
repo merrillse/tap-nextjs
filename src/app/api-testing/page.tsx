@@ -356,6 +356,48 @@ export default function APITestingPage() {
       preferredLanguage
     }
   }
+}
+
+# This is a long comment to test sticky header behavior
+# when scrolling through a GraphQL query with many lines
+# The header should remain visible at all times
+# Even when scrolling to the bottom of the editor
+# Let's add more content to ensure we need to scroll
+
+query AnotherQuery {
+  missionary(missionaryId: "123456") {
+    latinFirstName
+    latinLastName
+    missionaryNumber
+    emailAddress
+    mobilePhone
+    birthDate
+    assignments {
+      assignmentId
+      componentName
+      assignmentStartDate
+      assignmentEndDate
+    }
+  }
+}
+
+# More comments to increase the content height
+# This will force the editor to be scrollable
+# The sticky header should always remain visible
+# at the top of the editor container
+# regardless of scroll position
+
+query ThirdQuery {
+  missionary(missionaryId: "789012") {
+    latinFirstName
+    latinLastName
+    assignments {
+      assignmentId
+      mission {
+        name
+      }
+    }
+  }
 }`
   }), []);
 
