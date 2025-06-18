@@ -1133,6 +1133,12 @@ ${fields}
                     onExecute={selectedEndpoint === 'graphql' ? handleTest : undefined}
                     onSwitchFocus={handleSwitchFocus}
                     hasFocus={currentFocus === 'editor'}
+                    headers={httpHeaders}
+                    onHeadersChange={setHttpHeaders}
+                    apiClient={apiClient}
+                    schemaLoading={schemaLoading}
+                    loading={loading}
+                    generatingQuery={generatingQuery}
                   />
                 </div>
               </div>
@@ -1158,28 +1164,6 @@ ${fields}
                       language="json"
                       height="120px"
                       placeholder='{ "key": "value" }'
-                    />
-                  </div>
-                </div>
-
-                {/* Headers Panel */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
-                    onClick={() => {/* Toggle logic */}}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">Headers</span>
-                      <ExpandMoreIcon className="text-gray-400" />
-                    </div>
-                  </button>
-                  <div className="border-t border-gray-100">
-                    <CodeEditor
-                      value={httpHeaders}
-                      onChange={setHttpHeaders}
-                      language="json"
-                      height="120px"
-                      placeholder='{ "Authorization": "Bearer YOUR_TOKEN" }'
                     />
                   </div>
                 </div>

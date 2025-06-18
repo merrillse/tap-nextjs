@@ -593,6 +593,16 @@ interface EnhancedGraphQLEditorProps {
   onExecute?: () => void; // Added for Ctrl+Enter functionality
   onSwitchFocus?: () => void; // Added for Ctrl+X O functionality
   hasFocus?: boolean; // Added to track focus state for visual feedback
+  
+  // Tab content props
+  headers?: string; // JSON string for headers
+  onHeadersChange?: (value: string) => void;
+  
+  // Status tab props
+  apiClient?: any; // API client for status info
+  schemaLoading?: boolean;
+  loading?: boolean;
+  generatingQuery?: boolean;
 }
 
 export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLEditorProps>(function EnhancedGraphQLEditor({
@@ -605,10 +615,17 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   readOnly = false,
   onExecute,
   onSwitchFocus,
-  hasFocus = false
+  hasFocus = false,
+  headers = '{}',
+  onHeadersChange,
+  apiClient,
+  schemaLoading = false,
+  loading = false,
+  generatingQuery = false
 }, ref) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [activeTab, setActiveTab] = useState(0); // 0: Editor, 1: Headers, 2: Status
   const [reactSearchState, setReactSearchState] = useState({
     active: false,
     query: '',
@@ -619,7 +636,15 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
   const theme = useTheme();
 
-  // Debug fullscreen state changes
+  // Focus effect for the editor tab
+  useEffect(() => {
+    if (activeTab === 0 && editorRef.current?.view) {
+      // Focus the editor when switching to editor tab
+      setTimeout(() => {
+        editorRef.current?.view?.focus();
+      }, 0);
+    }
+  }, [activeTab]);
   useEffect(() => {
     console.log('🔍 DEBUG: Fullscreen state changed:', isFullscreen);
     console.log('🔍 DEBUG: Document body style:', document.body.style.overflow);
@@ -1009,7 +1034,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             })
           }}
         >
-          {/* Editor Section */}
+          {/* Editor Section with Tabs */}
           <Box sx={{ 
             flex: 1, 
             display: 'flex', 
@@ -1022,108 +1047,382 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             })
           }}>
 
-
-        {/* Editor - Full height content */}
-        <Box sx={{ 
-          position: 'relative',
-          flex: 1,
-          minHeight: 0,
-          overflow: 'auto',
-          '& .cm-editor': {
-            height: '100%',
-            border: 'none !important',
-            outline: 'none !important',
-            '&.cm-focused': {
-              position: 'relative',
-              border: 'none !important',
-              outline: 'none !important'
-            }
-          },
-          '& .cm-scroller': {
-            border: 'none !important'
-          },
-          '& .cm-content': {
-            border: 'none !important'
-          },
-          '& .cm-wrap': {
-            border: 'none !important'
-          },
-          '& .cm-editor.cm-focused': {
-            border: 'none !important',
-            outline: 'none !important'
-          }
-        }}>
-          <CodeMirror {...editorProps} />
-          
-          {/* Emacs-style Search Mode Line */}
-          {reactSearchState.active && (
-            <Box sx={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              bgcolor: isDark ? '#2d3748' : '#f1f5f9',
-              color: isDark ? '#e2e8f0' : '#334155',
-              borderTop: 1,
-              borderColor: isDark ? '#4a5568' : '#cbd5e1',
-              px: 2,
-              py: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-              fontSize: '12px',
-              fontWeight: 500,
-              zIndex: 1000,
-              boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
-              minHeight: '32px'
+            {/* Tab Navigation */}
+            <Box sx={{ 
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: '#f9fafb'
             }}>
-              {/* Left side: I-search prompt and query */}
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography component="span" sx={{ color: '#81c784', mr: 1, fontWeight: 'bold', fontSize: '12px' }}>
-                  I-search:
-                </Typography>
-                <Box sx={{
-                  color: isDark ? '#ffffff' : '#000000',
-                  bgcolor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  minWidth: '20px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace'
-                }}>
-                  {reactSearchState.query || ''}
-                </Box>
-              </Box>
-              
-              {/* Right side: match counter and help */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '11px' }}>
-                <Box sx={{
-                  color: reactSearchState.totalMatches > 0 ? '#90cdf4' : 
-                         (reactSearchState.query && reactSearchState.totalMatches === 0) ? '#fc8181' : '#a0aec0',
-                  fontWeight: reactSearchState.totalMatches > 0 ? 'bold' : 'normal',
-                  bgcolor: reactSearchState.totalMatches > 0 ? 'rgba(144, 205, 244, 0.1)' :
-                           (reactSearchState.query && reactSearchState.totalMatches === 0) ? 'rgba(252, 129, 129, 0.1)' : 'transparent',
-                  px: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 1 : 0,
-                  py: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 0.5 : 0,
-                  borderRadius: 1,
-                  fontSize: '11px'
-                }}>
-                  {reactSearchState.totalMatches > 0 
-                    ? `(${reactSearchState.currentMatch + 1}/${reactSearchState.totalMatches})`
-                    : reactSearchState.query && reactSearchState.totalMatches === 0 
-                      ? '(no matches)'
-                      : '(type to search)'
-                  }
-                </Box>
-                <Typography component="span" sx={{ color: '#a0aec0', fontSize: '11px' }}>
-                  C-s: next • C-r: prev • C-g: exit • Esc: cancel
-                </Typography>
+              <Box sx={{ display: 'flex' }}>
+                <button
+                  onClick={() => setActiveTab(0)}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    borderBottom: activeTab === 0 ? '2px solid #3b82f6' : '2px solid transparent',
+                    color: activeTab === 0 ? '#3b82f6' : '#6b7280',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== 0) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.borderBottomColor = '#d1d5db';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== 0) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.borderBottomColor = 'transparent';
+                    }
+                  }}
+                >
+                  Editor
+                </button>
+                <button
+                  onClick={() => setActiveTab(1)}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    borderBottom: activeTab === 1 ? '2px solid #3b82f6' : '2px solid transparent',
+                    color: activeTab === 1 ? '#3b82f6' : '#6b7280',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== 1) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.borderBottomColor = '#d1d5db';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== 1) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.borderBottomColor = 'transparent';
+                    }
+                  }}
+                >
+                  Headers
+                </button>
+                <button
+                  onClick={() => setActiveTab(2)}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    borderBottom: activeTab === 2 ? '2px solid #3b82f6' : '2px solid transparent',
+                    color: activeTab === 2 ? '#3b82f6' : '#6b7280',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== 2) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.borderBottomColor = '#d1d5db';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== 2) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.borderBottomColor = 'transparent';
+                    }
+                  }}
+                >
+                  Status
+                  {/* Status indicator dot */}
+                  {(schemaLoading || loading || generatingQuery || (apiClient && !apiClient.getCurrentToken?.())) && (
+                    <span 
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: schemaLoading || loading || generatingQuery ? '#3b82f6' : '#f59e0b',
+                        display: 'inline-block',
+                        marginLeft: '2px'
+                      }}
+                    />
+                  )}
+                </button>
               </Box>
             </Box>
-          )}
-        </Box>
+
+            {/* Tab Content */}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              
+              {/* Editor Tab */}
+              {activeTab === 0 && (
+                <Box sx={{ 
+                  height: '100%',
+                  position: 'relative',
+                  overflow: 'auto',
+                  '& .cm-editor': {
+                    height: '100%',
+                    border: 'none !important',
+                    outline: 'none !important',
+                    '&.cm-focused': {
+                      position: 'relative',
+                      border: 'none !important',
+                      outline: 'none !important'
+                    }
+                  },
+                  '& .cm-scroller': {
+                    border: 'none !important'
+                  },
+                  '& .cm-content': {
+                    border: 'none !important'
+                  },
+                  '& .cm-wrap': {
+                    border: 'none !important'
+                  },
+                  '& .cm-editor.cm-focused': {
+                    border: 'none !important',
+                    outline: 'none !important'
+                  }
+                }}>
+                  <CodeMirror {...editorProps} />
+                  
+                  {/* Emacs-style Search Mode Line */}
+                  {reactSearchState.active && (
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      bgcolor: isDark ? '#2d3748' : '#f1f5f9',
+                      color: isDark ? '#e2e8f0' : '#334155',
+                      borderTop: 1,
+                      borderColor: isDark ? '#4a5568' : '#cbd5e1',
+                      px: 2,
+                      py: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      zIndex: 1000,
+                      boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+                      minHeight: '32px'
+                    }}>
+                      {/* Left side: I-search prompt and query */}
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography component="span" sx={{ color: '#81c784', mr: 1, fontWeight: 'bold', fontSize: '12px' }}>
+                          I-search:
+                        </Typography>
+                        <Box sx={{
+                          color: isDark ? '#ffffff' : '#000000',
+                          bgcolor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          minWidth: '20px',
+                          fontSize: '12px',
+                          fontFamily: 'monospace'
+                        }}>
+                          {reactSearchState.query || ''}
+                        </Box>
+                      </Box>
+                      
+                      {/* Right side: match counter and help */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '11px' }}>
+                        <Box sx={{
+                          color: reactSearchState.totalMatches > 0 ? '#90cdf4' : 
+                                 (reactSearchState.query && reactSearchState.totalMatches === 0) ? '#fc8181' : '#a0aec0',
+                          fontWeight: reactSearchState.totalMatches > 0 ? 'bold' : 'normal',
+                          bgcolor: reactSearchState.totalMatches > 0 ? 'rgba(144, 205, 244, 0.1)' :
+                                   (reactSearchState.query && reactSearchState.totalMatches === 0) ? 'rgba(252, 129, 129, 0.1)' : 'transparent',
+                          px: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 1 : 0,
+                          py: reactSearchState.totalMatches > 0 || (reactSearchState.query && reactSearchState.totalMatches === 0) ? 0.5 : 0,
+                          borderRadius: 1,
+                          fontSize: '11px'
+                        }}>
+                          {reactSearchState.totalMatches > 0 
+                            ? `(${reactSearchState.currentMatch + 1}/${reactSearchState.totalMatches})`
+                            : reactSearchState.query && reactSearchState.totalMatches === 0 
+                              ? '(no matches)'
+                              : '(type to search)'
+                          }
+                        </Box>
+                        <Typography component="span" sx={{ color: '#a0aec0', fontSize: '11px' }}>
+                          C-s: next • C-r: prev • C-g: exit • Esc: cancel
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* Headers Tab */}
+              {activeTab === 1 && (
+                <Box sx={{ height: '100%', p: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                    HTTP Headers (JSON)
+                  </Typography>
+                  <Box sx={{ 
+                    height: 'calc(100% - 40px)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <CodeMirror
+                      value={headers}
+                      onChange={(val) => onHeadersChange?.(val)}
+                      placeholder='{ "Authorization": "Bearer YOUR_TOKEN" }'
+                      extensions={[
+                        EditorView.lineWrapping,
+                        EditorView.theme({
+                          "&": { fontSize: "13px", height: "100%" },
+                          ".cm-content": { 
+                            fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace',
+                            border: 'none !important'
+                          },
+                          ".cm-scroller": { border: 'none !important' },
+                          ".cm-editor": { border: 'none !important' }
+                        })
+                      ]}
+                      style={{ height: '100%' }}
+                    />
+                  </Box>
+                </Box>
+              )}
+
+              {/* Status Tab */}
+              {activeTab === 2 && (
+                <Box sx={{ height: '100%', p: 3, overflow: 'auto' }}>
+                  {/* Authentication Status */}
+                  {apiClient && (
+                    <Box sx={{ mb: 4 }}>
+                      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ 
+                          width: 32, 
+                          height: 32, 
+                          borderRadius: '8px',
+                          backgroundColor: apiClient.getCurrentToken?.() ? '#dcfce7' : '#fef3c7',
+                          color: apiClient.getCurrentToken?.() ? '#16a34a' : '#d97706',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          mr: 2
+                        }}>
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        </Box>
+                        Authentication
+                      </Typography>
+
+                      {apiClient.getCurrentToken?.() ? (
+                        <Box sx={{ p: 2, backgroundColor: '#dcfce7', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                          <Typography variant="body2" sx={{ color: '#16a34a', fontWeight: 'medium', mb: 1 }}>
+                            ✓ OAuth Token Active {apiClient.hasCachedToken?.() ? '(cached)' : '(fresh)'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#15803d' }}>
+                            Expires: {apiClient.getCurrentToken?.()?.expires_at ? new Date(apiClient.getCurrentToken().expires_at).toLocaleString() : 'Unknown'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box sx={{ p: 2, backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                          <Typography variant="body2" sx={{ color: '#d97706', fontWeight: 'medium' }}>
+                            Connecting to authentication server...
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Schema Status */}
+                  <Box>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: '8px',
+                        backgroundColor: schemaLoading ? '#dbeafe' : schema ? '#dcfce7' : '#f3f4f6',
+                        color: schemaLoading ? '#2563eb' : schema ? '#16a34a' : '#6b7280',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mr: 2
+                      }}>
+                        {schemaLoading ? (
+                          <Box sx={{ 
+                            width: 16, 
+                            height: 16, 
+                            border: '2px solid currentColor', 
+                            borderTopColor: 'transparent', 
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                            '@keyframes spin': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' }
+                            }
+                          }} />
+                        ) : (
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          </svg>
+                        )}
+                      </Box>
+                      GraphQL Schema
+                    </Typography>
+
+                    {schemaLoading && (
+                      <Box sx={{ p: 2, backgroundColor: '#dbeafe', borderRadius: '8px', border: '1px solid #bfdbfe', mb: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#2563eb', fontWeight: 'medium', mb: 1 }}>
+                          Loading GraphQL Schema...
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#1d4ed8' }}>
+                          Introspecting API to enable autocomplete and validation
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {!schemaLoading && schema && (
+                      <Box sx={{ p: 2, backgroundColor: '#dcfce7', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <Typography variant="body2" sx={{ color: '#16a34a', fontWeight: 'medium', mb: 1 }}>
+                          ✓ Schema loaded successfully
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#15803d' }}>
+                          Autocomplete, validation, and schema browser are now available
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {!schemaLoading && !schema && (
+                      <Box sx={{ p: 2, backgroundColor: '#f3f4f6', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                        <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 'medium' }}>
+                          Schema not loaded
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Active Operations */}
+                    {(loading || generatingQuery) && (
+                      <Box sx={{ p: 2, backgroundColor: '#dbeafe', borderRadius: '8px', border: '1px solid #bfdbfe', mt: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#2563eb', fontWeight: 'medium', mb: 1 }}>
+                          {loading && 'Executing GraphQL Query...'}
+                          {generatingQuery && 'Generating Random Query...'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#1d4ed8' }}>
+                          {loading && 'Sending request to API server'}
+                          {generatingQuery && 'Creating query from schema definition'}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </Box>
           </Box>
         </Box>
       </Paper>
