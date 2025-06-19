@@ -997,6 +997,24 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-yellow-900 mb-3">🔧 SMMS Options</h3>
+                      <p className="text-yellow-700 mb-3">Retrieve all available option values for the Service Missionary Management System (SMMS).</p>
+                      <div className="text-sm text-yellow-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Fetch all SMMS option categories in a single query</li>
+                          <li>• View assignment approval states and statuses</li>
+                          <li>• Access assignment types and opportunity statuses</li>
+                          <li>• Browse service types and opportunity type statuses</li>
+                          <li>• Filter options by category or search text</li>
+                          <li>• Sort options alphabetically in any order</li>
+                          <li>• Export option data to CSV for documentation</li>
+                          <li>• Track fetch history with timestamps and counts</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
@@ -1007,6 +1025,24 @@ assignments{mission{name}}}}`}
                           <li>• Filter by mission and zone</li>
                           <li>• View area boundaries and assignments</li>
                           <li>• Track area statistics and metrics</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-cyan-900 mb-3">📤 Proselyting Area for Referral</h3>
+                      <p className="text-cyan-700 mb-3">Find proselyting areas configured to receive referrals for a specific unit.</p>
+                      <div className="text-sm text-cyan-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by unit ID to find referral-configured areas</li>
+                          <li>• View comprehensive area details and contact information</li>
+                          <li>• See active missionary assignments and ecclesiastical units</li>
+                          <li>• Filter by country, state, or active assignments</li>
+                          <li>• Sort by area name, city, or geographic location</li>
+                          <li>• View vehicle information and transportation details</li>
+                          <li>• Export referral area data to CSV for documentation</li>
+                          <li>• Track search history for repeat queries</li>
                         </ul>
                       </div>
                     </div>
