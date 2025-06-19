@@ -47,6 +47,10 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       name: 'Search & Data',
       icon: '🔍',
       items: [
+        { name: 'Ecclesiastical Unit', href: '/ecclesiastical-unit', icon: '🏛️', description: 'Search ecclesiastical unit hierarchy and assignments' },
+        { name: 'Options Search', href: '/options', icon: '⚙️', description: 'Get all possible options for entities and attributes' },
+        { name: 'Leader Search', href: '/leader', icon: '👔', description: 'Search leader profile by CMIS ID' },
+        { name: 'Member Search', href: '/member', icon: '🆔', description: 'Search member missionary experiences by CMIS UUID' },
         { name: 'Missionary Search', href: '/missionary', icon: '👤', description: 'Search missionary records' },
         { name: 'Missionaries Search', href: '/missionaries', icon: '👥', description: 'Search multiple missionaries' },
         { name: 'Missionaries Connection', href: '/missionaries-connection', icon: '🔗', description: 'Paginated missionary retrieval with GraphQL Relay' },
