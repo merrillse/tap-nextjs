@@ -963,6 +963,22 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-cyan-900 mb-3">🏢 Missionaries by Assigned Unit</h3>
+                      <p className="text-cyan-700 mb-3">Find all missionaries assigned to a specific unit by Unit ID.</p>
+                      <div className="text-sm text-cyan-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by unit ID for comprehensive results</li>
+                          <li>• View detailed missionary profiles and contact info</li>
+                          <li>• Filter by status, type, gender, and active assignments</li>
+                          <li>• Sort by name, number, or service dates</li>
+                          <li>• Assignment history and status tracking</li>
+                          <li>• Export filtered results to CSV</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
