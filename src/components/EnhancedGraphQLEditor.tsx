@@ -6,10 +6,10 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, Drawer, FormControlLabel, Switch, Slider } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, Drawer, FormControlLabel, Switch } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema, Settings } from '@mui/icons-material';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
-import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType, highlightWhitespace } from '@codemirror/view';
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -637,40 +637,9 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     totalMatches: 0
   });
   
-  // Settings helper functions
-  const getStoredSettings = () => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('graphql-editor-settings');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const saveSettings = (settings: any) => {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem('graphql-editor-settings', JSON.stringify(settings));
-    } catch {
-      // Ignore localStorage errors
-    }
-  };
-
-  // Initialize settings from localStorage or defaults
-  const initializeSettings = () => {
-    const stored = getStoredSettings();
-    return {
-      showWhitespace: stored?.showWhitespace ?? true,
-      showIndentationGuides: stored?.showIndentationGuides ?? true,
-      whitespaceOpacity: stored?.whitespaceOpacity ?? 0.08,
-      indentationOpacity: stored?.indentationOpacity ?? 0.15
-    };
-  };
-
-  // Settings state
+  // Settings state - clean and simple
   const [showSettings, setShowSettings] = useState(false);
-  const [editorSettings, setEditorSettings] = useState(initializeSettings);
+  const [showWhitespace, setShowWhitespace] = useState(true);
   
   const editorRef = useRef<ReactCodeMirrorRef | null>(null);
   const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
@@ -856,67 +825,56 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   };
 
   const baseExtensions = useMemo(() => {
-    // Simple indentation guide extension
-    const indentationGuides = ViewPlugin.fromClass(class {
-      decorations: DecorationSet = Decoration.none;
+    // Clean whitespace visualization using mark decorations (no character replacement)
+    const createWhitespaceHighlighter = (isDark: boolean) => {
+      return ViewPlugin.fromClass(class {
+        decorations: DecorationSet;
 
-      constructor(view: EditorView) {
-        this.updateDecorations(view);
-      }
-
-      update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) {
-          this.updateDecorations(update.view);
+        constructor(view: EditorView) {
+          this.decorations = this.buildDecorations(view);
         }
-      }
 
-      updateDecorations(view: EditorView) {
-        const decorations: Range<Decoration>[] = [];
-        const tabSize = 2; // Assuming 2-space indentation for GraphQL
-        
-        for (let { from, to } of view.visibleRanges) {
-          for (let pos = from; pos <= to;) {
-            const line = view.state.doc.lineAt(pos);
-            const text = line.text;
-            
-            // Calculate indentation level
-            let indent = 0;
-            for (let i = 0; i < text.length; i++) {
-              if (text[i] === ' ') indent++;
-              else if (text[i] === '\t') indent += tabSize;
-              else break;
-            }
-            
-            // Add guide decorations for each indentation level
-            const levels = Math.floor(indent / tabSize);
-            for (let level = 1; level <= levels; level++) {
-              const guidePos = line.from + (level * tabSize);
-              if (guidePos < line.to) {
-                decorations.push(
-                  Decoration.mark({
-                    class: 'cm-indent-guide',
-                    attributes: { 'data-level': level.toString() }
-                  }).range(guidePos, guidePos + 1)
-                );
-              }
-            }
-            
-            pos = line.to + 1;
+        update(update: ViewUpdate) {
+          if (update.docChanged || update.viewportChanged) {
+            this.decorations = this.buildDecorations(update.view);
           }
         }
-        
-        this.decorations = Decoration.set(decorations);
-      }
-    }, {
-      decorations: v => v.decorations
-    });
+
+        buildDecorations(view: EditorView): DecorationSet {
+          const decorations: Range<Decoration>[] = [];
+          
+          for (const { from, to } of view.visibleRanges) {
+            const text = view.state.doc.sliceString(from, to);
+            let pos = from;
+            
+            for (let i = 0; i < text.length; i++) {
+              const char = text[i];
+              if (char === ' ') {
+                // Mark spaces with a dot overlay (no replacement)
+                decorations.push(Decoration.mark({
+                  class: 'cm-whitespace-space'
+                }).range(pos, pos + 1));
+              } else if (char === '\t') {
+                // Mark tabs with an arrow overlay (no replacement)
+                decorations.push(Decoration.mark({
+                  class: 'cm-whitespace-tab'
+                }).range(pos, pos + 1));
+              }
+              pos++;
+            }
+          }
+          
+          return Decoration.set(decorations);
+        }
+      }, {
+        decorations: v => v.decorations
+      });
+    };
 
     const extensions = [
       EditorView.lineWrapping,
       // Conditional whitespace visualization
-      ...(editorSettings.showWhitespace ? [highlightWhitespace()] : []),
-      // Conditional indentation guides
-      ...(editorSettings.showIndentationGuides ? [indentationGuides] : []),
+      ...(showWhitespace ? [createWhitespaceHighlighter(isDark)] : []),
       EditorView.theme({
         "&": {
           fontSize: "13px",
@@ -980,29 +938,34 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           minWidth: "14px",
           textAlign: "center"
         },
-        // Whitespace visualization styling
-        ".cm-whitespace": {
-          color: isDark ? `rgba(255, 255, 255, ${editorSettings.whitespaceOpacity})` : `rgba(128, 128, 128, ${editorSettings.whitespaceOpacity})`,
-          fontSize: "11px",
-        },
-        ".cm-trailing-space": {
-          color: isDark ? "rgba(255, 100, 100, 0.4)" : "rgba(255, 100, 100, 0.5)",
-          backgroundColor: isDark ? "rgba(255, 100, 100, 0.1)" : "rgba(255, 100, 100, 0.1)",
-        },
-        // Indentation guide styling
-        ".cm-indent-guide": {
+        // Clean whitespace visualization
+        ".cm-whitespace-space": {
           position: "relative",
           "&::before": {
-            content: '""',
+            content: "'·'",
             position: "absolute",
-            left: "0",
-            top: "0",
-            bottom: "0",
-            width: "1px",
-            backgroundColor: isDark ? `rgba(255, 255, 255, ${editorSettings.indentationOpacity})` : `rgba(128, 128, 128, ${editorSettings.indentationOpacity})`,
-            pointerEvents: "none",
+            color: isDark ? "rgba(255, 255, 255, 0.3)" : "rgba(128, 128, 128, 0.4)",
+            fontSize: "11px",
+            fontWeight: "bold",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none"
           }
         },
+        ".cm-whitespace-tab": {
+          position: "relative",
+          "&::before": {
+            content: "'→'",
+            position: "absolute",
+            color: isDark ? "rgba(255, 255, 255, 0.3)" : "rgba(128, 128, 128, 0.4)",
+            fontSize: "11px",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none"
+          }
+        }
       }),
       syntaxHighlighting(graphQLHighlight), // Use the defined graphQLHighlight
       Prec.high(keymap.of(completionKeymap)), // Ensure completion keymap has high precedence
@@ -1052,7 +1015,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
 
     return extensions;
-  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, editorSettings]); // Add dependencies
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, showWhitespace]); // Depend on the boolean toggle
 
   const editorProps = {
     value,
@@ -1837,11 +1800,9 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             <FormControlLabel
               control={
                 <Switch
-                  checked={editorSettings.showWhitespace}
+                  checked={showWhitespace}
                   onChange={(e) => {
-                    const newSettings = { ...editorSettings, showWhitespace: e.target.checked };
-                    setEditorSettings(newSettings);
-                    saveSettings(newSettings);
+                    setShowWhitespace(e.target.checked);
                   }}
                   size="small"
                 />
@@ -1854,73 +1815,8 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                   </Typography>
                 </Box>
               }
-              sx={{ mb: 2, alignItems: 'flex-start' }}
+              sx={{ mb: 3, alignItems: 'flex-start' }}
             />
-            
-            {editorSettings.showWhitespace && (
-              <Box sx={{ mb: 3, ml: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Whitespace Opacity: {Math.round(editorSettings.whitespaceOpacity * 100)}%
-                </Typography>
-                <Slider
-                  value={editorSettings.whitespaceOpacity}
-                  min={0.01}
-                  max={0.3}
-                  step={0.01}
-                  onChange={(_, value) => {
-                    const newSettings = { ...editorSettings, whitespaceOpacity: value as number };
-                    setEditorSettings(newSettings);
-                    saveSettings(newSettings);
-                  }}
-                  sx={{ width: '100%' }}
-                  size="small"
-                />
-              </Box>
-            )}
-            
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editorSettings.showIndentationGuides}
-                  onChange={(e) => {
-                    const newSettings = { ...editorSettings, showIndentationGuides: e.target.checked };
-                    setEditorSettings(newSettings);
-                    saveSettings(newSettings);
-                  }}
-                  size="small"
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="body2">Show Indentation Guides</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Display vertical lines to show code indentation levels
-                  </Typography>
-                </Box>
-              }
-              sx={{ mb: 2, alignItems: 'flex-start' }}
-            />
-            
-            {editorSettings.showIndentationGuides && (
-              <Box sx={{ mb: 3, ml: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Indentation Opacity: {Math.round(editorSettings.indentationOpacity * 100)}%
-                </Typography>
-                <Slider
-                  value={editorSettings.indentationOpacity}
-                  min={0.01}
-                  max={0.5}
-                  step={0.01}
-                  onChange={(_, value) => {
-                    const newSettings = { ...editorSettings, indentationOpacity: value as number };
-                    setEditorSettings(newSettings);
-                    saveSettings(newSettings);
-                  }}
-                  sx={{ width: '100%' }}
-                  size="small"
-                />
-              </Box>
-            )}
           </Box>
           
           <Divider sx={{ my: 2 }} />
@@ -2129,3 +2025,5 @@ const aceJumpPlugin = ViewPlugin.fromClass(class {
 }, {
   decorations: v => v.decorations
 });
+
+
