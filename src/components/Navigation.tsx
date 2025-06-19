@@ -47,16 +47,17 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       name: 'Search & Data',
       icon: '🔍',
       items: [
+        { name: 'District Search', href: '/district', icon: '🏘️', description: 'Search district details with zone and proselyting areas' },
         { name: 'Ecclesiastical Unit', href: '/ecclesiastical-unit', icon: '🏛️', description: 'Search ecclesiastical unit hierarchy and assignments' },
         { name: 'Mission Search', href: '/mission', icon: '🌍', description: 'Search mission details by organization number' },
         { name: 'Options Search', href: '/options', icon: '⚙️', description: 'Get all possible options for entities and attributes' },
         { name: 'Proselyting Area', href: '/proselyting-area', icon: '🗺️', description: 'Search proselyting area details by ID' },
+        { name: 'Zone Search', href: '/zone', icon: '🏢', description: 'Search zone details with mission and districts' },
         { name: 'Leader Search', href: '/leader', icon: '👔', description: 'Search leader profile by CMIS ID' },
         { name: 'Member Search', href: '/member', icon: '🆔', description: 'Search member missionary experiences by CMIS UUID' },
         { name: 'Missionary Search', href: '/missionary', icon: '👤', description: 'Search missionary records' },
         { name: 'Missionaries Search', href: '/missionaries', icon: '👥', description: 'Search multiple missionaries' },
         { name: 'Missionaries Connection', href: '/missionaries-connection', icon: '🔗', description: 'Paginated missionary retrieval with GraphQL Relay' },
-        { name: 'Proselyting Area', href: '/proselyting-area', icon: '🗺️', description: 'Search proselyting area details by ID' },
       ]
     },
     {
