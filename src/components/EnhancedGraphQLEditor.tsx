@@ -9,7 +9,7 @@ import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
-import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType, highlightWhitespace } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -820,8 +820,67 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
   };
 
   const baseExtensions = useMemo(() => {
+    // Simple indentation guide extension
+    const indentationGuides = ViewPlugin.fromClass(class {
+      decorations: DecorationSet = Decoration.none;
+
+      constructor(view: EditorView) {
+        this.updateDecorations(view);
+      }
+
+      update(update: ViewUpdate) {
+        if (update.docChanged || update.viewportChanged) {
+          this.updateDecorations(update.view);
+        }
+      }
+
+      updateDecorations(view: EditorView) {
+        const decorations: Range<Decoration>[] = [];
+        const tabSize = 2; // Assuming 2-space indentation for GraphQL
+        
+        for (let { from, to } of view.visibleRanges) {
+          for (let pos = from; pos <= to;) {
+            const line = view.state.doc.lineAt(pos);
+            const text = line.text;
+            
+            // Calculate indentation level
+            let indent = 0;
+            for (let i = 0; i < text.length; i++) {
+              if (text[i] === ' ') indent++;
+              else if (text[i] === '\t') indent += tabSize;
+              else break;
+            }
+            
+            // Add guide decorations for each indentation level
+            const levels = Math.floor(indent / tabSize);
+            for (let level = 1; level <= levels; level++) {
+              const guidePos = line.from + (level * tabSize);
+              if (guidePos < line.to) {
+                decorations.push(
+                  Decoration.mark({
+                    class: 'cm-indent-guide',
+                    attributes: { 'data-level': level.toString() }
+                  }).range(guidePos, guidePos + 1)
+                );
+              }
+            }
+            
+            pos = line.to + 1;
+          }
+        }
+        
+        this.decorations = Decoration.set(decorations);
+      }
+    }, {
+      decorations: v => v.decorations
+    });
+
     const extensions = [
       EditorView.lineWrapping,
+      // Subtle whitespace visualization
+      highlightWhitespace(),
+      // Custom indentation guides
+      indentationGuides,
       EditorView.theme({
         "&": {
           fontSize: "13px",
@@ -884,6 +943,29 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           display: "inline-block",
           minWidth: "14px",
           textAlign: "center"
+        },
+        // Whitespace visualization styling
+        ".cm-whitespace": {
+          color: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(128, 128, 128, 0.08)",
+          fontSize: "11px",
+        },
+        ".cm-trailing-space": {
+          color: isDark ? "rgba(255, 100, 100, 0.4)" : "rgba(255, 100, 100, 0.5)",
+          backgroundColor: isDark ? "rgba(255, 100, 100, 0.1)" : "rgba(255, 100, 100, 0.1)",
+        },
+        // Indentation guide styling
+        ".cm-indent-guide": {
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            left: "0",
+            top: "0",
+            bottom: "0",
+            width: "1px",
+            backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(128, 128, 128, 0.2)",
+            pointerEvents: "none",
+          }
         },
       }),
       syntaxHighlighting(graphQLHighlight), // Use the defined graphQLHighlight
