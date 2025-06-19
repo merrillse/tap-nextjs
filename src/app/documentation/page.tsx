@@ -918,6 +918,21 @@ assignments{mission{name}}}}`}
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-teal-50 border border-teal-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-teal-900 mb-3">📋 Active Assignment Search</h3>
+                      <p className="text-teal-700 mb-3">Find detailed information about a missionary's current active assignment.</p>
+                      <div className="text-sm text-teal-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by missionary number/legacy ID</li>
+                          <li>• View comprehensive assignment details</li>
+                          <li>• Access mission and location information</li>
+                          <li>• View training and curriculum data</li>
+                          <li>• Track assignment history and status</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
