@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, Drawer, FormControlLabel, Switch } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, Drawer, FormControlLabel, Switch, Slider } from '@mui/material';
 import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema, Settings } from '@mui/icons-material';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType, highlightWhitespace } from '@codemirror/view';
@@ -637,10 +637,40 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     totalMatches: 0
   });
   
+  // Settings helper functions
+  const getStoredSettings = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('graphql-editor-settings');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveSettings = (settings: any) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('graphql-editor-settings', JSON.stringify(settings));
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
+  // Initialize settings from localStorage or defaults
+  const initializeSettings = () => {
+    const stored = getStoredSettings();
+    return {
+      showWhitespace: stored?.showWhitespace ?? true,
+      showIndentationGuides: stored?.showIndentationGuides ?? true,
+      whitespaceOpacity: stored?.whitespaceOpacity ?? 0.08,
+      indentationOpacity: stored?.indentationOpacity ?? 0.15
+    };
+  };
+
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
-  const [showWhitespace, setShowWhitespace] = useState(true);
-  const [showIndentationGuides, setShowIndentationGuides] = useState(true);
+  const [editorSettings, setEditorSettings] = useState(initializeSettings);
   
   const editorRef = useRef<ReactCodeMirrorRef | null>(null);
   const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
@@ -884,9 +914,9 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     const extensions = [
       EditorView.lineWrapping,
       // Conditional whitespace visualization
-      ...(showWhitespace ? [highlightWhitespace()] : []),
+      ...(editorSettings.showWhitespace ? [highlightWhitespace()] : []),
       // Conditional indentation guides
-      ...(showIndentationGuides ? [indentationGuides] : []),
+      ...(editorSettings.showIndentationGuides ? [indentationGuides] : []),
       EditorView.theme({
         "&": {
           fontSize: "13px",
@@ -952,7 +982,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
         },
         // Whitespace visualization styling
         ".cm-whitespace": {
-          color: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(128, 128, 128, 0.08)",
+          color: isDark ? `rgba(255, 255, 255, ${editorSettings.whitespaceOpacity})` : `rgba(128, 128, 128, ${editorSettings.whitespaceOpacity})`,
           fontSize: "11px",
         },
         ".cm-trailing-space": {
@@ -969,7 +999,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             top: "0",
             bottom: "0",
             width: "1px",
-            backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(128, 128, 128, 0.2)",
+            backgroundColor: isDark ? `rgba(255, 255, 255, ${editorSettings.indentationOpacity})` : `rgba(128, 128, 128, ${editorSettings.indentationOpacity})`,
             pointerEvents: "none",
           }
         },
@@ -1022,7 +1052,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
 
     return extensions;
-  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, showWhitespace, showIndentationGuides]); // Add dependencies
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, editorSettings]); // Add dependencies
 
   const editorProps = {
     value,
@@ -1807,8 +1837,12 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
             <FormControlLabel
               control={
                 <Switch
-                  checked={showWhitespace}
-                  onChange={(e) => setShowWhitespace(e.target.checked)}
+                  checked={editorSettings.showWhitespace}
+                  onChange={(e) => {
+                    const newSettings = { ...editorSettings, showWhitespace: e.target.checked };
+                    setEditorSettings(newSettings);
+                    saveSettings(newSettings);
+                  }}
                   size="small"
                 />
               }
@@ -1823,11 +1857,36 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               sx={{ mb: 2, alignItems: 'flex-start' }}
             />
             
+            {editorSettings.showWhitespace && (
+              <Box sx={{ mb: 3, ml: 4 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Whitespace Opacity: {Math.round(editorSettings.whitespaceOpacity * 100)}%
+                </Typography>
+                <Slider
+                  value={editorSettings.whitespaceOpacity}
+                  min={0.01}
+                  max={0.3}
+                  step={0.01}
+                  onChange={(_, value) => {
+                    const newSettings = { ...editorSettings, whitespaceOpacity: value as number };
+                    setEditorSettings(newSettings);
+                    saveSettings(newSettings);
+                  }}
+                  sx={{ width: '100%' }}
+                  size="small"
+                />
+              </Box>
+            )}
+            
             <FormControlLabel
               control={
                 <Switch
-                  checked={showIndentationGuides}
-                  onChange={(e) => setShowIndentationGuides(e.target.checked)}
+                  checked={editorSettings.showIndentationGuides}
+                  onChange={(e) => {
+                    const newSettings = { ...editorSettings, showIndentationGuides: e.target.checked };
+                    setEditorSettings(newSettings);
+                    saveSettings(newSettings);
+                  }}
                   size="small"
                 />
               }
@@ -1841,6 +1900,27 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               }
               sx={{ mb: 2, alignItems: 'flex-start' }}
             />
+            
+            {editorSettings.showIndentationGuides && (
+              <Box sx={{ mb: 3, ml: 4 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Indentation Opacity: {Math.round(editorSettings.indentationOpacity * 100)}%
+                </Typography>
+                <Slider
+                  value={editorSettings.indentationOpacity}
+                  min={0.01}
+                  max={0.5}
+                  step={0.01}
+                  onChange={(_, value) => {
+                    const newSettings = { ...editorSettings, indentationOpacity: value as number };
+                    setEditorSettings(newSettings);
+                    saveSettings(newSettings);
+                  }}
+                  sx={{ width: '100%' }}
+                  size="small"
+                />
+              </Box>
+            )}
           </Box>
           
           <Divider sx={{ my: 2 }} />
