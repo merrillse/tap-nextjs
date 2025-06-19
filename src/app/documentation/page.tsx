@@ -11,6 +11,7 @@ export default function DocumentationPage() {
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
     { id: 'api-testing', title: 'API Testing Tools', icon: '🧪' },
     { id: 'schema-browser', title: 'MGQL Schema Browser', icon: '🔍' },
+    { id: 'organizational-search', title: 'Organizational Search Tools', icon: '🏢' },
     { id: 'local-storage', title: 'Local Storage Manager', icon: '💾' },
     { id: 'schemas', title: 'Schema Containers', icon: '📋' },
     { id: 'clients', title: 'Authorized Clients', icon: '👥' },
@@ -903,6 +904,171 @@ assignments{mission{name}}}}`}
                       <li>• Storage limits vary by browser (typically 5-10MB for localStorage)</li>
                       <li>• Private/incognito browsing may not persist localStorage data</li>
                     </ul>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'organizational-search' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Organizational Search Tools</h2>
+                  
+                  <p className="text-gray-600 mb-6">
+                    The application provides specialized search tools for various organizational entities within the missionary system. 
+                    Each search tool is designed to query specific types of organizational data with relevant filters and display options.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
+                      <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
+                      <div className="text-sm text-blue-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by area name and description</li>
+                          <li>• Filter by mission and zone</li>
+                          <li>• View area boundaries and assignments</li>
+                          <li>• Track area statistics and metrics</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-3">🌍 Mission Search</h3>
+                      <p className="text-green-700 mb-3">Search and explore mission information and boundaries.</p>
+                      <div className="text-sm text-green-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by mission name and code</li>
+                          <li>• Filter by geographic regions</li>
+                          <li>• View mission leadership and contact info</li>
+                          <li>• Access mission statistics and reports</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-purple-900 mb-3">🗺️ Zone Search</h3>
+                      <p className="text-purple-700 mb-3">Search and manage zones within missions.</p>
+                      <div className="text-sm text-purple-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by zone name and identifier</li>
+                          <li>• Filter by parent mission</li>
+                          <li>• View zone leadership assignments</li>
+                          <li>• Access zone performance metrics</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-orange-900 mb-3">🏘️ District Search</h3>
+                      <p className="text-orange-700 mb-3">Search and manage districts within zones.</p>
+                      <div className="text-sm text-orange-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by district name and code</li>
+                          <li>• Filter by parent zone and mission</li>
+                          <li>• View district leadership structure</li>
+                          <li>• Track district activities and progress</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Common Search Features</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Search Capabilities</h4>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          <li>• Real-time search with live filtering</li>
+                          <li>• Multiple search criteria support</li>
+                          <li>• Advanced filtering options</li>
+                          <li>• Sortable result columns</li>
+                          <li>• Export search results</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">User Experience</h4>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          <li>• Search history with localStorage persistence</li>
+                          <li>• Quick access to recent searches</li>
+                          <li>• Responsive design for all devices</li>
+                          <li>• Loading states and error handling</li>
+                          <li>• Intuitive navigation and breadcrumbs</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">🔗 GraphQL Integration</h3>
+                    <p className="text-blue-700 mb-3">
+                      All organizational search tools are built on the MGQL (Missionary GraphQL) schema, ensuring consistent data access and type safety.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-blue-800 mb-2">Schema Compliance</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Follows MGQL field definitions</li>
+                          <li>• Proper enum and array handling</li>
+                          <li>• Type-safe GraphQL queries</li>
+                          <li>• Consistent error handling</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-blue-800 mb-2">Performance</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Optimized query structures</li>
+                          <li>• Efficient data fetching</li>
+                          <li>• Pagination support</li>
+                          <li>• Caching strategies</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-green-900 mb-4">📊 Data Relationships</h3>
+                    <p className="text-green-700 mb-3">
+                      Understanding the hierarchical structure of organizational entities:
+                    </p>
+                    <div className="bg-white border border-green-200 rounded p-4">
+                      <div className="text-sm text-green-800 font-mono">
+                        <div className="mb-2">📋 <strong>Mission</strong></div>
+                        <div className="ml-4 mb-2">├── 🗺️ <strong>Zone</strong></div>
+                        <div className="ml-8 mb-2">├── 🏘️ <strong>District</strong></div>
+                        <div className="ml-12 mb-2">└── 📍 <strong>Proselyting Area</strong></div>
+                        <div className="ml-16">└── 👥 <strong>Missionaries</strong></div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-green-600 mt-3">
+                      Each level can be searched independently, and results can be filtered by parent entities.
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-yellow-900 mb-4">💡 Usage Tips</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-yellow-800 mb-2">Search Strategy</h4>
+                        <ul className="text-sm text-yellow-700 space-y-1">
+                          <li>• Start with broader searches (Mission → Zone → District)</li>
+                          <li>• Use partial matches for names and descriptions</li>
+                          <li>• Combine multiple filters for precise results</li>
+                          <li>• Save frequently used searches for quick access</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-yellow-800 mb-2">Data Management</h4>
+                        <ul className="text-sm text-yellow-700 space-y-1">
+                          <li>• Search history is stored locally in your browser</li>
+                          <li>• Export results for external analysis</li>
+                          <li>• Use the Local Storage Manager to clean up old searches</li>
+                          <li>• Bookmark frequently accessed organizational pages</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
