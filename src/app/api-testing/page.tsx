@@ -386,8 +386,6 @@ query ThirdQuery {
           name: 'Sample Missionary Query',
           query: defaultQuery,
           variables: { missionaryNumber: "916793" },
-          environment: savedEnv,
-          proxyClient: savedProxyClient,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -818,15 +816,6 @@ ${fields}
         }
       }
     }, 100);
-    
-    if (query.environment !== selectedEnvironment) {
-      const switchEnv = confirm(
-        `This query was saved for environment "${query.environment}". \\n        Would you like to switch to that environment?`
-      );
-      if (switchEnv) {
-        setSelectedEnvironment(query.environment);
-      }
-    }
   };
 
   const handleRunSavedQuery = async (query: SavedQuery) => {
@@ -835,14 +824,10 @@ ${fields}
     setEditingQuery(query); // Set the editing query so the header shows the name
     setShowLibraryDialog(false);
     
-    if (query.environment !== selectedEnvironment) {
-      setSelectedEnvironment(query.environment);
-      setTimeout(() => {
-        handleTest();
-      }, 100);
-    } else {
+    // Run the query with current environment and proxy settings
+    setTimeout(() => {
       handleTest();
-    }
+    }, 100);
   };
 
   const toggleResponsePanelFullscreen = () => {
@@ -1406,8 +1391,6 @@ ${fields}
             onSave={handleQuerySaved}
             query={queryInput}
             variables={graphqlVariables}
-            environment={selectedEnvironment}
-            proxyClient={selectedProxyClient}
             editingQuery={editingQuery} // Changed from existingQuery to editingQuery
           />
         )}
@@ -1418,15 +1401,11 @@ ${fields}
             onSave={handleQuerySaved}
             query={queryInput}
             variables={graphqlVariables}
-            environment={selectedEnvironment}
-            proxyClient={selectedProxyClient}
             editingQuery={{
               id: `temp-${Date.now()}`,
               name: 'Current Query',
               query: queryInput,
               variables: graphqlVariables ? JSON.parse(graphqlVariables) : {},
-              environment: selectedEnvironment,
-              proxyClient: selectedProxyClient,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }}

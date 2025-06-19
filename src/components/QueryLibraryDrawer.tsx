@@ -121,8 +121,6 @@ export interface SaveQueryDialogProps {
   onSave: (query: SavedQuery) => void;
   query: string; // Keep as query, was queryString
   variables?: string; // Variables as JSON string
-  environment: string;
-  proxyClient?: string; // Added proxy client
   editingQuery?: SavedQuery | null;
   isDuplicating?: boolean; // For duplicate mode
 }
@@ -133,8 +131,6 @@ export function SaveQueryDialog({
   onSave,
   query,
   variables,
-  environment,
-  proxyClient,
   editingQuery,
   isDuplicating = false
 }: SaveQueryDialogProps) {
@@ -195,8 +191,6 @@ export function SaveQueryDialog({
         query: query, // Use the query prop
         variables: parsedVars, // This is now Record<string, unknown> | undefined
         description: description.trim() || undefined,
-        environment,
-        proxyClient, // Added proxy client tracking
         tags: tagArray.length > 0 ? tagArray : undefined,
       };
 
@@ -280,38 +274,6 @@ export function SaveQueryDialog({
               sx: { fontFamily: 'monospace' }
             }}
           />
-          
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom component="div">
-              Environment: <Chip 
-                label={environment} 
-                size="small"
-                onClick={(e) => e.stopPropagation()} 
-              />
-            </Typography>
-            <Typography variant="caption" color="text.secondary" component="div">
-              Query will be associated with this environment.
-            </Typography>
-          </Box>
-          
-          {proxyClient && !environment.includes('mogs') && (
-            <Box>
-              <Typography variant="body2" color="text.secondary" gutterBottom component="div">
-                Proxy Client: <Chip 
-                  label={(() => {
-                    const client = PROXY_CLIENTS.find(c => c.clientId === proxyClient);
-                    return client ? client.name : proxyClient;
-                  })()} 
-                  size="small"
-                  onClick={(e) => e.stopPropagation()}
-                  color="secondary"
-                />
-              </Typography>
-              <Typography variant="caption" color="text.secondary" component="div">
-                Query will use this proxy client for MGQL requests.
-              </Typography>
-            </Box>
-          )}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -370,19 +332,21 @@ export function QueryLibraryDrawer({
         q.name.toLowerCase().includes(term) ||
         q.query.toLowerCase().includes(term) ||
         (q.description && q.description.toLowerCase().includes(term)) ||
-        (q.tags && q.tags.some(tag => tag.toLowerCase().includes(term))) ||
-        (q.proxyClient && q.proxyClient.toLowerCase().includes(term)) ||
-        (q.proxyClient && getProxyClientName(q.proxyClient).toLowerCase().includes(term))
+        (q.tags && q.tags.some(tag => tag.toLowerCase().includes(term)))
       );
     }
     
+    // Apply tab-based filtering
     if (selectedTab === 1) {
-      result = result.filter(q => q.environment === currentEnvironment);
+      // Recent: sort by updatedAt, show most recent first
+      result = result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     } else if (selectedTab === 2) {
-      result = result.filter(q => q.environment !== currentEnvironment);
+      // Favorites: filter by "favorite" tag
+      result = result.filter(q => q.tags?.includes('favorite'));
     }
+    
     setFilteredQueries(result);
-  }, [searchTerm, queries, selectedTab, currentEnvironment]);
+  }, [searchTerm, queries, selectedTab]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -530,8 +494,8 @@ export function QueryLibraryDrawer({
             }}
           >
             <Tab label="All Queries" />
-            <Tab label={`Current (${currentEnvironment})`} />
-            <Tab label="Other Envs" />
+            <Tab label="Recent" />
+            <Tab label="Favorites" />
           </Tabs>
         </Box>
 
@@ -635,22 +599,6 @@ export function QueryLibraryDrawer({
                   
                   {/* Metadata row */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap', width: '100%' }}>
-                    <Chip 
-                      icon={<FolderIcon fontSize="small"/>} 
-                      label={query.environment} 
-                      size="small" 
-                      variant="outlined" 
-                      color={query.environment === currentEnvironment ? "primary" : "default"}
-                    />
-                    {query.proxyClient && (
-                      <Chip 
-                        label={`Proxy: ${getProxyClientName(query.proxyClient)}`}
-                        size="small" 
-                        variant="outlined" 
-                        color="secondary"
-                        sx={{ fontSize: '0.7rem' }}
-                      />
-                    )}
                     {query.tags?.map(tag => (
                       <Chip key={tag} label={tag} size="small" variant="outlined" />
                     ))}

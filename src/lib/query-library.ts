@@ -11,13 +11,19 @@ export interface SavedQuery {
   description?: string;
   createdAt: string;
   updatedAt: string;
-  environment: string;
-  proxyClient?: string; // Added proxy client tracking
   tags?: string[];
+  version?: number; // For migration tracking
+}
+
+// Legacy interface for migration
+interface LegacySavedQuery extends SavedQuery {
+  environment?: string;
+  proxyClient?: string;
 }
 
 export class QueryLibrary {
   private static readonly STORAGE_KEY = 'graphql-query-library';
+  private static readonly CURRENT_VERSION = 2;
 
   /**
    * Get all saved queries
@@ -29,7 +35,18 @@ export class QueryLibrary {
     
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      
+      const rawQueries = JSON.parse(stored);
+      const migratedQueries = this.migrateQueries(rawQueries);
+      
+      // If migration occurred, save back to localStorage
+      if (JSON.stringify(rawQueries) !== JSON.stringify(migratedQueries)) {
+        console.log('[Query Library] Migration completed, saving updated queries');
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(migratedQueries));
+      }
+      
+      return migratedQueries;
     } catch (error) {
       console.error('Error loading saved queries:', error);
       return [];
@@ -57,7 +74,8 @@ export class QueryLibrary {
       savedQuery = {
         ...queries[existingIndex],
         ...query,
-        updatedAt: now
+        updatedAt: now,
+        version: this.CURRENT_VERSION
       };
       queries[existingIndex] = savedQuery;
     } else {
@@ -66,7 +84,8 @@ export class QueryLibrary {
         ...query,
         id: this.generateId(),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        version: this.CURRENT_VERSION
       };
       queries.push(savedQuery);
     }
@@ -109,10 +128,10 @@ export class QueryLibrary {
   }
 
   /**
-   * Get queries by environment
+   * Get queries by tag
    */
-  static getQueriesByEnvironment(environment: string): SavedQuery[] {
-    return this.getQueries().filter(q => q.environment === environment);
+  static getQueriesByTag(tag: string): SavedQuery[] {
+    return this.getQueries().filter(q => q.tags?.includes(tag));
   }
 
   /**
@@ -207,12 +226,16 @@ export class QueryLibrary {
    */
   static getStats() {
     const queries = this.getQueries();
-    const environments = new Set(queries.map(q => q.environment));
+    const allTags = new Set<string>();
+    queries.forEach(q => {
+      q.tags?.forEach(tag => allTags.add(tag));
+    });
+    
     const totalQueries = queries.length;
     
     return {
       totalQueries,
-      environments: Array.from(environments),
+      tags: Array.from(allTags),
       oldestQuery: queries.length > 0 ? 
         queries.reduce((oldest, current) => 
           new Date(current.createdAt) < new Date(oldest.createdAt) ? current : oldest
@@ -280,5 +303,37 @@ export class QueryLibrary {
       default:
         return null;
     }
+  }
+
+  /**
+   * Migrate legacy queries to new format
+   */
+  private static migrateQueries(queries: any[]): SavedQuery[] {
+    return queries.map(query => {
+      // Check if it's a legacy query with environment/proxyClient
+      if (query.environment || query.proxyClient) {
+        console.log(`[Query Library] Migrating legacy query: ${query.name}`);
+        
+        // Create tags from environment if it had one
+        const tags = query.tags || [];
+        if (query.environment && !tags.includes(query.environment)) {
+          tags.push(`env:${query.environment}`);
+        }
+        
+        // Remove environment and proxyClient, add version
+        const { environment, proxyClient, ...cleanQuery } = query;
+        return {
+          ...cleanQuery,
+          tags,
+          version: this.CURRENT_VERSION
+        };
+      }
+      
+      // Already in new format, just ensure version is set
+      return {
+        ...query,
+        version: query.version || this.CURRENT_VERSION
+      };
+    });
   }
 }
