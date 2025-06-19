@@ -1005,6 +1005,21 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-pink-50 border border-pink-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-pink-900 mb-3">🗺️ Mission Boundary Changes</h3>
+                      <p className="text-pink-700 mb-3">Search and track mission boundary adjustments from the IMOS system.</p>
+                      <div className="text-sm text-pink-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by mission unit numbers or adjustment IDs</li>
+                          <li>• Filter by boundary change status</li>
+                          <li>• View effective dates and IMOS status</li>
+                          <li>• Track sending and receiving missions</li>
+                          <li>• Export boundary change data</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-orange-900 mb-3">🏘️ District Search</h3>
                       <p className="text-orange-700 mb-3">Search and manage districts within zones.</p>

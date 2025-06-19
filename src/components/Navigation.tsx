@@ -52,6 +52,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'District Search', href: '/district', icon: '🏘️', description: 'Search district details with zone and proselyting areas' },
         { name: 'Ecclesiastical Unit', href: '/ecclesiastical-unit', icon: '🏛️', description: 'Search ecclesiastical unit hierarchy and assignments' },
         { name: 'Mission Search', href: '/mission', icon: '🌍', description: 'Search mission details by organization number' },
+        { name: 'Mission Boundary Changes', href: '/mission-boundary-changes', icon: '🗺️', description: 'Search mission boundary adjustments and changes from IMOS' },
         { name: 'Options Search', href: '/options', icon: '⚙️', description: 'Get all possible options for entities and attributes' },
         { name: 'Proselyting Area', href: '/proselyting-area', icon: '🗺️', description: 'Search proselyting area details by ID' },
         { name: 'Zone Search', href: '/zone', icon: '🏢', description: 'Search zone details with mission and districts' },
@@ -67,6 +68,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       name: 'Testing Tools',
       icon: '🧪',
       items: [
+        { name: 'Missionary Test Data', href: '/missionary-test-data', icon: '📊', description: 'Generate random missionary IDs and test data for API testing' },
         { name: 'GraphQL Testing', href: '/api-testing', icon: '🔧', description: 'Execute GraphQL queries with authentication and schema browser' },
         { name: 'Schema Visualizer', href: '/schema-visualizer', icon: '🕸️', description: 'Interactive GraphQL schema graph visualization' },
         { name: 'Load Testing', href: '/load-testing', icon: '⚡', description: 'Performance testing' },

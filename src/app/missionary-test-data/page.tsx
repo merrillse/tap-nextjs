@@ -139,7 +139,7 @@ export default function MissionaryTestDataPage() {
       }
 
       const data = response.data as { missionaryDataIds: MissionaryTestDataset[] };
-      const testDatasets = data.missionaryDataIds || [];
+      const testDatasets = Array.isArray(data.missionaryDataIds) ? data.missionaryDataIds : [];
       setTestData(testDatasets);
       addToSearchHistory(testDatasets.length);
       
@@ -155,7 +155,7 @@ export default function MissionaryTestDataPage() {
     }
   };
 
-  const sortedAndFilteredData = testData
+  const sortedAndFilteredData = Array.isArray(testData) ? testData
     .filter(item => {
       if (filterMission && !item.missionName?.toLowerCase().includes(filterMission.toLowerCase())) {
         return false;
@@ -183,10 +183,10 @@ export default function MissionaryTestDataPage() {
       }
       
       return 0;
-    });
+    }) : [];
 
-  const uniqueMissions = Array.from(new Set(testData.map(item => item.missionName).filter(Boolean)));
-  const uniqueTypes = Array.from(new Set(testData.map(item => item.missionaryType).filter(Boolean)));
+  const uniqueMissions = Array.from(new Set(Array.isArray(testData) ? testData.map(item => item.missionName).filter(Boolean) : []));
+  const uniqueTypes = Array.from(new Set(Array.isArray(testData) ? testData.map(item => item.missionaryType).filter(Boolean) : []));
 
   const exportToCsv = () => {
     if (sortedAndFilteredData.length === 0) return;
@@ -269,6 +269,14 @@ export default function MissionaryTestDataPage() {
   };
 
   const generateTestIds = () => {
+    if (!Array.isArray(testData)) {
+      return {
+        missionaryNumbers: [],
+        cmisUUIDs: [],
+        assignmentLocationIds: []
+      };
+    }
+
     const missionaryNumbers = sortedAndFilteredData.map(item => item.missionaryNumber).filter(Boolean);
     const cmisUUIDs = sortedAndFilteredData.map(item => item.cmisUUID).filter(Boolean);
     const assignmentLocationIds = sortedAndFilteredData.map(item => item.assignmentLocationId).filter(Boolean);
@@ -686,7 +694,7 @@ export default function MissionaryTestDataPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-blue-100 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-blue-900">
-                    {testData.length}
+                    {Array.isArray(testData) ? testData.length : 0}
                   </div>
                   <div className="text-sm text-blue-700">Total Records</div>
                 </div>
@@ -698,7 +706,7 @@ export default function MissionaryTestDataPage() {
                 </div>
                 <div className="bg-purple-100 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-900">
-                    {testData.filter(item => item.leaderName).length}
+                    {Array.isArray(testData) ? testData.filter(item => item.leaderName).length : 0}
                   </div>
                   <div className="text-sm text-purple-700">With Leaders</div>
                 </div>
