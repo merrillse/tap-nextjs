@@ -67,6 +67,13 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       ]
     },
     {
+      name: 'Utilities',
+      icon: '🔧',
+      items: [
+        { name: 'Local Storage Manager', href: '/local-storage', icon: '💾', description: 'Browse and manage local storage data' },
+      ]
+    },
+    {
       name: 'Administration',
       icon: '⚙️',
       items: [
