@@ -6,8 +6,8 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, forwardRef } from 'react';
-import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from '@mui/material';
-import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema } from '@mui/icons-material';
+import { Box, Paper, Typography, IconButton, Tooltip, useTheme, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, Drawer, FormControlLabel, Switch } from '@mui/material';
+import { ContentCopy, Fullscreen, FullscreenExit, AutoFixHigh, Casino, Save, LibraryBooks, FileCopy, Help, NoteAdd, Schema, Settings } from '@mui/icons-material';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType, highlightWhitespace } from '@codemirror/view';
 import { StateField, StateEffect, Range, Prec } from '@codemirror/state';
@@ -636,6 +636,12 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     currentMatch: -1,
     totalMatches: 0
   });
+  
+  // Settings state
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWhitespace, setShowWhitespace] = useState(true);
+  const [showIndentationGuides, setShowIndentationGuides] = useState(true);
+  
   const editorRef = useRef<ReactCodeMirrorRef | null>(null);
   const codeMirrorRef = useRef<any>(null); // Add separate ref for CodeMirror
   const theme = useTheme();
@@ -877,10 +883,10 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
 
     const extensions = [
       EditorView.lineWrapping,
-      // Subtle whitespace visualization
-      highlightWhitespace(),
-      // Custom indentation guides
-      indentationGuides,
+      // Conditional whitespace visualization
+      ...(showWhitespace ? [highlightWhitespace()] : []),
+      // Conditional indentation guides
+      ...(showIndentationGuides ? [indentationGuides] : []),
       EditorView.theme({
         "&": {
           fontSize: "13px",
@@ -1016,7 +1022,7 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
     }
 
     return extensions;
-  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus]); // Add dependencies
+  }, [isDark, builtSchema, graphQLHighlight, setReactSearchState, onExecute, onSwitchFocus, showWhitespace, showIndentationGuides]); // Add dependencies
 
   const editorProps = {
     value,
@@ -1138,7 +1144,8 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
               borderBottom: '1px solid #e5e7eb',
               backgroundColor: '#f9fafb'
             }}>
-              <Box sx={{ display: 'flex' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex' }}>
                 <button
                   onClick={() => setActiveTab(0)}
                   style={{
@@ -1275,6 +1282,26 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
                     />
                   )}
                 </button>
+                </Box>
+                
+                {/* Settings Icon */}
+                <Box sx={{ pr: 1 }}>
+                  <Tooltip title="Editor Settings">
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowSettings(true)}
+                      sx={{
+                        color: '#6b7280',
+                        '&:hover': {
+                          color: '#374151',
+                          backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                        }
+                      }}
+                    >
+                      <Settings fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Box>
             </Box>
 
@@ -1754,6 +1781,79 @@ export const EnhancedGraphQLEditor = forwardRef<HTMLDivElement, EnhancedGraphQLE
           <Button onClick={() => setShowKeyboardShortcuts(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Settings Drawer */}
+      <Drawer
+        anchor="right"
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 320,
+            padding: 2
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            Editor Settings
+          </Typography>
+          
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
+              Visual Aids
+            </Typography>
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showWhitespace}
+                  onChange={(e) => setShowWhitespace(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2">Show Whitespace</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Display dots for spaces and other whitespace characters
+                  </Typography>
+                </Box>
+              }
+              sx={{ mb: 2, alignItems: 'flex-start' }}
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showIndentationGuides}
+                  onChange={(e) => setShowIndentationGuides(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2">Show Indentation Guides</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Display vertical lines to show code indentation levels
+                  </Typography>
+                </Box>
+              }
+              sx={{ mb: 2, alignItems: 'flex-start' }}
+            />
+          </Box>
+          
+          <Divider sx={{ my: 2 }} />
+          
+          <Button
+            variant="outlined"
+            onClick={() => setShowSettings(false)}
+            sx={{ mt: 'auto' }}
+          >
+            Close
+          </Button>
+        </Box>
+      </Drawer>
     </>
   );
 });
