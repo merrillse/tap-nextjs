@@ -67,6 +67,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Missionaries by Assigned Unit', href: '/missionaries-by-assigned-unit', icon: '🏢', description: 'Find missionaries assigned to a specific unit by Unit ID' },
         { name: 'Missionaries Connection', href: '/missionaries-connection', icon: '🔗', description: 'Paginated missionary retrieval with GraphQL Relay' },
         { name: 'Candidates by Membership Unit', href: '/candidates-by-membership-unit', icon: '🎯', description: 'Find candidates who started recommends in a specific membership unit' },
+        { name: 'Countries', href: '/countries', icon: '🌍', description: 'Search countries and territories by ID, ISO codes, or name' },
       ]
     },
     {

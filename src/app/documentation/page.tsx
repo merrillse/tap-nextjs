@@ -1047,6 +1047,26 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-indigo-900 mb-3">🌍 Countries</h3>
+                      <p className="text-indigo-700 mb-3">Search and browse countries and territories with comprehensive geographic data.</p>
+                      <div className="text-sm text-indigo-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by country IDs, ISO2 codes, or ISO3 codes</li>
+                          <li>• Filter by country name or territory type</li>
+                          <li>• View ISO 3166-1 alpha-2 and alpha-3 codes</li>
+                          <li>• Identify countries vs territories/subunits</li>
+                          <li>• See effective ISO codes for territories</li>
+                          <li>• Sort by name, ID, or ISO codes</li>
+                          <li>• Export country data to CSV</li>
+                          <li>• Track search history for geographic queries</li>
+                          <li>• Summary statistics on countries vs subunits</li>
+                          <li>• Support for bulk search with multiple criteria</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-green-50 border border-green-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-green-900 mb-3">🌍 Mission Search</h3>
                       <p className="text-green-700 mb-3">Search and explore mission information and boundaries.</p>
