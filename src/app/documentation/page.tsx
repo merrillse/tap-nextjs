@@ -11,6 +11,7 @@ export default function DocumentationPage() {
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
     { id: 'api-testing', title: 'API Testing Tools', icon: '🧪' },
     { id: 'schema-browser', title: 'MGQL Schema Browser', icon: '🔍' },
+    { id: 'local-storage', title: 'Local Storage Manager', icon: '💾' },
     { id: 'schemas', title: 'Schema Containers', icon: '📋' },
     { id: 'clients', title: 'Authorized Clients', icon: '👥' },
     { id: 'development', title: 'Development', icon: '🛠️' },
@@ -703,6 +704,205 @@ assignments{mission{name}}}}`}
                       Use the Schema Browser alongside the API Testing tool to understand the available 
                       fields and their types before building your GraphQL queries.
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'local-storage' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">💾 Local Storage Manager</h2>
+                  
+                  <p className="text-gray-600 mb-6">
+                    The Local Storage Manager is a comprehensive utility for browsing, managing, and maintaining 
+                    your browser's local storage data. This tool is essential for debugging, data cleanup, 
+                    and understanding how the application stores persistent information.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Key Features</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600 mb-6">
+                    <li><strong>Real-time Statistics:</strong> View total items, storage size, and breakdown by category</li>
+                    <li><strong>Advanced Filtering:</strong> Filter by data type (string, object, array, etc.) or search history items</li>
+                    <li><strong>Search Functionality:</strong> Search across both keys and values for quick discovery</li>
+                    <li><strong>Data Inspection:</strong> View formatted JSON data with proper syntax highlighting</li>
+                    <li><strong>In-place Editing:</strong> Modify localStorage values directly from the interface</li>
+                    <li><strong>Bulk Operations:</strong> Clear search history or all data with safety confirmations</li>
+                    <li><strong>Export/Backup:</strong> Download all localStorage data as JSON for backup purposes</li>
+                    <li><strong>Type Detection:</strong> Automatically identifies and displays data types with visual icons</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">How to Access</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-3">
+                      Navigate to the Local Storage Manager through the sidebar:
+                    </p>
+                    <p className="font-mono text-sm bg-white p-2 rounded border">
+                      Utilities → Local Storage Manager
+                    </p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Or visit directly: <code>/local-storage</code>
+                    </p>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Storage Statistics Dashboard</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      The dashboard provides an at-a-glance view of your storage usage:
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+                      <div className="bg-white rounded p-3 border">
+                        <div className="text-2xl font-bold text-blue-600">42</div>
+                        <div className="text-gray-600">Total Items</div>
+                      </div>
+                      <div className="bg-white rounded p-3 border">
+                        <div className="text-2xl font-bold text-purple-600">156 KB</div>
+                        <div className="text-gray-600">Total Size</div>
+                      </div>
+                      <div className="bg-white rounded p-3 border">
+                        <div className="text-2xl font-bold text-green-600">8</div>
+                        <div className="text-gray-600">Search History</div>
+                      </div>
+                      <div className="bg-white rounded p-3 border">
+                        <div className="text-2xl font-bold text-orange-600">34</div>
+                        <div className="text-gray-600">Other Items</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Data Types & Icons</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                        <span className="mr-2">📦</span> Object Types
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">JSON objects like search history, user preferences</p>
+                      <code className="text-xs bg-white p-1 rounded">{"{ \"key\": \"value\" }"}</code>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                        <span className="mr-2">📋</span> Array Types
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">Lists of items like search suggestions</p>
+                      <code className="text-xs bg-white p-1 rounded">["item1", "item2"]</code>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                        <span className="mr-2">📝</span> String Types
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">Simple text values like settings</p>
+                      <code className="text-xs bg-white p-1 rounded">"simple text"</code>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                        <span className="mr-2">🔢</span> Number & Boolean
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">Numeric values and true/false flags</p>
+                      <code className="text-xs bg-white p-1 rounded">42, true, false</code>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Common Operations</h3>
+                  <div className="space-y-4 mb-6">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">🔍 Finding Data</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Use the search box to find items by key name or content</li>
+                        <li>• Filter by type using the dropdown (Objects, Arrays, etc.)</li>
+                        <li>• Use "search-history" filter to view only search-related data</li>
+                      </ul>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">👁️ Viewing Data</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Click the "View" button (eye icon) to see formatted content</li>
+                        <li>• JSON data is automatically formatted with syntax highlighting</li>
+                        <li>• Large values are truncated in the table for readability</li>
+                      </ul>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">✏️ Editing Data</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Click the "Edit" button (pencil icon) to modify values</li>
+                        <li>• Edit raw JSON or plain text directly in the dialog</li>
+                        <li>• Changes are saved immediately to localStorage</li>
+                      </ul>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">🗑️ Removing Data</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Delete individual items with the trash icon</li>
+                        <li>• Clear all search history with "Clear Search History"</li>
+                        <li>• Clear all localStorage with "Clear All" (use with caution!)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Search History Management</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      The application automatically stores search history for various forms to help you reuse previous searches:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      <li><strong>missionaries-search-history:</strong> Saved missionary search parameters</li>
+                      <li><strong>member-search-history:</strong> Member UUID search history</li>
+                      <li><strong>leader-search-history:</strong> Leader CMIS ID searches</li>
+                      <li><strong>options-search-history:</strong> Entity/attribute option queries</li>
+                      <li><strong>ecclesiastical-unit-search-history:</strong> Unit ID searches</li>
+                    </ul>
+                    <div className="mt-4 p-3 bg-white rounded border">
+                      <p className="text-sm font-medium text-gray-900">💡 Pro Tip:</p>
+                      <p className="text-sm text-gray-600">
+                        Search history items are automatically limited to the 10 most recent entries 
+                        to prevent excessive storage usage while maintaining useful history.
+                      </p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Export & Backup</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <p className="text-gray-700 mb-4">
+                      Use the "Export All" feature to create backups of your localStorage data:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                      <li>Click the "Export All" button in the controls section</li>
+                      <li>A JSON file will be automatically downloaded with format: <code>localStorage-backup-YYYY-MM-DD.json</code></li>
+                      <li>The file contains all localStorage items in a structured JSON format</li>
+                      <li>You can later import this data manually if needed for migration or recovery</li>
+                    </ol>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Best Practices</h3>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">RECOMMENDED</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Regular Cleanup</p>
+                        <p className="text-sm text-gray-600">Periodically clear old search history to keep storage lean</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">BACKUP</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Export Before Major Changes</p>
+                        <p className="text-sm text-gray-600">Create backups before clearing all data or making bulk edits</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">CAUTION</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Careful with Bulk Operations</p>
+                        <p className="text-sm text-gray-600">Double-check before using "Clear All" as this cannot be undone</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-amber-800 mb-2">⚠️ Important Notes</h4>
+                    <ul className="text-sm text-amber-700 space-y-1">
+                      <li>• localStorage is domain-specific and only visible to this application</li>
+                      <li>• Data persists across browser sessions but may be cleared by browser cleanup</li>
+                      <li>• Storage limits vary by browser (typically 5-10MB for localStorage)</li>
+                      <li>• Private/incognito browsing may not persist localStorage data</li>
+                    </ul>
                   </div>
                 </div>
               )}
