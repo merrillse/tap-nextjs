@@ -948,6 +948,21 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-amber-900 mb-3">🗂️ Missionaries by Assignment Location</h3>
+                      <p className="text-amber-700 mb-3">Find all missionaries currently or previously assigned to a specific location.</p>
+                      <div className="text-sm text-amber-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by assignment location ID</li>
+                          <li>• View comprehensive missionary profiles</li>
+                          <li>• Filter by missionary status and type</li>
+                          <li>• Sort by name or missionary number</li>
+                          <li>• Export results to CSV format</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
