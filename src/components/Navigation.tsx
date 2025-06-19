@@ -48,6 +48,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       icon: '🔍',
       items: [
         { name: 'Active Assignment', href: '/active-assignment', icon: '📋', description: 'Search missionary active assignment by missionary number' },
+        { name: 'Assignment Location', href: '/assignment-location', icon: '📍', description: 'Search assignment location details by ID' },
         { name: 'District Search', href: '/district', icon: '🏘️', description: 'Search district details with zone and proselyting areas' },
         { name: 'Ecclesiastical Unit', href: '/ecclesiastical-unit', icon: '🏛️', description: 'Search ecclesiastical unit hierarchy and assignments' },
         { name: 'Mission Search', href: '/mission', icon: '🌍', description: 'Search mission details by organization number' },

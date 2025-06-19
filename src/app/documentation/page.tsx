@@ -933,6 +933,21 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-indigo-900 mb-3">📍 Assignment Location Search</h3>
+                      <p className="text-indigo-700 mb-3">Search detailed information about assignment locations and missionary histories.</p>
+                      <div className="text-sm text-indigo-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by assignment location ID</li>
+                          <li>• View location type and details</li>
+                          <li>• Access comprehensive missionary histories</li>
+                          <li>• View companion relationships and dates</li>
+                          <li>• Track assignment statistics and metrics</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
