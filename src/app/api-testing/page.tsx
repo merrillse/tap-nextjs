@@ -215,151 +215,7 @@ export default function APITestingPage() {
     }
   };
 
-  // Load saved environment on component mount
-  useEffect(() => {
-    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
-    setSelectedEnvironment(savedEnv);
-
-    const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
-    setSelectedProxyClient(savedProxyClient);
-
-    // Clean up expired tokens on page load
-    cleanupExpiredTokens();
-
-    // Load saved query input
-    const savedQuery = localStorage.getItem('queryInput');
-    if (savedQuery) {
-      setQueryInput(savedQuery);
-    } else {
-      // Only set default query if no saved query exists
-      setQueryInput(sampleQueries[selectedEndpoint as keyof typeof sampleQueries]);
-    }
-
-    // Robust loading for graphqlVariables
-    let savedVars = localStorage.getItem('graphqlVariables');
-    try {
-      if (savedVars) {
-        JSON.parse(savedVars); // Validate if it's valid JSON
-      } else {
-        savedVars = '{}'; // Default if not found
-      }
-    } catch {
-      savedVars = '{}'; // Default if invalid JSON
-    }
-    setGraphqlVariables(savedVars);
-
-    // Robust loading for httpHeaders
-    let savedHeaders = localStorage.getItem('httpHeaders');
-    try {
-      if (savedHeaders) {
-        JSON.parse(savedHeaders); // Validate if it's valid JSON
-      } else {
-        savedHeaders = '{}'; // Default if not found
-      }
-    } catch {
-      savedHeaders = '{}'; // Default if invalid JSON
-    }
-    setHttpHeaders(savedHeaders);
-
-    // Focus the editor after a short delay to ensure it's fully rendered
-    const focusTimer = setTimeout(() => {
-      if (editorRef.current) {
-        // Try to focus on the CodeMirror editor
-        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
-        if (cmEditor) {
-          (cmEditor as HTMLElement).focus();
-          // Also try to set cursor to the beginning
-          const cmView = editorRef.current.querySelector('.cm-editor');
-          if (cmView && (cmView as any).view) {
-            const view = (cmView as any).view;
-            view.dispatch({
-              selection: { anchor: 0, head: 0 },
-              scrollIntoView: true
-            });
-          }
-        } else {
-          editorRef.current.focus();
-        }
-      }
-    }, 100); // Small delay to ensure the editor is fully mounted
-
-    return () => clearTimeout(focusTimer);
-  }, [selectedEndpoint]); // Add selectedEndpoint as dependency
-
-  // Save query input to local storage whenever it changes
-  useEffect(() => {
-    if (queryInput) {
-      localStorage.setItem('queryInput', queryInput);
-    }
-  }, [queryInput]);
-
-  // Save variables and headers to local storage
-  useEffect(() => {
-    localStorage.setItem('graphqlVariables', graphqlVariables);
-  }, [graphqlVariables]);
-
-  useEffect(() => {
-    localStorage.setItem('httpHeaders', httpHeaders);
-  }, [httpHeaders]);
-
-
-  // Initialize API client when environment changes
-  useEffect(() => {
-    const config = getEnvironmentConfig(selectedEnvironment);
-    if (config) {
-      setApiClient(new ApiClient(config, selectedEnvironment));
-    }
-    // Save selected environment
-    localStorage.setItem('selectedEnvironment', selectedEnvironment);
-    // Dispatch custom event to update indicator
-    window.dispatchEvent(new Event('environmentChanged'));
-    
-    // Clear schema when environment changes - it will be loaded on demand
-    setSchema(null);
-  }, [selectedEnvironment]);
-
-  // Auto-load schema for autocomplete when API client is ready
-  useEffect(() => {
-    const loadSchemaForAutocomplete = async () => {
-      if (!apiClient || schema) return; // Don't reload if already have schema
-      
-      setSchemaLoading(true);
-      try {
-        console.log('Loading schema for autocomplete...');
-        const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
-        setSchema(schemaResult as IntrospectionResult);
-        console.log('Schema loaded for autocomplete');
-      } catch (err) {
-        console.warn('Failed to load schema for autocomplete:', err);
-        // Don't show error to user - autocomplete will just be limited
-      } finally {
-        setSchemaLoading(false);
-      }
-    };
-
-    // Load schema after a short delay to avoid blocking the UI
-    const timeoutId = setTimeout(loadSchemaForAutocomplete, 1000);
-    return () => clearTimeout(timeoutId);
-  }, [apiClient, schema]);
-
-  // Manual refresh schema function
-  const refreshSchema = async () => {
-    if (!apiClient) return;
-    
-    setSchemaLoading(true);
-    try {
-      console.log('Refreshing schema...');
-      const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
-      setSchema(schemaResult as IntrospectionResult);
-      console.log('Schema refreshed successfully');
-    } catch (err) {
-      console.warn('Failed to refresh schema:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh schema');
-    } finally {
-      setSchemaLoading(false);
-    }
-  };
-
+  // Sample queries definition - moved here to be available for initialization
   const sampleQueries = useMemo(() => ({
     graphql: `query Missionary($missionaryNumber: ID = "916793") {
   missionary(missionaryId: $missionaryNumber) {
@@ -441,6 +297,187 @@ query ThirdQuery {
   }
 }`
   }), []);
+
+  // Load saved environment on component mount
+  useEffect(() => {
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    setSelectedEnvironment(savedEnv);
+
+    const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
+    setSelectedProxyClient(savedProxyClient);
+
+    // Clean up expired tokens on page load
+    cleanupExpiredTokens();
+
+    // Robust loading for graphqlVariables
+    let savedVars = localStorage.getItem('graphqlVariables');
+    try {
+      if (savedVars) {
+        JSON.parse(savedVars); // Validate if it's valid JSON
+      } else {
+        savedVars = '{}'; // Default if not found
+      }
+    } catch {
+      savedVars = '{}'; // Default if invalid JSON
+    }
+    setGraphqlVariables(savedVars);
+
+    // Robust loading for httpHeaders
+    let savedHeaders = localStorage.getItem('httpHeaders');
+    try {
+      if (savedHeaders) {
+        JSON.parse(savedHeaders); // Validate if it's valid JSON
+      } else {
+        savedHeaders = '{}'; // Default if not found
+      }
+    } catch {
+      savedHeaders = '{}'; // Default if invalid JSON
+    }
+    setHttpHeaders(savedHeaders);
+
+    // Focus the editor after a short delay to ensure it's fully rendered
+    const focusTimer = setTimeout(() => {
+      if (editorRef.current) {
+        // Try to focus on the CodeMirror editor
+        const cmEditor = editorRef.current.querySelector('.cm-editor .cm-content');
+        if (cmEditor) {
+          (cmEditor as HTMLElement).focus();
+          // Also try to set cursor to the beginning
+          const cmView = editorRef.current.querySelector('.cm-editor');
+          if (cmView && (cmView as any).view) {
+            const view = (cmView as any).view;
+            view.dispatch({
+              selection: { anchor: 0, head: 0 },
+              scrollIntoView: true
+            });
+          }
+        } else {
+          editorRef.current.focus();
+        }
+      }
+    }, 100); // Small delay to ensure the editor is fully mounted
+
+    return () => clearTimeout(focusTimer);
+  }, [selectedEndpoint]); // Add selectedEndpoint as dependency
+
+  // Separate effect for initializing the default query - runs when sampleQueries is available
+  useEffect(() => {
+    console.log('[Query Init] Initializing default query, sampleQueries available:', !!sampleQueries.graphql);
+    
+    // Load saved query input
+    const savedQuery = localStorage.getItem('queryInput');
+    if (savedQuery) {
+      console.log('[Query Init] Loading saved query from localStorage');
+      setQueryInput(savedQuery);
+    } else if (sampleQueries.graphql) {
+      console.log('[Query Init] Setting default sample query');
+      // Only set default query if no saved query exists and sampleQueries is available
+      const defaultQuery = sampleQueries[selectedEndpoint as keyof typeof sampleQueries];
+      setQueryInput(defaultQuery);
+      
+      // Set up editingQuery with proper name for the default query
+      if (selectedEndpoint === 'graphql') {
+        const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+        const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oak0jqakvevwjWrp357';
+        
+        console.log('[Query Init] Setting editingQuery with name "Sample Missionary Query"');
+        setEditingQuery({
+          id: 'default-missionary-query',
+          name: 'Sample Missionary Query',
+          query: defaultQuery,
+          variables: { missionaryNumber: "916793" },
+          environment: savedEnv,
+          proxyClient: savedProxyClient,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        
+        // Also set the default variables for the editor if not already set
+        const currentVars = localStorage.getItem('graphqlVariables');
+        if (!currentVars || currentVars === '{}' || currentVars.trim() === '') {
+          console.log('[Query Init] Setting default variables');
+          setGraphqlVariables('{"missionaryNumber": "916793"}');
+          localStorage.setItem('graphqlVariables', '{"missionaryNumber": "916793"}');
+        }
+      }
+    } else {
+      console.log('[Query Init] sampleQueries.graphql not available yet');
+    }
+  }, [sampleQueries, selectedEndpoint]); // Depend on sampleQueries and selectedEndpoint
+
+  // Save query input to local storage whenever it changes
+  useEffect(() => {
+    if (queryInput) {
+      localStorage.setItem('queryInput', queryInput);
+    }
+  }, [queryInput]);
+
+  // Save variables and headers to local storage
+  useEffect(() => {
+    localStorage.setItem('graphqlVariables', graphqlVariables);
+  }, [graphqlVariables]);
+
+  useEffect(() => {
+    localStorage.setItem('httpHeaders', httpHeaders);
+  }, [httpHeaders]);
+
+
+  // Initialize API client when environment changes
+  useEffect(() => {
+    const config = getEnvironmentConfig(selectedEnvironment);
+    if (config) {
+      setApiClient(new ApiClient(config, selectedEnvironment));
+    }
+    // Save selected environment
+    localStorage.setItem('selectedEnvironment', selectedEnvironment);
+    // Dispatch custom event to update indicator
+    window.dispatchEvent(new Event('environmentChanged'));
+    
+    // Clear schema when environment changes - it will be loaded on demand
+    setSchema(null);
+  }, [selectedEnvironment]);
+
+  // Auto-load schema for autocomplete when API client is ready
+  useEffect(() => {
+    const loadSchemaForAutocomplete = async () => {
+      if (!apiClient || schema) return; // Don't reload if already have schema
+      
+      setSchemaLoading(true);
+      try {
+        console.log('Loading schema for autocomplete...');
+        const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
+        setSchema(schemaResult as IntrospectionResult);
+        console.log('Schema loaded for autocomplete');
+      } catch (err) {
+        console.warn('Failed to load schema for autocomplete:', err);
+        // Don't show error to user - autocomplete will just be limited
+      } finally {
+        setSchemaLoading(false);
+      }
+    };
+
+    // Load schema after a short delay to avoid blocking the UI
+    const timeoutId = setTimeout(loadSchemaForAutocomplete, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [apiClient, schema]);
+
+  // Manual refresh schema function
+  const refreshSchema = async () => {
+    if (!apiClient) return;
+    
+    setSchemaLoading(true);
+    try {
+      console.log('Refreshing schema...');
+      const schemaResult = await apiClient.executeGraphQLQuery(INTROSPECTION_QUERY, {});
+      setSchema(schemaResult as IntrospectionResult);
+      console.log('Schema refreshed successfully');
+    } catch (err) {
+      console.warn('Failed to refresh schema:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh schema');
+    } finally {
+      setSchemaLoading(false);
+    }
+  };
 
   const handleTest = async () => {
     console.log('[Apex Debug] handleTest called');
