@@ -61,6 +61,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Missionary Search', href: '/missionary', icon: '👤', description: 'Search missionary records' },
         { name: 'Missionaries Search', href: '/missionaries', icon: '👥', description: 'Search multiple missionaries' },
         { name: 'Missionaries by Assignment Location', href: '/missionaries-by-assignment-location', icon: '📍', description: 'Find missionaries by assignment location ID' },
+        { name: 'Missionaries by Assignment Locations', href: '/missionaries-by-assignment-locations', icon: '📍', description: 'Find missionaries by multiple assignment location IDs (bulk search)' },
         { name: 'Missionaries by Assigned Unit', href: '/missionaries-by-assigned-unit', icon: '🏢', description: 'Find missionaries assigned to a specific unit by Unit ID' },
         { name: 'Missionaries Connection', href: '/missionaries-connection', icon: '🔗', description: 'Paginated missionary retrieval with GraphQL Relay' },
       ]
