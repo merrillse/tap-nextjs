@@ -979,6 +979,24 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-violet-50 border border-violet-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-violet-900 mb-3">🎯 Candidates by Membership Unit</h3>
+                      <p className="text-violet-700 mb-3">Find candidates who have started recommends in a specific membership unit.</p>
+                      <div className="text-sm text-violet-600">
+                        <strong>Key Features:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Search by membership unit ID for comprehensive candidate listing</li>
+                          <li>• View detailed candidate profiles with personal information</li>
+                          <li>• Filter by missionary type, source system, or recent recommends</li>
+                          <li>• Sort by name, number, or recommend start dates</li>
+                          <li>• Track recommend progress and availability dates</li>
+                          <li>• View unit relationships (membership, home, submitting)</li>
+                          <li>• Export filtered candidate data to CSV</li>
+                          <li>• Comprehensive search history and summary statistics</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Proselyting Area Search</h3>
                       <p className="text-blue-700 mb-3">Search and manage proselyting areas within missions.</p>
