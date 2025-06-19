@@ -120,6 +120,7 @@ export default function MissionariesPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
 
   // Initialize API client when environment changes
   useEffect(() => {
@@ -134,17 +135,21 @@ export default function MissionariesPage() {
     const savedHistory = localStorage.getItem('missionaries-search-history');
     if (savedHistory) {
       try {
-        setSearchHistory(JSON.parse(savedHistory));
+        const parsedHistory = JSON.parse(savedHistory);
+        setSearchHistory(parsedHistory);
       } catch (err) {
         console.error('Error loading search history:', err);
       }
     }
+    setIsHistoryLoaded(true);
   }, []);
 
-  // Save search history to localStorage whenever it changes
+  // Save search history to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
-    localStorage.setItem('missionaries-search-history', JSON.stringify(searchHistory));
-  }, [searchHistory]);
+    if (isHistoryLoaded) {
+      localStorage.setItem('missionaries-search-history', JSON.stringify(searchHistory));
+    }
+  }, [searchHistory, isHistoryLoaded]);
 
   const addToSearchHistory = (fieldName: string, value: string) => {
     if (!value.trim()) return;
@@ -346,6 +351,7 @@ export default function MissionariesPage() {
 
   const clearSearchHistory = () => {
     setSearchHistory([]);
+    localStorage.removeItem('missionaries-search-history');
   };
 
   const useHistoryValue = (fieldName: string, value: string) => {
@@ -542,8 +548,9 @@ export default function MissionariesPage() {
                     sx={{ 
                       cursor: 'pointer',
                       '&:hover': {
-                        backgroundColor: 'primary.light',
-                        color: 'primary.contrastText'
+                        backgroundColor: '#4b5563',
+                        color: '#000000',
+                        borderColor: '#1f2937'
                       }
                     }}
                   />
