@@ -143,8 +143,8 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-lg blur-sm opacity-30 -z-10"></div>
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">tap</h1>
-                <p className="text-xs text-gray-500">MGQL Service Team</p>
+                <h1 className="text-lg font-semibold text-gray-900">MQGL/MOGS</h1>
+                <p className="text-xs text-gray-500">Test Application</p>
               </div>
             </div>
           )}
