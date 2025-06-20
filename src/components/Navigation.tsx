@@ -79,6 +79,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Assignment Locations Search', href: '/mogs-assignment-locations-search', icon: '🔍', description: 'Type-ahead search for assignment locations with components' },
         { name: 'Component', href: '/mogs-component', icon: '🧩', description: 'Search MOGS component details by ID with optional filters' },
         { name: 'Enabled Member', href: '/mogs-enabled-member', icon: '👤', description: 'Search MOGS enabled member details by ID' },
+        { name: 'Leader', href: '/mogs-leader', icon: '👨‍💼', description: 'Search MOGS leader details by ID' },
       ]
     },
     {
