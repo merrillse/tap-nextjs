@@ -467,15 +467,266 @@ export default function MOGSLeaderAttachmentPage() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-500">Content Preview</span>
+                  <span className="text-sm font-medium text-gray-500">File Preview</span>
                   {attachment.fileContent.startsWith('data:') ? (
-                    <div className="mt-2 p-3 bg-gray-50 rounded border">
-                      <p className="text-sm text-gray-600">
-                        Base64 encoded file data ({attachment.fileContent.length} characters)
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 font-mono">
-                        {attachment.fileContent.substring(0, 100)}...
-                      </p>
+                    <div className="mt-2">
+                      {(() => {
+                        const fileType = attachment.fileType?.toLowerCase() || '';
+                        const isBase64DataUrl = attachment.fileContent.includes(',');
+                        const base64Data = isBase64DataUrl ? attachment.fileContent : `data:${fileType};base64,${attachment.fileContent}`;
+                        
+                        // Function to detect file type from Base64 magic numbers
+                        const detectFileTypeFromBase64 = (base64String: string): string => {
+                          try {
+                            const base64Content = isBase64DataUrl ? base64String.split(',')[1] : base64String;
+                            const binaryString = atob(base64Content.substring(0, 50)); // Just check first few bytes
+                            const bytes = new Uint8Array(binaryString.length);
+                            for (let i = 0; i < binaryString.length; i++) {
+                              bytes[i] = binaryString.charCodeAt(i);
+                            }
+                            
+                            // PDF magic number: %PDF
+                            if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+                              return 'pdf';
+                            }
+                            
+                            // JPEG magic numbers: FF D8 FF
+                            if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+                              return 'jpeg';
+                            }
+                            
+                            // PNG magic number: 89 50 4E 47
+                            if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+                              return 'png';
+                            }
+                            
+                            // GIF magic numbers: GIF87a or GIF89a
+                            if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+                              return 'gif';
+                            }
+                            
+                            // BMP magic number: BM
+                            if (bytes[0] === 0x42 && bytes[1] === 0x4D) {
+                              return 'bmp';
+                            }
+                            
+                            // ZIP/Office documents: PK
+                            if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+                              return 'zip';
+                            }
+                            
+                            // Check if it's likely text (printable ASCII)
+                            let textCount = 0;
+                            for (let i = 0; i < Math.min(bytes.length, 100); i++) {
+                              if ((bytes[i] >= 32 && bytes[i] <= 126) || bytes[i] === 9 || bytes[i] === 10 || bytes[i] === 13) {
+                                textCount++;
+                              }
+                            }
+                            if (textCount / Math.min(bytes.length, 100) > 0.8) {
+                              return 'text';
+                            }
+                            
+                            return 'binary';
+                          } catch (e) {
+                            console.error('Failed to detect file type:', e);
+                            return 'unknown';
+                          }
+                        };
+                        
+                        const detectedType = detectFileTypeFromBase64(attachment.fileContent);
+                        const combinedType = fileType || detectedType;
+                        
+                        // PDF files
+                        if (combinedType.includes('pdf') || base64Data.includes('data:application/pdf') || detectedType === 'pdf') {
+                          const pdfData = base64Data.includes('data:') ? base64Data : `data:application/pdf;base64,${attachment.fileContent}`;
+                          return (
+                            <div className="space-y-3">
+                              <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
+                                <span className="text-xs text-blue-700 font-medium">📄 PDF Document Detected</span>
+                              </div>
+                              <iframe
+                                src={pdfData}
+                                className="w-full h-96 border border-gray-300 rounded"
+                                title="PDF Preview"
+                              />
+                              <div className="flex space-x-2">
+                                <a
+                                  href={pdfData}
+                                  download={`${attachment.title || 'document'}.pdf`}
+                                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  <FileDownload className="h-4 w-4 mr-1" />
+                                  Download PDF
+                                </a>
+                                <button
+                                  onClick={() => window.open(pdfData, '_blank')}
+                                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  Open in New Tab
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Image files
+                        if (combinedType.includes('image') || combinedType.includes('jpg') || combinedType.includes('jpeg') || 
+                            combinedType.includes('png') || combinedType.includes('gif') || combinedType.includes('bmp') ||
+                            base64Data.includes('data:image/') || ['jpeg', 'png', 'gif', 'bmp'].includes(detectedType)) {
+                          const imageType = detectedType === 'jpeg' ? 'jpeg' : detectedType === 'png' ? 'png' : detectedType === 'gif' ? 'gif' : detectedType === 'bmp' ? 'bmp' : 'jpeg';
+                          const imageData = base64Data.includes('data:') ? base64Data : `data:image/${imageType};base64,${attachment.fileContent}`;
+                          return (
+                            <div className="space-y-3">
+                              <div className="bg-green-50 border border-green-200 rounded p-2 mb-2">
+                                <span className="text-xs text-green-700 font-medium">🖼️ {detectedType.toUpperCase()} Image Detected</span>
+                              </div>
+                              <div className="flex justify-center">
+                                <img
+                                  src={imageData}
+                                  alt={attachment.title || 'Image'}
+                                  className="max-w-full max-h-96 rounded border shadow-md"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const errorDiv = document.createElement('div');
+                                    errorDiv.className = 'text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3';
+                                    errorDiv.textContent = 'Unable to display image. The file data may be corrupted.';
+                                    target.parentElement?.appendChild(errorDiv);
+                                  }}
+                                />
+                              </div>
+                              <div className="flex space-x-2 justify-center">
+                                <a
+                                  href={imageData}
+                                  download={`${attachment.title || 'image'}.${imageType}`}
+                                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                >
+                                  <FileDownload className="h-4 w-4 mr-1" />
+                                  Download Image
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Text-based files (JSON, XML, CSV, TXT, etc.)
+                        if (combinedType.includes('text') || combinedType.includes('json') || combinedType.includes('xml') || 
+                            combinedType.includes('csv') || combinedType.includes('txt') || combinedType.includes('html') || detectedType === 'text') {
+                          try {
+                            const textContent = isBase64DataUrl ? 
+                              atob(base64Data.split(',')[1]) : 
+                              atob(attachment.fileContent);
+                            return (
+                              <div className="space-y-3">
+                                <div className="bg-purple-50 border border-purple-200 rounded p-2 mb-2">
+                                  <span className="text-xs text-purple-700 font-medium">📝 Text Content Detected</span>
+                                </div>
+                                <div className="mt-2 p-3 bg-gray-50 rounded border max-h-96 overflow-y-auto">
+                                  <pre className="text-sm whitespace-pre-wrap">{textContent}</pre>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      const blob = new Blob([textContent], { type: combinedType || 'text/plain' });
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `${attachment.title || 'document'}.${combinedType?.split('/')[1] || 'txt'}`;
+                                      a.click();
+                                      URL.revokeObjectURL(url);
+                                    }}
+                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                  >
+                                    <FileDownload className="h-4 w-4 mr-1" />
+                                    Download File
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          } catch (e) {
+                            console.error('Failed to decode text content:', e);
+                          }
+                        }
+                        
+                        // ZIP/Office documents
+                        if (detectedType === 'zip' || combinedType.includes('zip') || combinedType.includes('office') || 
+                            combinedType.includes('document') || combinedType.includes('spreadsheet') || combinedType.includes('presentation')) {
+                          return (
+                            <div className="space-y-3">
+                              <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2">
+                                <span className="text-xs text-yellow-700 font-medium">📦 Archive/Office Document Detected</span>
+                              </div>
+                              <div className="mt-2 p-3 bg-gray-50 rounded border">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <AttachFile className="h-5 w-5 text-gray-500" />
+                                  <span className="text-sm font-medium">Office Document or Archive</span>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  File Type: {attachment.fileType || 'Archive/Office Document'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Size: {formatFileSize(attachment.fileSize)}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  This appears to be a compressed archive or Microsoft Office document.
+                                </p>
+                              </div>
+                              <div className="flex space-x-2">
+                                <a
+                                  href={base64Data.includes('data:') ? base64Data : `data:application/octet-stream;base64,${attachment.fileContent}`}
+                                  download={`${attachment.title || 'document'}.${combinedType?.split('/')[1] || (detectedType === 'zip' ? 'zip' : 'bin')}`}
+                                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                >
+                                  <FileDownload className="h-4 w-4 mr-1" />
+                                  Download File
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Generic binary file
+                        return (
+                          <div className="space-y-3">
+                            <div className="bg-gray-50 border border-gray-200 rounded p-2 mb-2">
+                              <span className="text-xs text-gray-700 font-medium">
+                                🔍 {detectedType === 'unknown' ? 'Unknown File Type' : `${detectedType.toUpperCase()} File Detected`}
+                              </span>
+                            </div>
+                            <div className="mt-2 p-3 bg-gray-50 rounded border">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <AttachFile className="h-5 w-5 text-gray-500" />
+                                <span className="text-sm font-medium">Binary File</span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                File Type: {attachment.fileType || 'Unknown'}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Detected Type: {detectedType}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Size: {formatFileSize(attachment.fileSize)}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Base64 Data Length: {attachment.fileContent.length} characters
+                              </p>
+                              <p className="text-xs text-gray-500 mt-2 font-mono break-all">
+                                {attachment.fileContent.substring(0, 100)}...
+                              </p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <a
+                                href={base64Data.includes('data:') ? base64Data : `data:application/octet-stream;base64,${attachment.fileContent}`}
+                                download={`${attachment.title || 'file'}.${combinedType?.split('/')[1] || 'bin'}`}
+                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                              >
+                                <FileDownload className="h-4 w-4 mr-1" />
+                                Download File
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
