@@ -76,6 +76,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       items: [
         { name: 'Assignment', href: '/mogs-assignment', icon: '📋', description: 'Search MOGS assignment details by ID' },
         { name: 'Assignment Location', href: '/mogs-assignment-location', icon: '📍', description: 'Search MOGS assignment location details by ID' },
+        { name: 'Assignment Locations Search', href: '/mogs-assignment-locations-search', icon: '🔍', description: 'Type-ahead search for assignment locations with components' },
       ]
     },
     {
