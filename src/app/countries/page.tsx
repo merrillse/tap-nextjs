@@ -48,11 +48,14 @@ export default function CountriesPage() {
 
   // Initialize API client
   useEffect(() => {
-    const selectedEnvironment = localStorage.getItem('selectedEnvironment') || 'development';
+    const selectedEnvironment = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
     const config = ENVIRONMENTS[selectedEnvironment as keyof typeof ENVIRONMENTS];
     
     if (config) {
       setApiClient(new ApiClient(config, selectedEnvironment));
+    } else {
+      console.error(`Environment configuration not found for: ${selectedEnvironment}`);
+      setError(`Environment configuration not found for: ${selectedEnvironment}`);
     }
   }, []);
 

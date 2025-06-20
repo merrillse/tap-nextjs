@@ -107,3 +107,49 @@ export const getEnvironmentNames = (): Array<{key: string, name: string}> => {
     name: config.name
   }));
 };
+
+/**
+ * Get default environment based on service type
+ */
+export const getDefaultEnvironment = (serviceType: 'mis' | 'mogs' = 'mis'): string => {
+  return serviceType === 'mogs' ? 'mogs-gql-dev' : 'mis-gql-stage';
+};
+
+/**
+ * Get environment configuration with fallback
+ */
+export const getEnvironmentConfigSafe = (envKey: string, fallbackServiceType: 'mis' | 'mogs' = 'mis'): { config: EnvironmentConfig; key: string } => {
+  let config = ENVIRONMENTS[envKey];
+  let actualKey = envKey;
+  
+  if (!config) {
+    console.warn(`Environment '${envKey}' not found, falling back to default`);
+    actualKey = getDefaultEnvironment(fallbackServiceType);
+    config = ENVIRONMENTS[actualKey];
+  }
+  
+  if (!config) {
+    throw new Error(`No valid environment configuration found. Available environments: ${Object.keys(ENVIRONMENTS).join(', ')}`);
+  }
+  
+  return { config, key: actualKey };
+};
+
+/**
+ * Get saved environment from localStorage with fallback
+ */
+export const getSavedEnvironment = (fallbackServiceType: 'mis' | 'mogs' = 'mis'): string => {
+  const saved = localStorage.getItem('selectedEnvironment');
+  if (saved && ENVIRONMENTS[saved]) {
+    return saved;
+  }
+  return getDefaultEnvironment(fallbackServiceType);
+};
+
+/**
+ * Get all environment keys for a specific service type
+ */
+export const getEnvironmentKeysByService = (serviceType: 'mis' | 'mogs'): string[] => {
+  const prefix = serviceType === 'mogs' ? 'mogs-gql-' : 'mis-gql-';
+  return Object.keys(ENVIRONMENTS).filter(key => key.startsWith(prefix));
+};

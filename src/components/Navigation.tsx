@@ -71,6 +71,13 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       ]
     },
     {
+      name: 'MOGS',
+      icon: '🏛️',
+      items: [
+        { name: 'Assignment', href: '/mogs-assignment', icon: '📋', description: 'Search MOGS assignment details by ID' },
+      ]
+    },
+    {
       name: 'Testing Tools',
       icon: '🧪',
       items: [
