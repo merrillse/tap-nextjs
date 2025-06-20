@@ -311,6 +311,38 @@ export default function MOGSLeaderPage() {
     }
   }, [selectedEnvironment]);
 
+  // Load search history on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('mogs-leader-search-history');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setSearchHistory(history);
+      } catch (e) {
+        console.error('Failed to load search history:', e);
+      }
+    }
+  }, []);
+
+  // Save search history to localStorage
+  const saveSearchHistory = (id: string, found: boolean) => {
+    const newEntry: SearchHistoryItem = {
+      id: id,
+      timestamp: new Date().toLocaleString(),
+      found: found
+    };
+    
+    const updatedHistory = [newEntry, ...searchHistory.filter(item => item.id !== id).slice(0, 9)]; // Keep last 10 unique searches
+    setSearchHistory(updatedHistory);
+    localStorage.setItem('mogs-leader-search-history', JSON.stringify(updatedHistory));
+  };
+
+  // Clear search history
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('mogs-leader-search-history');
+  };
+
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -348,11 +380,7 @@ export default function MOGSLeaderPage() {
       
       if (result.leader) {
         setLeader(result.leader);
-        setSearchHistory(prev => [{
-          id: leaderId.trim(),
-          timestamp: new Date().toLocaleString(),
-          found: true
-        }, ...prev.slice(0, 9)]);
+        saveSearchHistory(leaderId.trim(), true);
         
         // Scroll to results
         setTimeout(() => {
@@ -360,20 +388,12 @@ export default function MOGSLeaderPage() {
         }, 100);
       } else {
         setError('Leader not found');
-        setSearchHistory(prev => [{
-          id: leaderId.trim(),
-          timestamp: new Date().toLocaleString(),
-          found: false
-        }, ...prev.slice(0, 9)]);
+        saveSearchHistory(leaderId.trim(), false);
       }
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred during search');
-      setSearchHistory(prev => [{
-        id: leaderId.trim(),
-        timestamp: new Date().toLocaleString(),
-        found: false
-      }, ...prev.slice(0, 9)]);
+      saveSearchHistory(leaderId.trim(), false);
     } finally {
       setLoading(false);
     }
@@ -530,24 +550,34 @@ export default function MOGSLeaderPage() {
             )}
           </button>
           {showHistory && (
-            <div className="mt-4 space-y-2">
-              {searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100"
-                  onClick={() => setLeaderId(item.id)}
+            <div className="mt-4">
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={clearSearchHistory}
+                  className="text-xs text-red-600 hover:text-red-800 underline"
                 >
-                  <div className="flex items-center space-x-3">
-                    {item.found ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Warning className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="font-mono text-sm">{item.id}</span>
+                  Clear History
+                </button>
+              </div>
+              <div className="space-y-2">
+                {searchHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100"
+                    onClick={() => setLeaderId(item.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {item.found ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Warning className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="font-mono text-sm">{item.id}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{item.timestamp}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{item.timestamp}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -960,8 +990,35 @@ export default function MOGSLeaderPage() {
                 </div>
                 {leader.photo.photo && (
                   <div className="col-span-full">
-                    <span className="text-sm font-medium text-gray-500">Photo Data</span>
-                    <p className="text-sm text-gray-600 mt-1">Photo data available (base64 encoded)</p>
+                    <span className="text-sm font-medium text-gray-500">Photo</span>
+                    <div className="mt-2 flex justify-center">
+                      <img 
+                        src={`data:image/jpeg;base64,${leader.photo.photo}`}
+                        alt="Leader Photo"
+                        className="max-w-xs max-h-64 rounded-lg shadow-md border border-gray-200"
+                        onError={(e) => {
+                          // Fallback to try different image formats if JPEG doesn't work
+                          const target = e.target as HTMLImageElement;
+                          const photoData = leader.photo?.photo;
+                          if (photoData) {
+                            if (target.src.includes('jpeg')) {
+                              target.src = `data:image/png;base64,${photoData}`;
+                            } else if (target.src.includes('png')) {
+                              target.src = `data:image/gif;base64,${photoData}`;
+                            } else {
+                              target.style.display = 'none';
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3';
+                              errorDiv.textContent = 'Unable to display image. The photo data may be corrupted or in an unsupported format.';
+                              target.parentElement?.appendChild(errorDiv);
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Base64 encoded image data ({leader.photo.photo.length} characters)
+                    </p>
                   </div>
                 )}
               </div>
