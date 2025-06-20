@@ -249,6 +249,38 @@ export default function MOGSEnabledMemberPage() {
     }
   }, [selectedEnvironment]);
 
+  // Load search history on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('mogs-enabled-member-search-history');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setSearchHistory(history);
+      } catch (e) {
+        console.error('Failed to load search history:', e);
+      }
+    }
+  }, []);
+
+  // Save search history to localStorage
+  const saveSearchHistory = (id: string, found: boolean) => {
+    const newEntry: SearchHistoryItem = {
+      id: id,
+      timestamp: new Date().toLocaleString(),
+      found: found
+    };
+    
+    const updatedHistory = [newEntry, ...searchHistory.filter(item => item.id !== id).slice(0, 9)]; // Keep last 10 unique searches
+    setSearchHistory(updatedHistory);
+    localStorage.setItem('mogs-enabled-member-search-history', JSON.stringify(updatedHistory));
+  };
+
+  // Clear search history
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('mogs-enabled-member-search-history');
+  };
+
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -286,11 +318,7 @@ export default function MOGSEnabledMemberPage() {
       
       if (result.enabledMember) {
         setEnabledMember(result.enabledMember);
-        setSearchHistory(prev => [{
-          id: enabledMemberId.trim(),
-          timestamp: new Date().toLocaleString(),
-          found: true
-        }, ...prev.slice(0, 9)]);
+        saveSearchHistory(enabledMemberId.trim(), true);
         
         // Scroll to results
         setTimeout(() => {
@@ -298,20 +326,12 @@ export default function MOGSEnabledMemberPage() {
         }, 100);
       } else {
         setError('Enabled Member not found');
-        setSearchHistory(prev => [{
-          id: enabledMemberId.trim(),
-          timestamp: new Date().toLocaleString(),
-          found: false
-        }, ...prev.slice(0, 9)]);
+        saveSearchHistory(enabledMemberId.trim(), false);
       }
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred during search');
-      setSearchHistory(prev => [{
-        id: enabledMemberId.trim(),
-        timestamp: new Date().toLocaleString(),
-        found: false
-      }, ...prev.slice(0, 9)]);
+      saveSearchHistory(enabledMemberId.trim(), false);
     } finally {
       setLoading(false);
     }
@@ -468,24 +488,34 @@ export default function MOGSEnabledMemberPage() {
             )}
           </button>
           {showHistory && (
-            <div className="mt-4 space-y-2">
-              {searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100"
-                  onClick={() => setEnabledMemberId(item.id)}
+            <div className="mt-4">
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={clearSearchHistory}
+                  className="text-xs text-red-600 hover:text-red-800 underline"
                 >
-                  <div className="flex items-center space-x-3">
-                    {item.found ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Warning className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="font-mono text-sm">{item.id}</span>
+                  Clear History
+                </button>
+              </div>
+              <div className="space-y-2">
+                {searchHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100"
+                    onClick={() => setEnabledMemberId(item.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {item.found ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Warning className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="font-mono text-sm">{item.id}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{item.timestamp}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{item.timestamp}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
