@@ -1,0 +1,3855 @@
+# ============================================================================
+# File: Address.graphqls
+# ============================================================================
+
+type Address {
+    addressLine1: String
+    addressLine2: String
+    addressLine3: String
+    district: String
+    city: String
+    stateProvince: String
+    zipcode: String
+    country: GeopoliticalLocation
+    countryCode: String
+}
+
+# ============================================================================
+# File: Airport.graphqls
+# ============================================================================
+
+type Airport {
+    homeAirport: String
+    missionaryNumber: Long
+}
+
+# ============================================================================
+# File: Assignment.graphqls
+# ============================================================================
+
+type Assignment {
+    "Assignment Object Primary Key"
+    id: String
+    assignmentId: String @deprecated(reason: "use id")
+    missionaryNumber: Long @deprecated(reason: "use missionary {missionaryNumber}")
+    "Mission or other church unit where this assignment resides"
+    assignmentChurchUnitNumber: Long
+    assignmentTypeId: Int
+    assignmentType: Option
+    serviceMethod: Option
+    assignmentStatusId: Int
+    assignmentStatus: Option
+    changeReason: ChangeReason
+    isPermanent: Boolean
+    "Assignment Location Details: language, status, assignment type and description, and NAPI component names"
+    component: AssignmentLocationComponent
+    componentId: Int @deprecated(reason: "use component")
+    componentName: String @deprecated(reason: "use component")
+    assignmentStartDate: String
+    assignmentEndDate: String
+    curriculumId: Long
+    curriculumName: String
+    spousePositionId: Long
+    trainingTrackId: String
+    trainingTrackName: String
+    trackSessionId: String
+    callId: Long
+    positionId: Long
+    overriddenCreatedOn: String
+    stateCode: Int
+    statusCode: Int
+    databaseSource: String @deprecated(reason: "all Missionary records are now sourced from Missionary Inquery (INQ) data")
+    isCurrentPerm: Boolean @deprecated(reason: "this data is no longer populated nor tracked")
+    courseId: Long
+    courseName: String
+    courseSessionId: String
+    trainingFacilityId: Long
+    trainingFacilityName: String
+    mission: Mission
+    missionary: Missionary
+    """Get the mission of an assignment location. If mission is the parent type or not. """
+    assignmentLocationDetail: AssignmentLocationDetail
+    """ Returns Location Information specific to Mission or Administrative Directorate """
+    location: Location
+    """returns service missionary tasks """
+    serviceTasks: [ServiceAssignment]
+    """Training course information on the course the missionary was given during training. This usually comes from the MTC """
+    trainingCourse: TrainingCourse
+}
+
+# ============================================================================
+# File: AssignmentLocation.graphqls
+# ============================================================================
+
+type AssignmentLocation {
+    id: ID
+    name: String
+    type: LabelValue
+    missionaryHistories: [MissionaryHistory]
+}
+
+# ============================================================================
+# File: AssignmentLocationComponent.graphqls
+# ============================================================================
+
+"""
+Assignment Location Component metadata. These components are used in assigning missionaries to a
+specific language and mission. The original source for this data is MSSW.asg_loc_components.
+"""
+type AssignmentLocationComponent {
+    "Unique identifier for this component"
+    id: Int
+    "Unique identifier for mission or other unit where the component is assigned"
+    assignmentLocationId: Int
+    "CDOL org number of the assignment location this component is part of"
+    unitNumber: Long
+    "CDOL org number of the parent assignment location this component is part of"
+    parentUnitNumber: Long
+    "CDOL org number of sub-unit within Mission Organization (e.g. withinMissionUnitNumber)"
+    subUnitNumber: Long
+    "Missionary Type ID ~ ID type of Missionaries that can be assigned to this component (Elder, Sister, etc.)"
+    missionaryTypeId: Long
+    "Type of Missionary that can be associated with this Assignment Location component (Elder, Sister, etc.)"
+    missionaryType: Option
+    "Status of the Assignment Location Component"
+    status: String
+    "Language associated with this component (uses old missionLanguage)"
+    language: Language @deprecated(reason: "use assignmentLanguage or missionLanguage")
+    "Component-level Language associated with this Assignment (componentMcsLanguageId)"
+    assignmentLanguage: Language
+    "Primary Language spoken in the Mission  ~ CDSCODE Language ID (missionMscLanguageId)"
+    missionLanguage: Language
+    "Language Id - another language..."
+    languageId: Long @deprecated(reason: "use assignmentLanguage or missionLanguage")
+    "English description of the component for reference"
+    description: String
+    "The component name used in NAPI"
+    assignmentMeetingName: String
+    "The component short name used in NAPI"
+    assignmentMeetingShortName: String
+    positionId: Int
+    positionAbbreviation: String
+    positionName: String
+    positionNameLangId: Int
+    missionComponentLanguagesList: String
+    responsibleOrganizationName: String
+    responsibleOrganizationNumber: Int
+}
+
+# ============================================================================
+# File: AssignmentLocationDetail.graphqls
+# ============================================================================
+
+type AssignmentLocationDetail {
+    assignmentUnitName: String
+    assignmentUnitNumber: Int
+    assignmentUnitTypeCode: Int
+    assignmentUnitTypeName: String
+    missionUnitName: String
+    missionUnitNumber: Int
+    missionUnitTypeCode: Int
+    missionUnitTypeName: String
+    "The assignment unit Country"
+    country: GeopoliticalLocation
+}
+
+# ============================================================================
+# File: AssignmentProcess.graphqls
+# ============================================================================
+
+"""
+AssignmentProcess:
+Represents the details related to a missionary's AssignmentProcess data.
+"""
+type AssignmentProcess {
+    missionaryNumber: Int
+    restrictions: [Restriction]
+    medicallyUnsuitable: Boolean
+    screeningMaster: ScreeningMaster
+    medicalServices: [MedicalService]
+    "The medications of a candidate"
+    medications: [Medication]
+    "The psychological services of a candidate"
+    psychologicalServices: [PsychologicalService]
+    "The psychological conditions of a candidate"
+    psychologicalConditions: [PsychologicalCondition]
+    "The medical screening info of a candidate"
+    medicalScreeningResults: MedicalScreeningResults
+    "The medical conditions of a candidate"
+    medicalConditions: [MedicalCondition]
+    "The missionary medical screening info of a candidate"
+    missionaryMedicalScreeningResults: MissionaryMedicalScreeningResults
+    "The psychological screening info of a candidate"
+    psychologicalScreeningResults: [PsychologicalScreeningResult]
+    "Senior missionary insurance history info"
+    seniorInsuranceResults: SeniorInsuranceResult
+}
+
+# ============================================================================
+# File: AssignmentsFilters.graphqls
+# ============================================================================
+
+input AssignmentsFilters {
+    types: [AssignmentType]
+    statuses: [AssignmentStatus]
+}
+
+
+# ============================================================================
+# File: AssignmentsInput.graphqls
+# ============================================================================
+
+input AssignmentsInput {
+    filter: AssignmentsFilters
+}
+
+# ============================================================================
+# File: AssignmentStatus.graphqls
+# ============================================================================
+
+enum AssignmentStatus {
+    ACTIVE
+    PLANNED
+    EARLY_RELEASED
+    CANCELED
+    ENDED
+    PAUSED
+    PENDING_EARLY_RELEASE
+}
+
+# ============================================================================
+# File: AssignmentType.graphqls
+# ============================================================================
+
+enum AssignmentType {
+    TEACHING
+    SERVICE
+    TRAINING
+    REMOTE_TRAINING
+    TEMPORARY
+    ON_LEAVE
+    TEACHING_VIRTUAL
+}
+
+# ============================================================================
+# File: CallLetterExport.graphqls
+# ============================================================================
+
+"""
+Exports a base64-encoded instance of the call letter.
+"""
+type CallLetterExport {
+    missionaryNumber: Long
+    originalFileName: String
+    encodedFile: String
+}
+
+# ============================================================================
+# File: CallPacketExport.graphqls
+# ============================================================================
+
+"""
+Exports a base64-encoded instance of the call packet.
+"""
+type CallPacketExport {
+    missionaryNumber: Long
+    originalFileName: String
+    encodedFile: String
+}
+
+# ============================================================================
+# File: Candidate.graphqls
+# ============================================================================
+
+type Candidate {
+        # Missionary Identifier
+        missionaryNumber: Long
+        # Unit ID where candidate's membership record is
+        membershipUnitId: Int
+        # Unit ID where candidate's membership record was when recommend was started
+        homeUnitId: Int
+        # Unit ID where the recommend was activated
+        submittingUnitId: Int
+        # LDS Account ID for matching with member
+        ldsAccountId: String
+        # Missionary Type
+        missionaryType: Option
+        # Missionary Type Id for developer use only.
+        missionaryTypeId: Int @deprecated(reason: "For development only. Do not add to client schemas")
+        # Missionary Type Description for developer use only
+        missionaryTypeDescription: String @deprecated(reason: "For development only. Do not add to client schemas")
+        # Legacy CMIS ID
+        cmisId: Long
+        # Email Address Submitted on recommend
+        emailAddress: String
+        # The data the recommend was started
+        recommendStartDate: String
+        # The last name entered on the recommend form
+        recommendLastName: String
+        # The first name entered on the recommend form
+        recommendFirstName: String
+        # The middle name entered on the recommend form
+        recommendMiddleName: String
+        # The name suffix entered on the recommend form
+        recommendNameSuffix: String
+        # The date of birth entered on the recommend form
+        birthdate: String
+        # The date the missionary is available entered on the recommend form
+        currentAvailabilityDate: String
+        # The System that the candidate entered their info into.
+        sourceSystem: String
+}
+
+# ============================================================================
+# File: ChangeReason.graphqls
+# ============================================================================
+
+"""
+ChangeReason:
+Represents a 'Change Action' related to a Missionary Assignment.  Every assignment has one or more change actions associated with it.
+Change Actions include: On Leave, Early Release, Reassignment, Cancellation, Temporary Assignments, and Service Mission Transfers.
+Every category of change includes a sub-category that further describes the purpose of the Assignment Change Action.
+"""
+type ChangeReason {
+    "Unique identifier for the Change Action Reason"
+    changeActionId: ID
+    "Name of the Change Action (General Reason)"
+    changeActionName: String
+    "Unique Identifier of the Change Action Reason"
+    changeReasonId: String
+    "Name of the Change Action Reason"
+    changeReasonName: String
+    "Identifies the Reason sub-category"
+    changeReasonSubCategoryId: String
+    "Name of the Reason sub-category (Specific Reason)"
+    changeReasonSubCategoryName: String
+    "Identifies the Reason sub-category Sub Id"
+    changeReasonSubCategorySubId: String
+    "Unique identifier for the associated Missionary Change Record"
+    missionaryChangeRecordId: String
+    "MSSW Id to sync back with MSSW"
+    msswReasonId: Int
+    "MSSW sub-reason Id to sync back"
+    msswSubReasonId: Int
+    "SMMS Reason Id to sync back"
+    smmsReasonId: Int
+    "Whether this assignment change for a couple applies to the Elder, Sister or Both"
+    reasonAppliesForCouples: Boolean
+    "Status of the Change Reason Sub Category"
+    stateCode: Int
+    "Reason for the status of the Change Reason Sub Category"
+    statusCode: Int
+}
+
+# ============================================================================
+# File: Companion.graphqls
+# ============================================================================
+
+type Companion {
+    name: String
+    legacyMissId: Long
+}
+
+# ============================================================================
+# File: Contact.graphqls
+# ============================================================================
+
+type Contact {
+"""
+Contact information about a person
+"""
+    name: String
+    phone: String
+    email: String
+}
+
+# ============================================================================
+# File: CountriesFilters.graphqls
+# ============================================================================
+
+input CountriesFilters {
+        # Country Identifier
+        ids: [ID]
+        # Country iso3 code
+        iso3Codes: [String]
+        # Country iso2 code
+        iso2Codes: [String]
+}
+
+# ============================================================================
+# File: Country.graphqls
+# ============================================================================
+
+type Country {
+        # Country Identifier
+        id: ID
+        # Country Name
+        name: String
+        # Country Short Name
+        shortName: String
+        # Parent Identifier if exists
+        parentId: String
+        # ISO 3166-1 alpha-2, may be null for subunits
+        iso2Code: String
+        # ISO 3166-1 alpha-3, may be null for subunits
+        iso3Code: String
+        # ISO 3166-1 alpha-2 code of parent when null
+        effectiveIso2Code: String
+        # ISO 3166-1 alpha-3 code of parent when null
+        effectiveIso3Code: String
+}
+
+# ============================================================================
+# File: Department.graphqls
+# ============================================================================
+
+type Department {
+    "Service Department information"
+    id: String
+    name: String
+}
+
+# ============================================================================
+# File: District.graphqls
+# ============================================================================
+
+type District {
+    id: ID
+    name: String
+    zone: Zone
+    proselytingAreas: [ProselytingArea]
+}
+
+# ============================================================================
+# File: DrivingInfo.graphqls
+# ============================================================================
+
+type DrivingInfo {
+    drivingStatus: Boolean
+    designatedDriver: Boolean
+}
+
+# ============================================================================
+# File: EcclesiasticalUnit.graphqls
+# ============================================================================
+
+type EcclesiasticalUnit {
+    id: ID
+    missionaryDeptUnitId: Int
+    name: String
+    type: String
+    cdolUnitTypeId: Int
+    cdolParentUnit: Int
+    cdolParentUnitTypeId: Int
+    parentUnit: EcclesiasticalUnit
+    childUnits: [EcclesiasticalUnit]
+    missionOrgNumber: Int
+    proselytingAreas: [ProselytingArea]
+    missionaries: [Missionary]
+}
+
+# ============================================================================
+# File: EnabledMember.graphqls
+# ============================================================================
+
+type EnabledMember {
+    id: ID
+    "Enabled Date: Time (in mountain time) when the candidate was enabled (allowed to enter recommend data) online."
+    enabledMemberDate: String
+    homeUnit: MMSOrganization
+    tempUnit: MMSOrganization
+    missionaryType: MissionaryType
+    language: LanguageAddendum
+    procstat: Procstat
+    inindrfn: String
+    spouseInindrfn: String
+    procstatDate: String
+    legacyMissId: Long
+    legacySpouseMissId: Long
+    currentAvailabilityDate: String
+    releaseInfoAuthDate: String
+    enabledByRoleId: Long
+    pendingPapers: Boolean
+    alert: String
+    spouseReleaseInfoAuthDate: String
+    callLetterSentDate: String
+    hold: Boolean
+    createdBy: String
+    dateCreated: String
+    modifiedBy: String
+    dateModified: String
+    legacy: Boolean
+    initiatedVersion: Long
+    pendingTranslationState: Long
+    missionStartDate: String
+    releaseDate: String
+    anniversaryDate: String
+    releaseDateChangeDate: String
+    leaderVisibility: Boolean
+    termMonths: Int
+    recommendFormTypeId: Int
+    addressConfirmPending: Boolean
+    initialAssignmentDate: String
+    otxSyncCol: String
+    imageProcessed: Boolean
+    missionaryAuthPin: Long
+    pinEnteredDate: String
+    callPacketImmunization: Boolean
+    callPacketPortal: Boolean
+    cmisUnitId: Long
+    missionarySearchOTX: Boolean
+    ldsAccountId: String
+    spouseLdsAccountId: String
+    cmisId: String
+    spouseCmisId: String
+    doNotPurge: Boolean
+    hushEndDate: String
+    callNotificationId: Long
+    callLetterPageVisitTimestamp: String
+    inqMigrationDate: String
+    inHushPeriod: InHushPeriod
+    missionaries: [Missionary]
+    assignments: [Assignment]
+}
+
+# ============================================================================
+# File: Flags.graphqls
+# ============================================================================
+
+"""
+Flags:
+Various flags that influence how systems treat the record of a missionary.
+"""
+type Flags {
+    "The record id, matches the missionaryNumber and legacyMissId for a missionary."
+    id: ID
+    "The English Connect Eligible flag provided by Mission Management. Indicates a missionary is eligible for the English Connect Course."
+    englishConnectEligible: Boolean
+    afabEnabledYN: String
+    onlineProselytingEnabledYN: String
+    pmdProfileOverride: String
+    pmdEnabledYN: String
+    socialMediaSpecialistOrganizations: String
+}
+
+# ============================================================================
+# File: GeopoliticalLocation.graphqls
+# ============================================================================
+
+type GeopoliticalLocation {
+    locationCodeNumber: Int
+    commonName: String
+    concatenatedName: String
+    geopoliticalLocationId: String
+    officialName: String
+    parentClassIdValue: String
+    geographicIdValue: String
+    geopoliticalClass: Option
+    hierarchyLevel: Int
+    lastUpdate: String
+    iso: String
+    abbreviatedName: String
+    dialingCode: Int
+    stateCode: Option
+    statusCode: Option
+}
+
+# ============================================================================
+# File: HealthQuestionResponse.graphqls
+# ============================================================================
+
+"""
+all MissionaryHealthSurvey information combined together. This is the data that is needed for medical response data for
+missionaries.
+"""
+type HealthQuestionResponse {
+    name: String
+    questionResponseId: String
+    questionIdValue: String
+    response: String
+}
+
+# ============================================================================
+# File: HealthReorganizedResponse.graphqls
+# ============================================================================
+
+type HealthReorganizedResponse {
+    healthQuestionResponses: [HealthQuestionResponse]
+    activityId: String
+    administrationDate: String
+    fastSurveyScore: String
+    faSurveyScore: String
+    moqSurveyScore: String
+    oqAnalystId: String
+    sdSurveyScore: String
+    stateCode: Int
+    statusCode: Int
+    subject: String
+    irSurveyScore: String
+    srSurveyScore: String
+    surveyRequestId: String
+    totalSurveyScore: String
+    unAnsweredQuestions: String
+}
+
+# ============================================================================
+# File: IdentityAttachment.graphqls
+# ============================================================================
+
+"""
+Retrieves a list of filtered identity attachments associated with the specified Missionary.
+They include documentation for Drivers License and Passports, in a variety of file formats.
+"""
+type IdentityAttachment {
+    "The number used to identify a missionary. Usually Legacy Miss ID"
+    missionaryNumber: ID
+    "Identity Attachment Type (DriversLicenceAttachments, PassportAttachments, Photograph, etc.)"
+    type: String
+    "File Attachment Identifier"
+    attachmentId: Long
+    "Base64-encoded representation of the binary file attachment"
+    attachmentData: String
+    "Original filename of the Attachment"
+    fileName: String
+    "File Format of the Attachment (jpeg, doc, docx, pdf, etc.)"
+    fileType: String
+    "Description of File, as specified when first created by the Missionary, Parent, or Leader"
+    description: String
+}
+
+# ============================================================================
+# File: InHushPeriod.graphqls
+# ============================================================================
+
+type InHushPeriod {
+    id: ID
+    procstat: Procstat
+    missionaryType: MissionaryType
+    callLetterSentDate: Date
+    enabledMemberMissionStartDate: Date
+}
+
+# ============================================================================
+# File: Insurance.graphqls
+# ============================================================================
+
+"""
+Insurance:
+Insurance information on a Recommendation for a missionary.
+"""
+type Insurance {
+    "The number used in the UI to identify a missionary. Usually Legacy Miss ID."
+    missionaryNumber: Int
+    primary: InsuranceDetail
+    secondary: InsuranceDetail
+    planCoverage: String
+    nationalPlanWaitingPeriod: String
+    chronicHealthCondition: String
+    personalCoverageChronicConditionPlan: String
+    healthInsurancePrivate: Option
+    state: Option
+    status: Option
+}
+
+
+# ============================================================================
+# File: InsuranceDetail.graphqls
+# ============================================================================
+
+"""
+InsuranceDetail:
+Insurance detail information on a Recommendation for a missionary.
+"""
+type InsuranceDetail {
+    companyName: String
+    companyDetails: String
+    companyPhone: String
+    mailingAddress: Address
+    policyHolder: Person
+    effectiveDateOfCoverage: String
+    alphaPrefixForIdNumber: String
+    policyIdNumber: String
+    policyGroupNumber: String
+    chronicConditionNotCoveredPlan: String
+    deductibleAmount: Int
+    coverageByLocationWithinRegion: Option
+    coverageByLocationOutsideRegion: Option
+    coverageByLocationOutsideCountry: Option
+    providerPreExisting: Option
+}
+
+
+# ============================================================================
+# File: Label.graphqls
+# ============================================================================
+
+type Label {
+    localizedLabels: [LocalizedLabel]
+}
+
+# ============================================================================
+# File: LabelValue.graphqls
+# ============================================================================
+
+type LabelValue {
+    value: Int
+    label: String
+}
+
+# ============================================================================
+# File: Language.graphqls
+# ============================================================================
+
+"""
+Cross-map of language ids from church, missionary and iso3. The initial source of this
+information is MSSW.MMS_LANG table.
+"""
+type Language {
+    "Language ID used by missionary systems"
+    missionaryLanguageId: Int
+    "Language ID used by many church systems"
+    churchLanguageId: Int
+    "English name of language for reference"
+    languageName: String
+    "Non-standard abbreviation for language name"
+    languageAbbreviation: String
+    "Standard ISO3 code used to identify language"
+    iso3Code: String
+    "IANA Registry contains abbreviated language tags (codes) defined by IETF"
+    ianaLanguageSubtag: String
+    "Date the language record was loaded into system."
+    loadDate: String
+    "Language Approval"
+    approved: Boolean
+    "Name of the True North Scale Assessment for the given language (Emmersion’s proprietary scale)."
+    trueNorthAssessmentName: String
+    "Identifies if language is spoken"
+    spokenLanguage: Boolean
+    "States if this is the main language"
+    lang: String
+}
+
+# ============================================================================
+# File: LanguageAddendum.graphqls
+# ============================================================================
+
+type LanguageAddendum {
+    id: ID
+    languageGroupId: Long
+    lastUpdateDate: String
+    recentryLanguage: Boolean
+    metadataTranslated: Boolean
+    seniorSiteLanguageStatus: Int
+    napiLanguageStatus: Int
+}
+
+# ============================================================================
+# File: Leader.graphqls
+# ============================================================================
+
+"""
+Leader:
+Represents the details related to one mission leader. A leader may
+have more than one citizenship in their lifetime.
+"""
+type Leader {
+    "The unique identifier for the leader as contained in CMIS."
+    cmisId: ID
+    "The unique identifier for the leader's spouse as contained in CMIS."
+    spouseCmisId: ID
+    "Membership Record Number"
+    mrn: String
+    "Code for the gender of the leader"
+    genderCode: String
+    "The number of the leader's home unit"
+    homeUnitNumber: Long
+    "The surname of the leader"
+    surname: String
+    "The given name(s) of the leader"
+    givenName: String
+    "The preferred surname of the leader"
+    preferredSurname: String
+    "The preferred given name of the leader"
+    preferredGivenName: String
+    "The number of the unit that the leader is assigned to"
+    leaderUnitNumber: Long
+    "The start date of the leader's assignment"
+    startDate: String
+    "The end date of the leader's assignment"
+    endDate: String
+    "The email address of the leader's church email"
+    ldsEmail: String
+    "The email address of the leader's personal email"
+    personalEmail: String
+    "The phone number of the leader"
+    phone: String
+    "The home address of the leader"
+    homeAddress: String
+    "The location ID associated with the leader's home unit"
+    homeLocationId: Long
+    "The leader's date of birth"
+    birthDate: Date
+    "The birthplace of the leader"
+    birthPlace: String
+    "The location ID associated with the leader's birth location"
+    birthLocationId: Long
+    "The leader's passport number"
+    passportNumber: String @deprecated(reason: "see GVM for passport information")
+    "The expiration date of the leader's passport"
+    passportExpirationDate: String @deprecated(reason: "see GVM for passport information")
+    "The name of the leader's emergency contact"
+    contactName: String
+    "The relationship of the leader's emergency contact to the leader"
+    contactRelationship: String
+    "The address of the leader's emergency contact"
+    contactAddress: String
+    "The email address of the leader's emergency contact"
+    contactEmail: String
+    "The phone number of the leader's emergency contact"
+    contactPhone: String
+    "The LeaderImage associated with the leader's cmisId"
+    leaderImage: LeaderImage
+    "The list of citizenships that the leader has"
+    citizenships: [LeaderCitizenship]
+}
+
+# ============================================================================
+# File: LeaderCitizenship.graphqls
+# ============================================================================
+
+"""
+LeaderCitizenship:
+Represents the details related to one citizenship of a mission leader.
+A person may have more than one citizenship in their lifetime.
+"""
+type LeaderCitizenship {
+    "The unique ID of the citizenship"
+    id: ID
+    "The CMIS ID the citizenship is associated with"
+    cmisId: ID
+    "The GeopoliticalLocation object that is associated with this citizenship"
+    leaderCitizenshipLocation: GeopoliticalLocation
+    "A string, either Y or N, signifying if the citizenship is the leader's current citizenship"
+    currentCitizenship: String
+    "Whether or not the citizenship co-exists at the same time with another one of the leader's citizenships"
+    dualCitizen: Boolean @deprecated(reason: "No longer calculated")
+}
+
+# ============================================================================
+# File: LeaderImage.graphqls
+# ============================================================================
+
+"""
+LeaderImage:
+Represents the digital photo image of a missionary leader.
+"""
+type LeaderImage {
+    "The unique ID of the leader image"
+    id: ID
+    "The CMIS ID that this image is associated with"
+    cmisId: ID
+    "The text string representation of the image file"
+    photo: String
+}
+
+# ============================================================================
+# File: LeaderPermissionData.graphqls
+# ============================================================================
+
+"""
+LeaderPermissionData:
+Represents the permissions that a leader should have in relation to a missionary.
+"""
+type LeaderPermissionData {
+    "This is a string of list of permissions that a mission leader should have for a given missionary."
+    leaderPermissionData: String
+}
+
+
+# ============================================================================
+# File: LocalizedLabel.graphqls
+# ============================================================================
+
+type LocalizedLabel {
+    label: String
+    languageCode: Long
+    metadataId: String
+}
+
+# ============================================================================
+# File: Location.graphqls
+# ============================================================================
+
+"""
+Location: the unit and ecclesiastical leader data that oversees the specified Missionary Assignment.
+Applies to all missionary assignments, whether it is a mission, training center, or a variety of service or special assignments.
+This Location data will describe the Mission or Administrative Directorate to which their leader is assigned.
+"""
+type Location {
+    "Assignment Location Number"
+    assignmentLocationId: Long
+    "Assignment Location Name"
+    assignmentName: String
+    "CDOL Legacy ID"
+    legacyId: Long
+    "Location/Organization Type"
+    type: LabelValue
+    "CDOL ID"
+    cdolId: Long
+    "CDOL Organization Id"
+    mmsId: Long
+}
+
+# ============================================================================
+# File: MailingAddress.graphqls
+# ============================================================================
+
+type MailingAddress {
+    "first address line"
+    addressLine1: String
+    "second address line"
+    addressLine2: String
+    "third address line"
+    addressLine3: String
+    "district for the address"
+    district: String
+    "The City"
+    city: String
+    "State or providence the address is in."
+    stateProvince: String
+    "zip code of mailing address. Set as a String because it is not always a number."
+    zipcode: String
+    "Geopolitical location of the mailing address. Example: United States of America"
+    country: GeopoliticalLocation
+}
+
+# ============================================================================
+# File: MedicalCondition.graphqls
+# ============================================================================
+
+"""
+MedicalService represents the medical conditions that a candidate has
+"""
+type MedicalCondition {
+    "unique identifier for MedicalCondition."
+    id: String
+    name: String
+    notes: String
+    diagnosisStatus: Option
+    detailName: String
+    detailDescription: String
+    detailMsswId: Int
+    detailRequiresMissionaryMedicalReview: Boolean
+    candidateId: String
+    missionaryNumber: Int
+}
+
+
+# ============================================================================
+# File: MedicalEvaluation.graphqls
+# ============================================================================
+
+"""
+MedicalEvaluation info for a recommendation.
+"""
+type MedicalEvaluation {
+    name: String
+    abdomen: Option
+    abdomenComments: String
+    activeOrthodonticTreatmentCompleted: Option
+    back: Option
+    backComments: String
+    biteWingXraysLast6Months: Option
+    bloodPressure: String
+    bloodPressureDiastolic: Int
+    bloodPressureSystolic: Int
+    bmi:  Float
+    breastPelvicExam: Option
+    breastPelvicExamComments: String
+    breastsCommentsWomenOnly: String
+    breastsWomenOnly: Option
+    chestLungs: Option
+    chestLungsComments: String
+    chestXrayResults: Option
+    currentActiveOrthodontia: Option
+    dateOralEvaluationCompleted: String
+    dentalDecayResolved: Option
+    dentistsDistrict: String
+    dentistsOfficeAddress: String
+    dentistsOfficeCity: String
+    dentistsOfficeCountryCode: Int
+    dentistsOfficeEmailAddress: String
+    dentistsOfficePhone: String
+    dentistsOfficePostalCode: String
+    dentistsOfficeStateOrProvince: String
+    diabetesMellitusHemaglobinA1CLabResults: String
+    dmDiabeticFootExam: Option
+    dmDiabeticFootExamComments: String
+    dmKidneyFunctionCreatinine: String
+    dmKidneyFunctionSpotUrineAcrMgmmol: String
+    dmLipidProfileFastingCholesterol: String
+    dmLipidProfileFastingTriglyceride: String
+    dmLipidProfileHdl: String
+    dmOphthalmologistRetinalExam: Option
+    dmOphthalmologistRetinalExamComments: String
+    ears: Option
+    earsComments: String
+    exerciseEcgRiskFactors: [Option]
+    exerciseEcgTestDate: String
+    exerciseElectrocardiography: Option
+    exerciseElectrocardiographyComments: String
+    eyes: Option
+    eyesComments: String
+    followUpCareComments: String
+    followUpCareOrContinuingMedication: Option
+    freeOfDentalProblemsComments: String
+    fullPeriodontalChartingLast6Months: Option
+    generalAppearance: Option
+    generalAppearanceComments: String
+    genitalia: Option
+    genitaliaComments: String
+    hadOralExamWithinSixMonths: Option
+    heart: Option
+    heartComments: String
+    height:  Float
+    heightUnit: Option
+    hematocrithemoglobinChoice: Option
+    hematocritTestResults: String
+    hemoglobinhematocritComments: String
+    hemoglobinTestResults: String
+    interferonTestResults: Option
+    limitationLevelCode: Option
+    lowerExtremities: Option
+    lowerExtremitiesComments: String
+    mammogram: Boolean
+    mammogramComments: String
+    medicalEvaluationCompleted: Date
+    id: ID
+    medicationsImpairingDriving: Boolean
+    medicationsImpairingDrivingExplanation: String
+    nameOfDentist: String
+    neurologicalSystem: Option
+    neurologicalSystemComments: String
+    noseThroat: String
+    noseThroatComments: String
+    panoramicAllTeethLast12Months: Option
+    physicianAddress: String
+    physicianCity: String
+    physicianCountry: GeopoliticalLocation
+    physicianCountryCode: Int
+    physicianDistrict: String
+    physicianEmail: String
+    physicianName: String
+    physicianOfficePhone: String
+    physicianPostalCode: String
+    physicianState: String
+    physicianType: Option
+    problemMolarsExtracted: Option
+    prostate: Option
+    prostateComments: String
+    psaTesting: Option
+    psaTestingComments: String
+    pulse: Int
+    reproductiveOrgansCommentsWomenOnly: String
+    reproductiveOrgansWomenOnly: Option
+    signature: String
+    skin: Option
+    skinComments: String
+    tbComments: String
+    tbExposureRisk: String
+    tbScreeningPpdNotDone: Option
+    tbScreeningPpdResultsValue: String
+    thirdMolarsEvident: Option
+    upperExtremities: Option
+    upperExtremitiesComments: String
+    urinalysisBloodResults: String
+    urinalysisComments: String
+    urinalysisMicroscopicResults: String
+    urinalysisProteinResults: String
+    urinalysisSugarResults: String
+    visionLeft: String
+    visionRight: String
+    weight:  Float
+    weightUnit: Option
+}
+
+# ============================================================================
+# File: MedicalHistory.graphqls
+# ============================================================================
+
+type MedicalHistory {
+    id: ID
+    additionalMedications: String
+    allergyDetails: String
+    allergyHistory: Option
+    asthmaAggravatingFactors: [Option]
+    asthmaBeenHospitalized: Option
+    asthmaCurrentMedications: String
+    asthmaDisturbsSleep: Option
+    asthmaHistory: Option
+    asthmaLastAttackDate: String
+    asthmaLastDrVisit: String
+    asthmaLastHospitalized: String
+    asthmaLastMedicationDate: String
+    asthmaAttackLength: String
+    asthmaDailyLimitations: String
+    asthmaOnsetAge: Int
+    asthmaOtherAggravatingFactors: String
+    asthmaPreviousMedications: String
+    asthmaRequiresInhaler: Option
+    bloodDisordersCurrentMedication: String
+    bloodDisordersDetails: String
+    bloodDisordersDiagnosisAge: Int
+    bloodDisordersFieldRequirements: String
+    bloodDisordersHistory: Option
+    bloodDisordersLimitations: String
+    bloodDisordersPreviousMedication: String
+    brokenTeeth: Option
+    brushTeeth2xDailyYn: Option
+    cancerCurrentMedications: String
+    cancerDetails: String
+    cancerAgeDiagnosed: Int
+    cancerFieldRequirements: String
+    cancerHistory: Option
+    cancerInRemission: Option
+    cancerLimitations: String
+    cancerOncologistDetails: String
+    cancerPreviousMedications: String
+    cancerDateOfRemission: String
+    cysticFibrosisBeingTreated: Option
+    cysticFibrosisLengthOfCare: String
+    cysticFibrosisCareFrequency: String
+    cysticFibrosisCurrentMedications: String
+    cysticFibrosisHistory: Option
+    cysticFibrosisLastHospitalized: String
+    cysticFibrosisPreviousMedications: String
+    cysticFibrosisRequirements: String
+    cysticFibrosisRestrictions: String
+    diabetes1HypoglycemiaFrequency: String
+    diabetes2HypoglycemiaFrequency: String
+    diabetesAge1: Int
+    diabetesAge2: Int
+    diabetesBrandCgm: String
+    diabetesBrandPump: String
+    diabetesBrandPumpCgm: String
+    diabetesCgmMobileApp: String
+    diabetesComplications: String
+    diabetesComplications2: String
+    diabetesDatesResults2: String
+    diabetesDatesResults: String
+    diabetesHemoglobinDescription1: String
+    diabetesHemoglobinDescription2: String
+    diabetesType1: Option
+    diabetesListMedications: String
+    diabetesListMedications2: String
+    diabetesListPreviousMedication: String
+    diabetesListPreviousMedication2: String
+    diabetesMedicalAlert: Option
+    diabetesMedicalAlert2: Option
+    diabetesType2: Option
+    endometriosisDetails: String
+    endometriosisHistory: Option
+    earsNoseThroatIssues: Option
+    earsNoseThroatDetails: String
+    enuresisTreatedInLast12Months: Option
+    enuresisFrequency: String
+    enuresisHadExam: Option
+    enuresisHistory: Option
+    enuresisLastIncident: String
+    enuresisManagementPlan: String
+    enuresisFieldRequirements: String
+    enuresisTreatments: [Option]
+    eyeIssues: Option
+    eyeIssuesDetails: String
+    gender: Option
+    giConditionHistory: Option
+    giConditions: [Option]
+    giCurrentMedications: String
+    giHadSurgery: Option
+    herniavaricoceleDetails: String
+    herniavaricoceleHistory: Option
+    giLastSurgeryDate: String
+    giLimitations: String
+    giPastMedications: String
+    giRequirements: String
+    giSpecialistDetails: String
+    giSurgeryDetails: String
+    hasHeadInjurySymptoms: Option
+    hasRemovableRetainerYn: Option
+    headacheDailyInterference: Option
+    headacheDailyInterferenceDetails: String
+    headacheFrequency: String
+    headacheFrequencyOption: Option
+    headacheHistory: Option
+    headacheLengthDays: Int
+    headacheLengthHours: Int
+    headacheLengthWeeks: Int
+    headacheMedicationDetails: String
+    headacheOtcMedicationDetails: String
+    headacheOtherTestDetails: String
+    headachePhysicianEvalDetails: String
+    headachePhysicianEvaluated: Option
+    headachePrescriptionMedicationDetails: String
+    headacheReceivedTreatment: Option
+    headacheRequiredSleepDetails: String
+    headacheRequiresSleep: Option
+    headacheTakesRegularMedication: Option
+    headacheTestsPerformed: [Option]
+    headacheTreatmentDetails: String
+    headInjuryCurrentMedications: String
+    headInjuryDetails: String
+    headInjuryHistory: Option
+    headInjuryPreviousMedications: String
+    headInjuryRestrictions: String
+    headInjurySpecialist: String
+    hearingIssues: Option
+    hearingIssuesDetails: String
+    heartCurrentMedications: String
+    heartAgeOfDiagnosis: Int
+    heartSurgeryOrProcedure: Option
+    heartHistory: Option
+    heartDetails: String
+    heartPreviousMedications: String
+    heartFieldRequirements: String
+    heartRestrictions: String
+    heartDateOfSurgery: String
+    heartSurgeryDetails: String
+    hypoglycemicDetails: String
+    hypoglycemicHistory: Option
+    immunizationConcerns: String
+    immunizationRefusalReason: String
+    immunizationUnderstandingConfirmation: Option
+    insulinAdminMonitoring: [Option]
+    kidneyCurrentMedications: String
+    kidneyDiagnosisAge: Int
+    kidneyDiseases: [Option]
+    kidneyFieldRequirements: String
+    kidneyHadDialysis: Option
+    kidneyHadProcedure: Option
+    kidneyHistory: Option
+    kidneyLimitations: String
+    kidneyOtherDetails: String
+    kidneyPreviousMedications: String
+    kidneyLastProcedureDate: String
+    kidneyProcedureDetails: String
+    kidneySpecialistDetails: String
+    kidneyStoneDetails: String
+    kidneyStoneHistory: Option
+    kidneyStoneLastDate: String
+    kidneyStoneTreatments: String
+    liverGallBladderDetails: String
+    liverGallBladderHistory: Option
+    lowerExtremityCurrentMedications: String
+    lowerExtremityDetails: String
+    lowerExtremityHadSurgery: Option
+    lowerExtremityHistory: Option
+    lowerExtremityIssueAreas: [Option]
+    lowerExtremityPreviousMedications: String
+    lowerExtremityRecommendedSurgeries: String
+    lowerExtremityRequirements: String
+    lowerExtremityRestrictions: String
+    lowerExtremitySurgeryDate: String
+    lowerExtremitySurgeryDetails: String
+    lowerExtremityTreatmentDetails: String
+    lungsCurrentMedications: String
+    lungsDiagnosis: String
+    lungsHistory: Option
+    lungsProcedures: String
+    lungRequirements: String
+    lungsPreviousMedications: String
+    medicationReactionDetails: String
+    migraineCausesNausea: Option
+    migraineDailyInterference: Option
+    migraineDailyInterferenceDetails: String
+    migraineFrequency: String
+    migraineHistory: Option
+    migraineLengthDays: Int
+    migraineLengthHours: Int
+    migraineLengthWeeks: Int
+    migraineMedicationDetails: String
+    migraineOtcMedicationDetails: String
+    migraineOtherTestsDetails: String
+    migrainePhysicianEvalDetails: String
+    migrainePhysicianEvaluated: Option
+    migrainePrescriptionMedicationDetails: String
+    migraineReceivedTreatment: Option
+    migraineRequiredSleepDetails: String
+    migraineRequiresSleep: Option
+    migraineTakesRegularMedication: Option
+    migraineTestsPerformed: [Option]
+    migraineTreatmentDetails: String
+    mouthPain: Option
+    mouthPainExplanation: String
+    name: String
+    nervousSystemCurrentMedications: String
+    nervousSystemDetails: String
+    nervousSystemIssues: Option
+    nervousSystemPreviousMedications: String
+    nervousSystemRequirements: String
+    nervousSystemRestrictions: String
+    nervousSystemSpecialist: String
+    orthodonticTreatmentCompleted: Option
+    orthodonticTreatmentYn: Option
+    otherDiseases: Option
+    otherDiseasesDetails: String
+    otherHospitalization: Option
+    otherHospitalizationDetails: String
+    seizureCurrentMedications: String
+    seizureDetails: String
+    seizureDiagnosed: Option
+    seizureDiagnosisAge: Int
+    seizureIssues: Option
+    seizureLastDate: String
+    seizurePreviousMedications: String
+    seizureRequirements: String
+    seizureTypes: String
+    skinAccutaneCompleted: Option
+    skinAccutaneTreated: Option
+    skinAccutaneTreatmentEndDate: String
+    skinAcneDetails: String
+    skinAcneHistory: Option
+    skinConditionDetails: String
+    skinConditionHistory: Option
+    skinSunSensitivityDetails: String
+    skinSunSensitivity: Option
+    spineCurrentMedications: String
+    spineDetails: String
+    spineHadSurgery: Option
+    spineIssues: Option
+    spinePreviousMedications: String
+    spineRecommendedSurgery: String
+    spineRequirements: String
+    spineRestrictions: String
+    spineLastSurgeryDate: String
+    spineSurgeryDetails: String
+    spineTherapyDetails: String
+    stdDiagnosisDetails: String
+    stdHistory: Option
+    stdBeenTested: Option
+    tattooDetails: String
+    tattooHistory: Option
+    thyroidDetails: String
+    thyroidHistory: Option
+    transplantCurrentMedications: String
+    transplantDetails: String
+    transplantFieldRequirements: String
+    transplantHistory: Option
+    transplantLimitations: String
+    transplantPreviousMedications: String
+    transplantSpecialistRequirements: String
+    upperExtremitiesAreas: [Option]
+    upperExtremitiesCurrentMedications: String
+    upperExtremitiesDetails: String
+    upperExtremitiesHadSurgery: Option
+    upperExtremitiesHistory: Option
+    upperExtremitiesLastSurgery: String
+    upperExtremitiesPreviousMedications: String
+    upperExtremitiesRecommendedSurgery: String
+    upperExtremitiesRequirements: String
+    upperExtremitiesRestrictions: String
+    upperExtremitiesSurgeryDetails: String
+    upperExtremitiesTherapyDetails: String
+    veinsDetails: String
+    veinsHistory: Option
+    willReceiveImmunizations: Option
+    wisdomTeethRemoved: Option
+}
+
+# ============================================================================
+# File: MedicalNote.graphqls
+# ============================================================================
+
+"""
+MedicalNote info for a recommendation.
+"""
+type MedicalNote {
+    description: String
+    medicalInfo: String
+    id: String
+    candidateId: Int
+    noteName: String
+    medicalNoteType: Option
+    originalCreator: Person
+}
+
+# ============================================================================
+# File: MedicalScreeningResults.graphqls
+# ============================================================================
+
+"""
+MedicalScreeningResults info for a recommendation.
+"""
+type MedicalScreeningResults {
+    name: String
+    isOnHold: Boolean
+    id: String
+    dueDate: Date
+    medicalNotes: [MedicalNote]
+}
+
+# ============================================================================
+# File: MedicalService.graphqls
+# ============================================================================
+
+"""
+MedicalService represents the medical services that a candidate has
+"""
+type MedicalService {
+    "unique identifier for medicalService."
+    candidateMedicalServiceId: String
+    id: String
+    name: String
+    candidateId: Int
+    notes: String
+    requirementStatus: Option
+    missionaryNumber: Int
+    medicalConditionId: Int
+    medicalConditionName: String
+    medicalConditionDescription: String
+}
+
+
+# ============================================================================
+# File: Medication.graphqls
+# ============================================================================
+
+"""
+Medication represents the medications that a candidate has
+"""
+type Medication {
+    name: String
+    notes: String
+    missionaryNumber: Int
+    medicationDescription: String
+    requiresMedicalReview: Boolean
+    id: ID
+}
+
+
+# ============================================================================
+# File: Mission.graphqls
+# ============================================================================
+
+type Mission {
+    id: ID
+    name: String
+    address: String
+    mailingAddress: String
+    phoneInternationalCode: String
+    phone: String
+    phoneExtension: String
+    faxInternationalCode: String
+    fax: String
+    faxExtension: String
+    email: String
+    leaderCmisId: Long
+    leaderName: String
+    leaderHomeAddress: String
+    leaderPhoneInternationalCode: String
+    leaderPhone: String
+    leaderPhoneExtension: String
+    leaderCellInternationalCode: String
+    leaderCell: String
+    leaderCellExtension: String
+    leaderEmail: String
+    mobileDevice: Boolean
+    missionaryAllocation: Int
+    assignmentLocationStatusId: Int
+    assignmentLocationStatusDescription: String
+    zones: [Zone]
+}
+
+# ============================================================================
+# File: MissionariesConnection.graphqls
+# ============================================================================
+
+"""
+MissionariesConnection:
+Connection type for paginated retrieval of missionaries. This implements
+the GraphQL Relay Connection specification for cursor-based pagination.
+"""
+type MissionariesConnection {
+    "List of missionary edges containing cursors and nodes"
+    edges: [MissionariesEdge]
+    "Information about pagination state"
+    pageInfo: PageInfo!
+}
+
+"""
+MissionariesEdge:
+An edge in a missionaries connection containing a missionary node and cursor.
+"""
+type MissionariesEdge {
+    "The missionary node"
+    node: Missionary
+    "A cursor for use in pagination"
+    cursor: String!
+}
+
+"""
+MissionariesConnectionInput:
+Input for paginated missionaries query with filtering capabilities.
+Currently supports filtering by service department only.
+"""
+input MissionariesConnectionInput {
+    "Pagination and filtering parameters"
+    filter: MissionariesConnectionFilters
+}
+
+"""
+MissionariesConnectionFilters:
+Filtering options for missionaries connection query.
+Initial implementation supports only service department filtering
+with optional missionaryStatus.
+"""
+input MissionariesConnectionFilters {
+    "Filter missionaries by service department"
+    serviceDepartment: serviceDepartment
+    "Filter missionaries by status codes(Optional)"
+    missionaryStatus: [MissionaryStatusCode]
+}
+
+
+# ============================================================================
+# File: MissionariesFilters.graphqls
+# ============================================================================
+
+input MissionariesFilters {
+    homeUnitId: ID
+    membershipUnitId: ID
+    submittingUnitId: ID
+    fundingUnitId: ID
+    # DEPRECATED: Use missionariesConnection instead for serviceDepartment requests.
+    serviceDepartment: serviceDepartment
+    missionUnitNumber: [Long]
+    missionaryStatus: [MissionaryStatusCode]
+}
+
+# ============================================================================
+# File: MissionariesInput.graphqls
+# ============================================================================
+
+input MissionariesInput {
+    filter: MissionariesFilters
+}
+
+# ============================================================================
+# File: Missionary.graphqls
+# ============================================================================
+
+"""
+Missionary:
+Represents the details related to one missionary call experience. A person
+may be represented by more than one mission record in their lifetime.
+"""
+type Missionary {
+    "The number used in the UI to identify a missionary. Usually Legacy Miss ID."
+    missionaryNumber: Long
+    "Maps to member record in CMIS"
+    cmisUUID: ID
+    "Missionary number unique to INQ"
+    inqMissionaryId: String
+    "Missionary Object Primary Key"
+    id: ID
+    legacyCmisId: Long
+    ldsAccountId: Long
+    preferredFirstName: String  @deprecated(reason: "use recommendFirstName")
+    preferredMiddleName: String @deprecated(reason: "use recommendMiddleName")
+    preferredLastName: String   @deprecated(reason: "use recommendLastName")
+    preferredSuffix: String     @deprecated(reason: "use recommendNameSuffix")
+    officialFirstName: String   @deprecated(reason: "use recommendFirstName")
+    officialMiddleName: String  @deprecated(reason: "use recommendMiddleName")
+    officialLastName: String    @deprecated(reason: "use recommendLastName")
+    officialSuffix: String      @deprecated(reason: "use recommendNameSuffix")
+    "The first name entered on the recommend form"
+    recommendFirstName: String
+    "The middle name entered on the recommend form"
+    recommendMiddleName: String
+    "The last name entered on the recommend form"
+    recommendLastName: String
+    "The suffix name entered on the recommend form"
+    recommendNameSuffix: String
+    latinFirstName: String
+    latinMiddleName: String
+    latinLastName: String
+    latinNameSuffix: String
+    birthDate: String
+    birthPlace: String
+    emailAddress: String
+    proselytingEmailAddress: String
+    homeUnitNumber: Int
+    membershipUnitNumber: Int
+    submittingUnitNumber: Int
+    fundingUnitNumber: Int
+    missionaryStatus: Option
+    drivingInfo: DrivingInfo
+    "Missionary Experience Start Date Including Training"
+    startDate: String
+    "Missionary Experience Release Date"
+    releaseDate: String
+    "Missionary Date in Mission Date"
+    infieldDate: String
+    missionaryTypeId: Long
+    "Missionary Type (Elder, Sister, Senior, etc.)"
+    missionaryType: Option
+    "Get the image for a missionary"
+    missionaryImage: MissionaryImage
+    "Missionary's Gender"
+    gender: Option
+    callLetterLanguage: Option
+    anniversaryDate: String
+    callSentDate: String
+    hushEndDate: String
+    "Church Headquarters Pays Travel To (true/false): Indicates whether CHQ will be paying for travel costs for the missionary traveling to an assignment (true) or not (false)."
+    outboundTravelPaidBy: Boolean
+    "Church Headquarters Pays Travel From (true/false): Indicates whether CHQ will be paying for travel costs for the missionary returning home from an assignment (true) or not (false)."
+    returnTravelPaidBy: Boolean
+    "Assignments associated with this Missionary (Active, Ended, Cancelled, etc.), and of various types (Teaching, Service, Training, etc.)"
+    assignments(input: AssignmentsInput): [Assignment]
+    "A list of persons related to this Missionary with contact details."
+    relations: [Relation]
+    "A list of citizenship's held by the missionary.  Designates home country, dual/current citizenship's, and geopolitical data"
+    missionaryCitizenships: [MissionaryCitizenship]
+    "Addresses where the Missionary Lived while serving"
+    missionaryAddressHistories: [MissionaryAddressHistory]
+    "Place where missionary is born"
+    birthCountry: Int
+    "Mobile phone number for missionary"
+    mobilePhone: String
+    "Whether the missionary can accept text messages on their mobile number"
+    canTextMobilePhone: Boolean
+    "Home phone of missionary"
+    homePhone: String
+    "Passport of missionary"
+    passportNumber: String @deprecated(reason: "see GVM for passport information")
+    "Passport expiration of missionary"
+    passportExpirationDate: String @deprecated(reason: "see GVM for passport information")
+    "Medical ID for the missionary (DMBA number)"
+    medicalId: String
+    "Primary Missionary"
+    primaryMissionary: Boolean
+    "Missionary is shipshape to travel"
+    readyToTravel: Boolean
+    "Database info comes from"
+    sourceOfData: Int
+    "medicallyCleared to go on a mission"
+    medicallyCleared: Int @deprecated(reason: "use medicallyClearedToTravel")
+    "Enabled Member ID for Rec-entry or ID from MRS"
+    recommend: String
+    "Whether missionary accepted call or not."
+    callAccepted: Boolean
+    "Commercial airport closest to their home inqAddress."
+    homeAirport: String
+    missionaryAirport: Airport @deprecated(reason: "Only to be given to GVM. Should not be given to another customer.")
+    myPlanMissionary: MyPlanMissionary
+    "Missionary's current assignment."
+    activeAssignment: Assignment @deprecated(reason: "use assignments(input: AssignmentsInput)")
+    "Returns missionary Identity for GVM"
+    missionaryIdentityRecord: [MissionaryIdentityRecord]
+    missionaryHistories: [MissionaryHistory]
+    "Current active proselyting area where missionary is serving/located."
+    proselytingArea: ProselytingArea
+    "Gets languages the missionary is assigned and proficiency with them."
+    languages: [MissionaryLanguage]
+    "Gets the Health Survey for the missionary requested. Uses the missionary ID as the key"
+    missionaryHealthSurveys: [MissionaryHealthSurvey] @deprecated(reason: "Use healthSurveys instead.")
+    "Gets the Health Survey for the missionary requested. Uses the missionary ID as the key"
+    healthSurveys: [HealthReorganizedResponse]
+    "List of filtered Attachments associated with this Missionary (Drivers License, Passport, etc.)"
+    attachments: [IdentityAttachment]
+    """if the missionary has a spouse then we will get the spouseMissionaryNumber which is the legacy_mis_id of the spouse from INQ.
+    We then use that to get the spouse object as a call to missionary to get their record."""
+    spouseMissionaryNumber: Long
+    """This is the missionary record returned for the missionary spouse using spouseMissionaryNumber"""
+    spouse: Missionary
+    """The home address information of the missionary."""
+    homeAddress: Address
+    """ Notes for a missionary. Currently only returning notes that are NOT confidential. """
+    notes: [Note]
+    """ Retrieves Missionary Recommendation file data; returns a PDF of the non-confidential data portion. """
+    recommendExport: RecommendExport
+    """ A list of Missionary Hobbies and Skills entered by the Missionary in Recommend Entry """
+    missionaryHobbiesSkills: MissionaryHobbiesSkills
+    """ The address the call letter was sent to. """
+    mailingAddress: Address
+    "This is a string of list of permissions that a mission leader should have for a given missionary."
+    leaderPermissionData: LeaderPermissionData
+    " The Call Packet of a missionary."
+    callPacketExport: CallPacketExport
+    "Details about a recommendation for a missionary."
+    recommendation: Recommendation
+    "Call Letter for a missionary."
+    callLetterExport: CallLetterExport
+    "Data relating to a missionary's processing up to their first assignment given (NAPI data)"
+    assignmentProcessing: AssignmentProcess
+    "If the missionary has been cleared to travel medically "
+    medicallyClearedToTravel: Option
+    "Flags related to the missionary"
+    flags: Flags
+    "The proselyting email status for the missionary"
+    proselytingEmailStatus: String
+    assignmentPackageXml: String
+    "The missionary's original release date."
+    originalReleaseDate: String
+}
+
+
+# ============================================================================
+# File: MissionaryAddressHistory.graphqls
+# ============================================================================
+
+type MissionaryAddressHistory {
+    "The unique id to a missionary address history."
+    id: Int
+    "Primary key for missionary. Usually matches legacy miss id"
+    missionaryNumber: Int
+    "Object representing the mission this address was assigned to"
+    mission: Int
+    "Date this missionary began living at this address"
+    startDate: String
+    "Date this missionary left this address"
+    endDate: String
+    "Street address line"
+    addressLine1: String
+    "Address City"
+    addressCity: String
+    "Address State or Province"
+    addressState: String
+    "Address District"
+    addressDistrict: String
+    "Address Postal Code"
+    addressPostal: String
+    "GeoPol object for the country the address is in"
+    addressCountry: GeopoliticalLocation
+}
+
+# ============================================================================
+# File: MissionaryCitizenship.graphqls
+# ============================================================================
+
+type MissionaryCitizenship {
+    birthCitizenship: Boolean
+    currentCitizenship: Boolean
+    dualCitizen: Boolean
+    homeCountry: Boolean
+    nationalId: String
+    geopoliticalLocation: GeopoliticalLocation
+}
+
+# ============================================================================
+# File: MissionaryHealthSurvey.graphqls
+# ============================================================================
+
+"""
+all MissionaryHealthSurvey information combined together. This is the data that is needed for medical response data for
+missionaries.
+"""
+type MissionaryHealthSurvey {
+    name: String
+    questionResponseId: String
+    questionIdValue: String
+    response: String
+    surveyResponseId: SurveyResponseId
+}
+
+# ============================================================================
+# File: MissionaryHistory.graphqls
+# ============================================================================
+
+type MissionaryHistory {
+    legacyMissId: Long
+    assignmentLocationId: Long
+    assignmentLocationName: String
+    effectiveDate: Date
+    effectiveEndDate: Date
+    proselytingAreaId: Long
+    areaName: String
+    areaDate: Date
+    areaEndDate: Date
+    roleId: Long
+    roleType: String
+    roleDate: Date
+    roleEndDate: Date
+    companions: [Companion]
+    companionshipDate: Date
+    companionshipEndDate: Date
+}
+
+# ============================================================================
+# File: MissionaryHobbiesSkills.graphqls
+# ============================================================================
+
+"""
+A list of Missionary Hobbies and Skills entered by the Missionary in Recommend Entry
+"""
+type MissionaryHobbiesSkills {
+    """ Missionary Id from the MSSW.missionaries table """
+    id: Long @deprecated(reason: "Migrate to 'missionaryNumber' aka legacy missionary id")
+    """ Legacy Missionary Id for this Missionary """
+    missionaryNumber: ID
+    """ Junior Missionary Hobbies and Interests; Senior Missionary Skills and Professional Experience """
+    skillsHobbiesOverview: String
+}
+
+
+# ============================================================================
+# File: MissionaryIdentityRecord.graphqls
+# ============================================================================
+
+type MissionaryIdentityRecord {
+    """ legacy_miss_id """
+    id: Long
+    missionaryNameId: Long
+    enabledMember: EnabledMember
+    legacyMissId: Long
+    issueCountry: MMSLocation
+    issueState: String
+    suspended: Boolean
+    documentExpireDate: Date
+    documentId: String
+    altIdType: String
+    nameTypeCode: String
+    firstName: String
+    lastName: String
+    middleName: String
+    suffix: String
+}
+
+# ============================================================================
+# File: MissionaryImage.graphqls
+# ============================================================================
+
+type MissionaryImage {
+    missionaryNumber: Long
+    missionaryImage: String
+    missionaryThumbnail: String
+}
+
+# ============================================================================
+# File: MissionaryLanguage.graphqls
+# ============================================================================
+
+type MissionaryLanguage {
+    missionaryNumber: ID
+    languageCode: Int  @deprecated(reason: "Language details are now available by using 'languageDetail' object")
+    languageDetail: Language
+    mtcProficiency: Int
+    name: String
+    preferredLanguage: Boolean
+    selfProficiency: Int
+    overRiddenCreatedOn: String
+    callLetterLanguage: Boolean
+    leaderAssessment: Option
+    prefieldAssessment: Option
+}
+
+# ============================================================================
+# File: MissionaryMedicalLegNote.graphqls
+# ============================================================================
+
+type MissionaryMedicalLegNote {
+    id: ID
+    name: String
+    description: String
+    noteType: Option
+    originalCreatorFirstName: String
+    originalCreatorLastName: String
+    originalCreatorFullName: String
+}
+
+
+# ============================================================================
+# File: MissionaryMedicalScreeningResults.graphqls
+# ============================================================================
+
+"""
+MissionaryMedicalScreeningResults info for a recommendation.
+This type is all about insurance risk eval and case management.
+"""
+type MissionaryMedicalScreeningResults {
+    id: ID
+    caseManagement: Option
+    dueDate: String
+    insuranceStatus: Option
+    isOnHold: Boolean
+    name: String
+    workStepResult: WorkStepResult
+    onholdReason: ScreeningOnHoldReason
+    missionaryMedicalLegNotes: [MissionaryMedicalLegNote]
+    screeningLeg: ScreeningLeg
+}
+
+
+# ============================================================================
+# File: MissionaryStatusCode.graphqls
+# ============================================================================
+
+enum MissionaryStatusCode {
+    SSM_AWAITING_CALL
+    CALL_SENT
+    REMOTE_MTC
+    ONSITE_MTC
+    PRE_FIELD
+    IN_FIELD
+    ON_LEAVE
+    RELEASED
+    UNKNOWN
+}
+
+# ============================================================================
+# File: MissionaryTestDataset.graphqls
+# ============================================================================
+
+"""
+A series of ID's and names that represent each of the data points used to query MGQL.
+This data allows automated tests to be ran, and can provide approved clients with data for testing the MGQL API.
+"""
+type MissionaryTestDataset {
+    "The number used to identify a missionary. Usually Legacy Miss ID."
+    missionaryNumber: Long
+    "The Missionary name (Latin)"
+    missionaryName: String
+    "Member UUID (aka CMIS) ~ preferred ID for CMIS Service Look-up"
+    cmisUUID: String
+    "The number associated with a member, used in place of MRNs"
+    legacyCmisId: Long
+    "Unique identifier for mission or other unit where the missionary is assigned"
+    assignmentLocationId: Long
+    "Assignment Status: ACTIVE(1), PLANNED, ENDED, etc."
+    assignmentStatus: Long
+    "The Church Unit (Branch, Ward) where the missionary's parents records reside"
+    homeUnitNumber: Int
+    "The Church Unit (Branch, Ward) where the missionary's records are currently assigned"
+    membershipUnitNumber: Int
+    "Type of Missionary (Elder, Sister, Senior Elder/Sister, Senior Couple, Volunteer)"
+    missionaryType: Long
+    "Missionary Status ID"
+    statusCode: Int
+    "Mission of the Church : a geographical area comprised of zones, districts, and proselyting area's"
+    missionId: Long
+    "The name of the Mission"
+    missionName: String
+    "Proselyting Area ID to which a Missionary Couple or companionship is assigned."
+    proselytingAreaId: Long
+    "Proselyting Area Name"
+    proselytingAreaName: String
+    "District ID : comprises multiple areas."
+    districtId: Long
+    "District Name"
+    districtName: String
+    "Zone ID : encompasses multiple districts"
+    zoneId: Long
+    "Zone Name"
+    zoneName: String
+    "The ecclesiastical leader that oversees the missionaries well-being.  Often the Mission President."
+    leaderCmisId: Long
+    "The name of the leader called to the Mission that the Missionary has been called to."
+    leaderName: String
+    "The congregational unit a Missionary is assigned to, often located in the proselyting area. There can be multiple."
+    ecclesiasticalUnitId: Long
+    "The name of the ecclesiastical unit a missionary is assigned to."
+    ecclesiasticalUnitName: String
+    "The type of unit: Branch, Ward, Stake"
+    ecclesiasticalUnitType: String
+    "A unit id that contains candiates for testing"
+    candidateUnitId: Long
+}
+
+# ============================================================================
+# File: MissionaryType.graphqls
+# ============================================================================
+
+type MissionaryType {
+    id: ID
+    minimumMonthsSinceRelease: Int
+    minimumAgeDefault: Int
+    maximumAgeDefault: Int
+    abbreviation: String
+    senior: Boolean
+    seniorAssignmentMeetingAbbreviation: String
+    missionaryTypeGroup: String
+    missionaryTypeName: String
+    missionaryTypeCode: String
+}
+
+enum MissionaryTypeEnum {
+    ELDER
+    SISTER
+    SR_SISTER
+    SR_COUPLE
+    SR_ELDER
+    PT_ELDER
+    PT_SISTER
+    PT_COUPLE
+}
+
+# ============================================================================
+# File: MissionBoundaryChange.graphqls
+# ============================================================================
+
+"""
+all Mission Boundary change or Mission Boundary Adjustment information combined together. To request the data. You need to
+enter a list of strings. It can be a list of Strings. It can be 1 or many Strings separated by a comma. for example :if providing
+id: {missionBoundaryAdjustmentIds:['123-xxx-xxx-xxx-abc', '23434234'], sendingMissionUnitNumbers: ['ABC-123-xxxxx', 'abc-1234']}
+filter: {statuses:[ACTIVE]}
+})
+This would be an example where multiples are given with a status type of active. There are more combinations but this should
+get you started.
+"""
+type MissionBoundaryChange {
+    availableDate: Date
+    effectiveDate: Date
+    finalizedDate: Date
+    imosStatus: String
+    missionBoundaryAdjustmentId: String
+    name: String
+    modifiedByValue: String
+    modifiedOn: DateTime
+    missionBoundaryChangeStateCode: Option
+    missionBoundaryChangeStatusCode: Option
+    sendingMission: MissionBoundaryChangeSendingMission
+    receivingMissions: [MissionBoundaryChangeReceivingMission]
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeFilters.graphqls
+# ============================================================================
+
+"""
+all Mission Boundary change information combined together. This is the data that is needed by IMOS to know of mission boundary changes.
+ids would be SendingMission or MissionBoundaryAdjustmentId
+Statuses would be ACTIVE, INACTIVE as an example
+"""
+input MissionBoundaryChangeFilters{
+    statuses: [MissionBoundaryChangeStatus]
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeIds.graphqls
+# ============================================================================
+
+"""
+all Mission Boundary change information combined together. This is the data that is needed by IMOS to know of mission boundary changes.
+ids would be SendingMission or MissionBoundaryAdjustmentId
+Statuses would be ACTIVE, INACTIVE as an example
+"""
+input MissionBoundaryChangeIds{
+    sendingMissionUnitNumbers: [ID]
+    missionBoundaryAdjustmentIds: [ID]
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeInput.graphqls
+# ============================================================================
+
+"""
+Missionary Boundary Change input. Search by filters and any combination of missionBoundaryAdjustmentId and sendingMission or,
+Just search by filters or just the id's referenced.
+"""
+input MissionBoundaryChangeInput {
+    ids: MissionBoundaryChangeIds
+    filters: MissionBoundaryChangeFilters
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeReceivingMission.graphqls
+# ============================================================================
+
+"""
+This is the info relating to the missions that will be changed as a result of a boundary change and where Missionaries will be sent to when the boundary is changed.
+"""
+type MissionBoundaryChangeReceivingMission {
+    unitName: String
+    unitId: Long
+    churchUnitId: String
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeSendingMission.graphqls
+# ============================================================================
+
+"""
+This has the sendingMissionUnitNumber. Unit number is what most people will recognize and probably search by.
+"""
+type MissionBoundaryChangeSendingMission {
+    unitNumber: Long
+}
+
+# ============================================================================
+# File: MissionBoundaryChangeStatus.graphqls
+# ============================================================================
+
+enum MissionBoundaryChangeStatus {
+    ACTIVE
+    INACTIVE
+    SENDING_TO_IMOS
+    SENT_TO_IMOS
+    CREATE
+    BULK_CHANGES_CREATED
+}
+
+# ============================================================================
+# File: MissionContact.graphqls
+# ============================================================================
+
+type MissionContact {
+    missionUnitNumber: Int
+    missionName: String
+    missionAddress: String
+    missionMailAddress: String
+    missionPhoneInternationalCode: String
+    missionPhone: String
+    missionPhoneExtension: String
+    missionFaxInternationalCode: String
+    missionFax: String
+    missionFaxExtension: String
+    missionEmail: String
+    leaderCmisId: Int
+    leaderName: String
+    leaderHomeAddress: String
+    leaderPhoneInternationalCode: String
+    leaderPhone: String
+    leaderPhoneExtension: String
+    leaderCellInternationalCode: String
+    leaderCell: String
+    leaderCellExtension: String
+    leaderEmail: String
+    mobileDevice: String
+    missionaryAllocation: Int
+    assignmentLocationStatusId: Int
+    assignmentLocationStatusDescription: String
+}
+
+# ============================================================================
+# File: MMSLocation.graphqls
+# ============================================================================
+
+type MMSLocation {
+    """ loc_id """
+    id: ID
+    iso3Code: String
+    name: String
+    shortName: String
+    abbreviation: String
+    smsIso3Code: String
+}
+
+# ============================================================================
+# File: MMSOrganization.graphqls
+# ============================================================================
+
+type MMSOrganization {
+    id: ID
+    organizationId: Long
+    name: String
+    officialName: String
+    shortName: String
+    officialShortName: String
+}
+
+# ============================================================================
+# File: Mutation.graphqls
+# ============================================================================
+
+type Mutation {
+    deleteRelation(id: ID!): ID
+    createRelation(relationInput: RelationInput): Relation
+    updateRelation(id: ID! relationInput: RelationInput): Relation
+}
+
+input RelationInput {
+    missionaryRelation: String
+    addressCity: String
+    addressLine1: String
+    addressLine2: String
+    addressLine3: String
+    addressPostal: String
+    addressState: String
+    addressCountry: String
+    addressDistrict: String
+    canReceiveTextMessages: Boolean
+    doNotContact: Boolean
+    email: String
+    firstName: String
+    middleName: String
+    lastName: String
+    suffix: String
+    isDeceased: Boolean
+    isMember: Boolean
+    phoneCountryCodeId: String
+    phone: String
+    occupation: String
+    parentalRelationship: Int
+}
+
+# ============================================================================
+# File: MyPlanMissionary.graphqls
+# ============================================================================
+
+"""
+MyPlanMissionary:
+Represents the details related to one missionary's MyPlanMissionary data.
+"""
+type MyPlanMissionary {
+    """ id is legacy_miss_id """
+    id: ID
+    missionaryId: Long
+    cmisId: Long
+    ldsAccountId: String
+    lastName: String
+    firstName: String
+    middleName: String
+    suffix: String
+    missionaryType: String
+    missionAssignmentLocation: AssignmentLocation
+    missionOrgNumber: MMSOrganization
+    missionName: String
+    assignmentEndDate: Date
+    procstat: Procstat
+    cmisUnitId: Long
+    cmisUnitName: String
+    parentUnitId: Long
+    parentUnitName: String
+    netdUid: String
+    imltModule: String
+    netdCourseId: String
+    courseStatusCode: String
+    courseStatusName: String
+    enrolledTimestamp: DateTime
+    startTimestamp: DateTime
+    myPlanCompletionTimestamp: DateTime
+    myPlanSharing: Boolean
+    imosReport: Boolean
+    myPlanURL: String
+}
+
+# ============================================================================
+# File: Note.graphqls
+# ============================================================================
+
+type Note {
+    note: String
+    subject: String
+    noteType: String
+    noteId: String
+    description: String
+    name: String
+    isFavorite: Boolean
+    originalCreator: Person
+}
+
+# ============================================================================
+# File: Option.graphqls
+# ============================================================================
+
+"""
+The option contains a value and label. Usually a developer should code to the
+value and use the label only for reference or in some cases user display.
+"""
+type Option {
+    "Usually an integer"
+    value: String
+    "Usually an English string that describes the value"
+    label: String
+}
+"""
+The option attributes fall under one of the following entities.
+"""
+enum Entity {
+    "Missionary Call Assignment"
+    ASSIGNMENT
+    "Missionary Call"
+    MISSIONARY
+    "Candidate(Enabled Member)"
+    CANDIDATE
+    "Missionary Call Relations"
+    RELATION
+    "Geopolitical Location"
+    GEOPOLITICAL_LOCATION
+    "Mission Boundary Change"
+    MISSION_BOUNDARY_CHANGE
+    "Missionary Recommendation System (MRS)"
+    RECOMMENDATION
+    "Missionary Language"
+    MISSIONARY_LANGUAGE
+    "Missionary Medical Leg Notes"
+    MISSIONARY_MEDICAL_LEG_NOTES
+    "Missionary Medical Screening Information"
+    MISSIONARY_MEDICAL_SCREENING_RESULTS
+    "Missionary Recommend System (MRS) Screening master"
+    SCREENING_MASTER
+    "Medical service info for a candidate (MRS)"
+    MEDICAL_SERVICE
+    "Medical Evaluation info for a recommendation (MRS)"
+    MEDICAL_EVALUATION
+    "Senior Missionary Medical History"
+    SENIOR_MISSIONARY_MEDICAL_HISTORY
+    "Psychological Leg Note"
+    PSYCHOLOGICAL_LEG_NOTE
+    "Missionary Medical Note"
+    MEDICAL_NOTE
+    "Missionary Medical Screening Info"
+    MISSIONARY_MEDICAL_SCREENING_INFO
+    "Missionary Medical history"
+    MEDICAL_HISTORY
+    "Language Proficiency"
+    LANGUAGE_PROFICIENCY
+}
+"""
+The attributeName should closely align with the MGQL attribute name. The
+attribute belongs to one or more of the Entity types (Assignment, Missionary
+Relation)
+"""
+enum AttributeName {
+    "Entity:Missionary"
+    ASSAULT_SURVIVOR
+    "Entity:Missionary"
+    ASSIGNED_CHURCH_OWNED_VEHICLE
+    "Entity:Missionary"
+    CALL_ACCEPTED
+    "Entity:Missionary"
+    CALL_LETTER_LANGUAGE
+    "Entity:Missionary"
+    CALL_LETTER_TYPE
+    "Entity:Missionary"
+    CALL_TYPE_CODE
+    "Entity:Relations"
+    CAN_RECEIVE_TEXT_MESSAGES
+    "Entity:Missionary"
+    CAN_TEXT_MOBILE_PHONE
+    "Entity:MissionaryMedicalScreeningResults"
+    CASE_MANAGEMENT
+    "Entity:Missionary"
+    CERTIFICATE_REQUESTED
+    "Entity:Missionary"
+    COMPONENT
+    "Entity:Assignment"
+    COUNCIL_APPROVED
+    "Entity:Relations"
+    DO_NOT_CONTACT
+    "Entity:Missionary"
+    DO_NOT_PURGE
+    "Entity:Relations"
+    EMERGENCY_CONTACT_RELATIONSHIP
+    "Entity:Missionary"
+    GENDER
+    "Entity:GeopoliticalLocation"
+    GEOPOLITICAL_CLASS
+    "Entity:GeopoliticalLocation"
+    GEOPOLITICAL_TYPE
+    "Entity:Relations"
+    HAS_RELATIVE_SERVING
+    "Entity:Missionary"
+    HOUSING_SWEEP_PARTICIPATION
+    "Entity:Missionary"
+    IMMUNIZATION_STATUS
+    "Entity:MissionaryMedicalScreeningResults"
+    INSURANCE_STATUS
+    "Entity:Relations"
+    IS_DECEASED
+    "Entity:Relations"
+    IS_MEMBER
+    "Entity:Missionary"
+    MISSIONARY_TYPE
+    "Entity:Missionary"
+    OUTBOUND_TRAVEL_PAID_BY
+    "Entity:Relations"
+    PARENTAL_RELATIONSHIP_LABEL
+    "Entity:Assignment"
+    IS_PERMANENT
+    "Entity:Relations"
+    PHONE_COUNTRY_CODE
+    "Entity:Missionary"
+    PRIMARY_MISSIONARY
+    "Entity:Missionary"
+    READY_TO_TRAVEL
+    "Entity:Relations"
+    RELATIONS_SERVING
+    "Entity:Missionary"
+    RETURN_TRAVEL_PAID_BY
+    "Entity:Assignment"
+    SEND_TO_SMMS
+    "Entity:Missionary"
+    SOURCE_OF_DATA
+    "Entity:Assignment"
+    START_DATE_VERIFIED
+    "Entity:Assignment"
+    ASSIGNMENT_TYPE
+    "Entity:Assignment"
+    SERVICE_METHOD
+    "Entity:Missionary"
+    WORKFORCE_ENABLED
+    "Entity:Missionary, Assignment, Relations, GeopoliticalLocation, MissionBoundaryChange, Recommendation"
+    STATE_CODE
+    "Entity:Missionary, Assignment, Relations, GeopoliticalLocation, MissionBoundaryChange, Recommendation"
+    STATUS_CODE
+    "Entity:Recommendation"
+    COVERAGE_BY_LOCATION_WITHIN_REGION
+    "Entity:Recommendation"
+    COVERAGE_BY_LOCATION_OUTSIDE_REGION
+    "Entity:Recommendation"
+    COVERAGE_BY_LOCATION_OUTSIDE_COUNTRY
+    "Entity:Missionary"
+    RECOMMEND_TYPE
+    "Entity:Recommendation"
+    PRIMARY_LANGUAGE_DETAILS
+    "Entity:Recommendation"
+    LANGUAGE_GRADE
+    "Entity:Recommendation"
+    PROFICIENCY
+    "Entity:Recommendation"
+    LANGUAGE_DETAILS
+    "Entity:MissionaryLanguage"
+    LEADER_ASSESSMENT
+    "Entity:MissionaryLanguage"
+    PREFIELD_ASSESSMENT
+    "Entity:ScreeningMaster"
+    CANDIDATE_1_ACCESS_TO_MEDICAL_CARE_GREATEST
+    "Entity:ScreeningMaster"
+    CANDIDATE_2_ACCESS_TO_MEDICAL_CARE_GREATEST
+    "Entity:MedicalService"
+    CANDIDATE_MEDICAL_SERVICE
+    "Entity:MedicalEvaluation"
+    ABDOMEN
+    "Entity:MedicalEvaluation"
+    ACTIVE_ORTHODONTIC_TREATMENT_COMPLETED
+    "Entity:MedicalEvaluation"
+    BACK
+    "Entity:MedicalEvaluation"
+    BITE_WING_X_RAYS_LAT_6_MONTHS
+    "Entity:MedicalEvaluation"
+    BREAST_PELVIC_EXAM
+    "Entity:MedicalEvaluation"
+    CHEST_LUNGS
+    "Entity:MedicalEvaluation"
+    CHEST_X_RAY_RESULTS
+    "Entity:MedicalEvaluation"
+    CURRENT_ACTIVE_ORTHODONTIA
+    "Entity:MedicalEvaluation"
+    DENTAL_DECAY_RESOLVED
+    "Entity:MedicalEvaluation"
+    DM_DIABETIC_FOOT_EXAM
+    "Entity:MedicalEvaluation"
+    DM_OPHTHALMOLOGIST_RETINAL_EXAM
+    "Entity:MedicalEvaluation"
+    EARS
+    "Entity:MedicalEvaluation"
+    EXERCISE_ECG_RISK_FACTORS
+    "Entity:MedicalEvaluation"
+    EXERCISE_ELECTROCARDIOGRAPHY
+    "Entity:MedicalEvaluation"
+    EYES
+    "Entity:MedicalEvaluation"
+    FOLLOW_UP_CARE_CONTINUING_MEDICATION
+    "Entity:MedicalEvaluation"
+    FULL_PERIODONTAL_CHARTING_LAT_6_MONTHS
+    "Entity:MedicalEvaluation"
+    GENERAL_APPEARANCE
+    "Entity:MedicalEvaluation"
+    GENITALIA
+    "Entity:MedicalEvaluation"
+    HAD_ORAL_EXAM_WITHIN_SIX_MONTHS
+    "Entity:MedicalEvaluation"
+    HEART
+    "Entity:MedicalEvaluation"
+    HEIGHT_UNIT
+    "Entity:MedicalEvaluation"
+    HEMATOCRIT_HEMOGLOBIN_CHOICE
+    "Entity:MedicalEvaluation"
+    INTERFERON_TEST_RESULTS
+    "Entity:MedicalEvaluation"
+    LIMITATION_LEVEL_CODE
+    "Entity:MedicalEvaluation"
+    LOWER_EXTREMITIES
+    "Entity:MissionaryMedicalLegNote"
+    MEDICAL_NOTE_TYPE
+    "Entity:MedicalEvaluation"
+    MEDICATIONS_IMPAIRING_DRIVING
+    "Entity:MedicalEvaluation"
+    NEUROLOGICAL_SYSTEM
+    "Entity:MedicalEvaluation"
+    NOSE_THROAT
+    "Entity:MedicalEvaluation"
+    PHYSICIAN_TYPE
+    "Entity:MedicalEvaluation"
+    PROBLEM_MOLARS_EXTRACTED
+    "Entity:MedicalEvaluation"
+    PROSTATE
+    "Entity:MedicalEvaluation"
+    PSA_TESTING
+    "Entity:MedicalEvaluation"
+    REPRODUCTIVE_ORGANS_WOMEN_ONLY
+    "Entity:MedicalEvaluation"
+    SKIN
+    "Entity:MedicalEvaluation"
+    TBS_SCREENING_PPD_NOT_DONE
+    "Entity:MedicalEvaluation"
+    UPPER_EXTREMITIES
+    "Entity:MedicalEvaluation"
+    WEIGHT_UNIT
+    "Entity:MedicalEvaluation"
+    PANORAMIC_ALL_TEETH_LAST_12_MONTHS
+    "Entity:MedicalCondition"
+    DIAGNOSIS_STATUS
+    "Entity: SeniorMissionaryMedicalHistory"
+    ADRENAL_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ALLERGY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ANEMIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ANEURYSM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ANTI_COAGULANT_MEDICATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ARTHRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ASTHMA_HISTORY
+    "Entity: MedicalHistory"
+    ASTHMA_AGGRAVATING_FACTORS,
+    "Entity: MedicalHistory"
+    ASTHMA_BEEN_HOSPITALIZED
+    "Entity: MedicalHistory",
+    ASTHMA_DISTURBS_SLEEP,
+    "Entity: MedicalHistory"
+    ASTHMA_REQUIRES_INHALER
+    "Entity: MedicalHistory"
+    BLOOD_HISTORY
+    "Entity: MedicalHistory"
+    BROKEN_TEETH
+    "Entity: MedicalHistory"
+    CANCER_HISTORY
+    "Entity: MedicalHistory"
+    CANCER_IN_REMISSION
+    "Entity: MedicalHistory"
+    CYSTIC_FIBROSIS_HISTORY
+    "Entity: MedicalHistory"
+    CYSTIC_FIBROSIS_BEING_TREATED
+    "Entity: MedicalHistory"
+    DIABETES_HISTORY
+    "Entity: MedicalHistory"
+    DIABETES_MEDICAL_ALERT_2
+    "Entity: MedicalHistory"
+    DIABETES_MEDICAL_ALERT
+    "Entity: MedicalHistory"
+    DIABETES_TYPE_2
+    "Entity: MedicalHistory"
+    ENT_HISTORY
+    "Entity: MedicalHistory"
+    ENDOMETRIOSIS_HISTORY
+    "Entity: MedicalHistory"
+    ENURESIS_BEEN_TESTED
+    "Entity: MedicalHistory"
+    ENURESIS_HAD_EXAM
+    "Entity: MedicalHistory"
+    ENURESIS_HISTORY
+    "Entity: MedicalHistory"
+    ENURESIS_TREATMENTS
+    "Entity: MedicalHistory"
+    EYES_HISTORY
+    "Entity: MedicalHistory"
+    GENDER_CODE
+    "Entity: MedicalHistory"
+    GI_CONDITION_HISTORY
+    "Entity: MedicalHistory"
+    GI_CONDITIONS
+    "Entity: MedicalHistory"
+    GI_HAD_SURGERY
+    "Entity: MedicalHistory"
+    GI_HERNIA_HISTORY
+    "Entity: MedicalHistory"
+    HAS_HEAD_INJURY_SYMPTOMS
+    "Entity: MedicalHistory"
+    HAS_REMOVABLE_RETAINER
+    "Entity: MedicalHistory"
+    HEADACHE_DAILY_INTERFERENCE
+    "Entity: MedicalHistory"
+    HEADACHE_FREQUENCY_OPTION
+    "Entity: MedicalHistory"
+    HEADACHE_PHYSICIAN_EVALUATED
+    "Entity: MedicalHistory"
+    HEADACHE_RECEIVED_TREATMENT
+    "Entity: MedicalHistory"
+    HEADACHE_REQUIRES_SLEEP
+    "Entity: MedicalHistory"
+    HEADACHE_TAKES_REGULAR_MEDICATION
+    "Entity: MedicalHistory"
+    HEADACHE_TESTS_PERFORMED
+    "Entity: MedicalHistory"
+    HEART_HAD_SURGERY
+    "Entity: MedicalHistory"
+    HEART_HISTORY
+    "Entity: MedicalHistory"
+    HYPOGLYCEMIC_HISTORY
+    "Entity: MedicalHistory"
+    INSULIN_ADMIN_MONITORING
+    "Entity: MedicalHistory"
+    KIDNEY_DISEASES
+    "Entity: MedicalHistory"
+    KIDNEY_HAD_DIALYSIS
+    "Entity: MedicalHistory"
+    KIDNEY_HAD_PROCEDURE
+    "Entity: MedicalHistory"
+    KIDNEY_HISTORY
+    "Entity: MedicalHistory"
+    KIDNEY_STONE_HISTORY
+    "Entity: MedicalHistory"
+    LIVER_GALL_BLADDER_HISTORY
+    "Entity: MedicalHistory"
+    LOWER_EXTREMITY_HAD_SURGERY
+    "Entity: MedicalHistory"
+    LOWER_EXTREMITY_ISSUE_AREAS
+    "Entity: MedicalHistory"
+    LOWER_EXTREMITY_HISTORY
+    "Entity: MedicalHistory"
+    LUNG_ISSUES
+    "Entity: MedicalHistory"
+    MIGRAINE_CAUSES_NAUSEA
+    "Entity: MedicalHistory"
+    MIGRAINE_DAILY_INTERFERENCE
+    "Entity: MedicalHistory"
+    MIGRAINE_HISTORY
+    "Entity: MedicalHistory"
+    MIGRAINE_PHYSICIAN_EVALUATED
+    "Entity: MedicalHistory"
+    MIGRAINE_RECEIVED_TREATMENT
+    "Entity: MedicalHistory"
+    MIGRAINE_REQUIRES_SLEEP
+    "Entity: MedicalHistory"
+    MIGRAINE_TAKES_REGULAR_MEDICATION
+    "Entity: MedicalHistory"
+    MIGRAINE_TESTS_PERFORMED
+    "Entity: MedicalHistory"
+    MOUTH_PAIN
+    "Entity: MedicalHistory"
+    NERVOUS_SYSTEM_HISTORY
+    "Entity: MedicalHistory"
+    ORTHODONTIC_TREATMENT_COMPLETED
+    "Entity: MedicalHistory"
+    ORTHODONTIC_TREATMENT
+    "Entity: MedicalHistory"
+    OTHER_DISEASES
+    "Entity: MedicalHistory"
+    OTHER_HOSPITALIZATION
+    "Entity: MedicalHistory"
+    SEIZURE_DIAGNOSED
+    "Entity: MedicalHistory"
+    SEIZURE_HISTORY
+    "Entity: MedicalHistory"
+    SKIN_ACCUTANE_COMPLETED
+    "Entity: MedicalHistory"
+    SKIN_ACCUTANE_TREATED
+    "Entity: MedicalHistory"
+    SKIN_ACNE_HISTORY
+    "Entity: MedicalHistory"
+    SKIN_SUN_SENSITIVITY_HISTORY
+    "Entity: MedicalHistory"
+    SPINE_HAD_SURGERY
+    "Entity: MedicalHistory"
+    SPINE_HISTORY
+    "Entity: MedicalHistory"
+    STD_HISTORY
+    "Entity: MedicalHistory"
+    STD_BEEN_TESTED
+    "Entity: MedicalHistory"
+    STD_HAD_TREATMENT
+    "Entity: MedicalHistory"
+    SUBMIT_MBA_TOGGLE
+    "Entity: "
+    GET_LATEST_TOGGLE
+    "Entity: "
+    PRIMARY_LANGUAGE_GRADE
+    "Entity: "
+    RECOMMENDATION_LANGUAGE_DETAILS
+    "Entity: "
+    RECOMMENDATION_LANGUAGE_YEARS_STUDIED
+    "Entity: MedicalHistory"
+    REQUIREMENT_STATUS
+    "Entity: MedicalHistory"
+    BREASTS_WOMEN_ONLY
+    "Entity: MedicalHistory"
+    THIRD_MOLARS_EVIDENT
+    "Entity: MedicalHistory"
+    TATTOO_HISTORY
+    "Entity: MedicalHistory"
+    TRANSPLANT_HISTORY
+    "Entity: MedicalHistory"
+    UPPER_EXTREMITIES_AREAS
+    "Entity: MedicalHistory"
+    UPPER_EXTREMITIES_HISTORY
+    "Entity: MedicalHistory"
+    VEIN_ISSUE_HISTORY
+    "Entity: MedicalHistory"
+    WISDOM_TEETH_REMOVED
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ADRENAL_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ALLERGY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ANEMIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ANEURYSM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ANTI_COAGULANT_MEDICATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ARTHRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ASTHMA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_BALANCE_LOST_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_BRAIN_ISSUE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_BRUSH_TEETH_TWICE_DAILY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CANCER_SCREENING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CHRONIC_BACK_PAIN_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CIRRHOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CLOTTING_ABNORMALITY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_COLLAPSED_LUNG_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_COMPLETED_ACTIVE_ORTHODONTIA
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CURRENTLY_TAKING_MEDICATION
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CURRENT_MOUTH_PROBLEMS
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_DEGENERATIVE_DISC_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_DENTURES
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_DIABETES_MELLITUS_1_OR_2_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_DIFFICULTY_WALKING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_EYE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_FAINTING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_FOOD_ALLERGY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_FRACTURE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_GALLBLADDER_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_GENDER
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_DIVERTICULITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_GASTRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_IRRITABLE_BOWEL_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_RECTAL_BLEEDING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ACTIVE_ULCERATIVE_COLITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ULCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEADACHE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEAD_INJURY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEARING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_CONGENITAL_HEART_CONDITION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEART_CORONARY_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEART_FAILURE_CHRONIC_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEART_IRREGULAR_HEART_RHYTHM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEART_VALVE_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HEPATITIS_CHRONIC_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HERNIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_HYPER_TENSION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_IMMUNIZATION_UNDERSTANDING_CONFIRMATION
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_JOINT_OPERATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_KIDNEY_FAILURE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_KIDNEY_INFECTIONS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_KIDNEY_STONES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_LEUKEMIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_LOSS_OF_LIMB_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_LUNG_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_LUPUS_OR_ARTHRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_MEDICATION_REACTION
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_MEMORY_LOSS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_MOUTH_PROBLEMS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ORGAN_CANCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_ORGAN_TRANSPLANT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_OSTEOPOROSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_OTHER_ENDOCRINE_ISSUES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_OTHER_HEALTHCARE_ISSUES
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_OVERWEIGHT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_PARALYSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_PNEUMONIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_PROBLEM_TEETH_REMOVED
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_PULMONARY_EMBOLISM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_REPRODUCTIVE_ORGAN_ISSUE_FEMALE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_REPRODUCTIVE_ORGAN_ISSUE_MALE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_REQUIRES_MOBILITY_DEVICE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SCOLIOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SINUS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SKIN_CANCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SKIN_CONDITION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SLEEP_APNEA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_SPINE_OPERATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_STROKE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_THYROID_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_TUBERCULOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_TUMOR_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_URINATION_ISSUES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_URINE_INCONTINENCE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_VASCULAR_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_VISUAL_IMPAIRMENT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SENIOR_WILL_RECEIVE_IMMUNIZATIONS
+    "Entity: SeniorMissionaryMedicalHistory"
+    BALANCE_LOST_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    BRAIN_ISSUE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    BRUSH_TEETH_TWICE_DAILY
+    "Entity: SeniorMissionaryMedicalHistory"
+    CANCER_SCREENING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    CHRONIC_BACK_PAIN_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    CIRRHOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    CLOTTING_ABNORMALITY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    COLLAPSED_LUNG_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    COMPLETED_ACTIVE_ORTHODONTIA
+    "Entity: SeniorMissionaryMedicalHistory"
+    CURRENTLY_TAKING_MEDICATION
+    "Entity: SeniorMissionaryMedicalHistory"
+    CURRENT_MOUTH_PROBLEMS
+    "Entity: SeniorMissionaryMedicalHistory"
+    DEGENERATIVE_DISC_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    DENTURES
+    "Entity: SeniorMissionaryMedicalHistory"
+    DIABETES_MELLITUS_1_OR_2_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    DIFFICULTY_WALKING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    EYE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    FAINTING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    FOOD_ALLERGY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    FRACTURE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    GALLBLADDER_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    DIVERTICULITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    GASTRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    IRRITABLE_BOWEL_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    RECTAL_BLEEDING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ACTIVE_ULCERATIVE_COLITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ULCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEADACHE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEAD_INJURY_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEARING_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    CONGENITAL_HEART_CONDITION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEART_CORONARY_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEART_FAILURE_CHRONIC_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEART_IRREGULAR_HEART_RHYTHM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEART_VALVE_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HEPATITIS_CHRONIC_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HERNIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    HYPER_TENSION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    IMMUNIZATION_UNDERSTANDING_CONFIRMATION
+    "Entity: SeniorMissionaryMedicalHistory"
+    JOINT_OPERATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    KIDNEY_FAILURE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    KIDNEY_INFECTIONS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    KIDNEY_STONES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    LEUKEMIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    LOSS_OF_LIMB_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    LUNG_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    LUPUS_OR_ARTHRITIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    MEDICATION_REACTION
+    "Entity: SeniorMissionaryMedicalHistory"
+    MEMORY_LOSS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    MOUTH_PROBLEMS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ORGAN_CANCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    ORGAN_TRANSPLANT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    OSTEOPOROSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    OTHER_ENDOCRINE_ISSUES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    OTHER_HEALTHCARE_ISSUES
+    "Entity: SeniorMissionaryMedicalHistory"
+    OVERWEIGHT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    PARALYSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    PNEUMONIA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    PROBLEM_TEETH_REMOVED
+    "Entity: SeniorMissionaryMedicalHistory"
+    PULMONARY_EMBOLISM_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    REPRODUCTIVE_ORGAN_ISSUE_FEMALE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    REPRODUCTIVE_ORGAN_ISSUE_MALE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    REQUIRES_MOBILITY_DEVICE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SCOLIOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SINUS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SKIN_CANCER_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SKIN_CONDITION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SLEEP_APNEA_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    SPINE_OPERATION_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    STROKE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    THYROID_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    TUBERCULOSIS_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    TUMOR_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    URINATION_ISSUES_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    URINE_INCONTINENCE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    VASCULAR_DISEASE_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    VISUAL_IMPAIRMENT_HISTORY
+    "Entity: SeniorMissionaryMedicalHistory"
+    WILL_RECEIVE_IMMUNIZATIONS
+    "Entity: PsychologicalLegNote"
+    PSYCHOLOGICAL_LEG_NOTE_TYPE
+    "Entity: Missionary"
+    MEDICALLY_CLEARED_TO_TRAVEL
+}
+
+
+# ============================================================================
+# File: PageInfo.graphqls
+# ============================================================================
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+
+# ============================================================================
+# File: Person.graphqls
+# ============================================================================
+
+"""
+Person:
+Person information type. Usually legal guardian or parent for jr. missionaries.
+"""
+type Person {
+    firstName: String
+    lastName: String
+    suffix: String
+    birthDate: Date
+    fullName: String
+}
+
+
+# ============================================================================
+# File: PhoneCountryCode.graphqls
+# ============================================================================
+
+type PhoneCountryCode {
+    dialingCode: Int
+    geoPoliticalLocationId: String
+}
+
+# ============================================================================
+# File: PrimaryLanguage.graphqls
+# ============================================================================
+
+"""
+Recommendation Primary Language:
+Represents the details related to one recommended missionary. A person
+may be represented by more than one mission record in their lifetime.
+"""
+type PrimaryLanguage {
+    "details of the Language"
+    primaryLanguageDetails: Option
+    "grade given for understanding the language"
+    primaryLanguageGrade: Option
+}
+
+
+# ============================================================================
+# File: PrivacyReleases.graphqls
+# ============================================================================
+
+type PrivacyReleases {
+    "The privacy releases identifier."
+    id: ID
+    "The authorized individual's full name."
+    authorizedIndividualFullName: String
+    "The authorized individual's name."
+    authorizedIndividualName: String
+    "The authorized individual's birth date."
+    authorizedIndividualBirthDate: String
+    "The candidate's relationship to the authorized individual."
+    relationshipToAuthorizedIndividual: Option
+    "Is psychological information access authorized."
+    psychologicalInfoAccess: Boolean
+    "Is physical health information access authorized."
+    healthInfoAccess: Boolean
+}
+
+# ============================================================================
+# File: Procstat.graphqls
+# ============================================================================
+
+type Procstat {
+    id: Int
+    description: String
+    enabledMemberProcstatLocationId: Long
+    key: String
+    dataArchitectComment: String
+    active: Boolean
+    shortDescription: String
+}
+
+# ============================================================================
+# File: ProselytingArea.graphqls
+# ============================================================================
+
+type ProselytingArea {
+    "Proselyting area id"
+    id: ID
+    name: String
+    district: District
+    address: String
+    city: String
+    stateProvince: String
+    postalCode: String
+    countryLocationCode: Int  @deprecated(reason: "use country: GeopoliticalLocation : locationCodeNumber")
+    countryLocationId: Int    @deprecated(reason: "use country: GeopoliticalLocation : geopoliticalLocationId")
+    "Country where the Proselyting Area is located."
+    country: GeopoliticalLocation
+    vehicleId: String
+    vehicleUnitOfMeasureCode: String
+    vehicleUnitOfMeasureLimit: Int
+    vehicleSTWD: Boolean
+    emailAddress: String
+    "Date of the Last Update to this Proselyting Area"
+    updatedDate: String
+    "List of ecclesiastical units served by the proselyting area."
+    ecclesiasticalUnitsList: String
+    "The local unit to which the Missionary is assigned (usually a ward or branch)"
+    ecclesiasticalUnits: [EcclesiasticalUnit]
+    activeAssignments: [Assignment]
+    proselytingAreaPhones: [ProselytingAreaPhone]
+    ecclesiasticalAreaNumber: Int
+    ecclesiasticalAreaName: String
+}
+
+# ============================================================================
+# File: ProselytingAreaPhone.graphqls
+# ============================================================================
+
+type ProselytingAreaPhone {
+    """ phone_id """
+    id: ID
+    proselytingArea: ProselytingArea
+    phoneNumber: String
+    primary: Boolean
+}
+
+# ============================================================================
+# File: PsychologicalCondition.graphqls
+# ============================================================================
+
+"""
+PsychologicalCondition represents the psychological Conditions that a candidate has.
+"""
+type PsychologicalCondition {
+    id: ID
+    name: String
+    notes: String
+    detailName: String
+    requiresMissionaryMedicalReview: Boolean
+}
+
+
+# ============================================================================
+# File: PsychologicalLegNote.graphqls
+# ============================================================================
+
+"""
+PsychologicalLegNote info for a recommendation.
+"""
+type PsychologicalLegNote {
+    description: String
+    noteInfo: String
+    id: String
+    noteName: String
+    psychologicalNoteType: Option
+    originalCreator: Person
+}
+
+# ============================================================================
+# File: PsychologicalScreeningResult.graphqls
+# ============================================================================
+
+"""
+PsychologicalScreeningResult represents the psychological Services that a candidate has used or is using.
+"""
+type PsychologicalScreeningResult {
+     id: ID
+     denialReasonDescription: String
+     screeningLegName: String
+     denialReasonId: String
+     dueDate: Date
+     isOnHold: Boolean
+     onHoldReasonId: String
+     onHoldReasonDescription: String
+     psychologicalScreeningNotes: [PsychologicalLegNote]
+}
+
+
+# ============================================================================
+# File: PsychologicalService.graphqls
+# ============================================================================
+
+"""
+PsychologicalService represents the psychological Services that a candidate has used or is using.
+"""
+type PsychologicalService {
+     id: ID
+     name: String
+     description: String
+     notes: String
+     detailName: String
+}
+
+
+# ============================================================================
+# File: Query.graphqls
+# ============================================================================
+
+type Query {
+
+    # Retrieve a Missionary Profile and associated data by their Missionary ID:
+    missionary(missionaryId: ID!): Missionary
+
+    # Retrieve a list of Missionaries based on Missionary Input type using optional filters (default is membership unit number):
+    missionaries(
+        missionariesInput: MissionariesInput,
+        """
+        deprecated using unitId: Migrate to missionariesInput using membershipUnitId
+        Querying by unitId without missionariesInput may be removed in a future version.
+        """
+        unitId: ID
+    ): [Missionary]
+
+    # Retrieve a list of all possible options related to a specific entity and attribute.
+    options(entity: Entity, attributeName: AttributeName): [Option]
+
+    # Retrieve a list of Missionary experiences associated with a member:
+    member(cmisUuid: ID!): [Missionary]
+
+    # Retrieve a Leader Profile and associated data by their CMIS ID:
+    leader(cmisId: ID!): Leader
+
+    ecclesiasticalUnit(id: ID!): EcclesiasticalUnit
+
+    # Retrieve a proselyting area by ProselytingArea ID:
+    proselytingArea(id: ID!): ProselytingArea
+
+    #Retrieve Mission data by Org Number
+    mission(id: ID!): Mission
+
+    zone(id: ID!): Zone
+
+    district(id: ID!): District
+
+    # Retrieve a missionary's active assignment by their missionaryNumber/legacyMissId:
+    activeAssignment(missionaryNumber: ID!): Assignment
+
+    assignmentLocation(id: ID!): AssignmentLocation
+
+    missionariesByAssignmentLocation(assignmentLocationId: ID!): [Missionary]
+
+    #Retrieve a random set of Missionary ID's for testing the API:
+    missionaryDataIds: MissionaryTestDataset
+
+    # Retrieve info on mission boundary adjustments from inq
+    missionBoundaryChanges(input: MissionBoundaryChangeInput): [MissionBoundaryChange]
+    # Retrieve a list of missionaries with a given unitId
+    missionariesByAssignedUnit(unitId: ID!): [Missionary]
+    """ List of missionaries by AssignmentLocationId's"""
+    missionariesByAssignmentLocations(ids: [ID]): [Missionary]
+    """ List of candidates who have started a recommend by their current membership unit number"""
+    candidatesByMembershipUnit(id:ID): [Candidate]
+    """ List of option values that are returned for smms"""
+    smmsOptions: SmmsOptions
+    """ Request by UnitID, Returns Proselyting Area configured to receive referrals for that Unit. """
+    proselytingAreaForReferral(id: ID): [ProselytingArea]
+    """ Gets a list of countries. Can use iso2Codes, iso3Codes, or ids to filter. """
+    countries(input: CountriesFilters): [Country]
+
+    """ Retrieve a paginated list of missionaries by Service Department """
+    missionariesConnection(
+        input: MissionariesConnectionInput,
+        first: Int,
+        after: String,
+        last: Int,
+        before: String
+    ): MissionariesConnection
+}
+
+
+
+
+
+# ============================================================================
+# File: Recommendation.graphqls
+# ============================================================================
+
+"""
+Recommendation:
+Represents the details related to one recommended missionary. A person
+may be represented by more than one mission record in their lifetime.
+"""
+type Recommendation {
+    "unique identifier for a missionary recommendation."
+    id: String
+    "Usually Legacy Miss ID."
+    missionaryNumber: Int
+    "Insurance information on a Recommendation for a missionary."
+    insurance: Insurance
+    "The type of missionary the recommendation is for. for example young missionary, senior missionary, etc."
+    recommendType: Option
+    "The primary language details for a recommendation"
+    primaryLanguage: PrimaryLanguage
+    "The language details for a recommendation"
+    language: [RecommendationLanguage]
+    "The authorized individuals who can access privacy information."
+    privacyReleases: [PrivacyReleases]
+    "Medical evaluations for a recommendation."
+    medicalEvaluations: [MedicalEvaluation]
+    "The medical history details for a recommendation"
+    medicalHistories: [MedicalHistory]
+    "The medical history of a senior missionary"
+    seniorMissionaryMedicalHistory: SeniorMissionaryMedicalHistory
+}
+
+
+# ============================================================================
+# File: RecommendationLanguage.graphqls
+# ============================================================================
+
+"""
+RecommendationLanguage info for a recommendation.
+"""
+type RecommendationLanguage {
+    "How long a missionary has studied a language"
+    yearsStudied: Option
+    "How proficient the missionary thinks they are in the language"
+    proficiency: Option
+    "The language details for a recommendation"
+    languageDetails: Option
+}
+
+# ============================================================================
+# File: RecommendExport.graphqls
+# ============================================================================
+
+"""
+Exports a base64-encoded instance of the non-confidential portion of the Missionaries Recommend.
+"""
+type RecommendExport {
+    missionaryNumber: Long
+    originalFileName: String
+    encodedFile: String
+}
+
+# ============================================================================
+# File: Relation.graphqls
+# ============================================================================
+
+type Relation {
+    relationId: ID
+    missionaryNumber: Int
+    addressCity: String @deprecated(reason: "use address")
+    addressCountry: String @deprecated(reason: "use address")
+    addressDistrict: String @deprecated(reason: "use address")
+    addressPostal: String @deprecated(reason: "use address")
+    addressState: String @deprecated(reason: "use address")
+    addressLine1: String @deprecated(reason: "use address")
+    addressLine2: String @deprecated(reason: "use address")
+    addressLine3: String @deprecated(reason: "use address")
+    birthPlace: String
+    canReceiveTextMessages: Boolean
+    parentalRelationshipLabel: String
+    emergencyContractualRelationship: String
+    doNotContact: Boolean
+    email: String
+    firstName: String
+    middleName: String
+    lastName: String
+    suffix: String
+    name: String
+    isDeceased: Boolean
+    isMember: Boolean
+    phone: String
+    occupation: String
+    overRiddenCreatedOn: String
+    """The address information of the relation. """
+    address: Address
+}
+
+# ============================================================================
+# File: Restriction.graphqls
+# ============================================================================
+
+"""
+Restriction:
+Represents the details related to one missionary's medical restrictions data.
+"""
+type Restriction {
+    missionaryNumber: Int
+    description: String
+    alertDescription: String
+}
+
+# ============================================================================
+# File: schema.graphqls
+# ============================================================================
+
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+## if you add more scalars make sure they are also in the graphql.extended-scalars property in application.yml
+scalar Long
+scalar DateTime
+scalar Date
+
+
+
+
+
+# ============================================================================
+# File: ScreeningLeg.graphqls
+# ============================================================================
+
+type ScreeningLeg {
+    id: ID
+    name: String
+}
+
+
+# ============================================================================
+# File: ScreeningMaster.graphqls
+# ============================================================================
+
+"Screening Master is the identifier for overall screening process that the missionary went through and also get the greatest medical need for candidates."
+type ScreeningMaster {
+    screeningMasterId: String
+    candidate1AccessToMedicalCareGreatest: Option
+    candidate2AccessToMedicalCareGreatest: Option
+}
+
+# ============================================================================
+# File: ScreeningOnHoldReason.graphqls
+# ============================================================================
+
+type ScreeningOnHoldReason {
+    id: ID
+    name: String
+}
+
+
+# ============================================================================
+# File: SeniorInsuranceResult.graphqls
+# ============================================================================
+
+"""
+SeniorInsuranceResult
+Represents the instance results of a senior missionary Insurance info.
+"""
+type SeniorInsuranceResult {
+    dueDate: String
+    isOnHold: Option
+    name: String
+    insuranceStatus: Option
+    notes: [Note]
+    onHoldReasonId: Int
+}
+
+# ============================================================================
+# File: SeniorMissionaryMedicalHistory.graphqls
+# ============================================================================
+
+"""
+SeniorMissionaryMedicalHistory info for a recommendation.
+"""
+type SeniorMissionaryMedicalHistory {
+    adrenalDetails: String
+    adrenalHistory: Option
+    allergiesDetails: String
+    allergiesHistory: Option
+    anemiaDetails: String
+    anemiaHistory: Option
+    aneurysmDetails: String
+    aneurysmHistory: Option
+    anticoagulantMedicationsDetails: String
+    anticoagulantMedicationsHistory: Option
+    arthritisDetails: String
+    arthritisHistory: Option
+    asthmaDetails: String
+    asthmaHistory: Option
+    balanceLossDetails: String
+    balanceLossHistory: Option
+    brainIssuesDetails: String
+    brainIssuesHistory: Option
+    brushTeeth2xDaily: Option
+    cancerScreeningDetails: String
+    cancerScreeningHistory: Option
+    chronicBackPainDetails: String
+    chronicBackPainHistory: Option
+    cirrhosisDetails: String
+    cirrhosisHistory: Option
+    clottingAbnormalityDetails: String
+    clottingAbnormalityHistory: Option
+    collapsedLungDetails: String
+    collapsedLungHistory: Option
+    completedActiveOrthodontia: Option
+    currentlyTakingMedsDetails: String
+    currentlyTakingMeds: Option
+    currentMouthProblems: Option
+    degenerativeDiskDiseaseDetails: String
+    degenerativeDiskDiseaseHistory: Option
+    dentures: Option
+    diabetesMellitus1or2Details: String
+    diabetesMellitus1or2History: Option
+    difficultyWalkingDetails: String
+    difficultyWalkingHistory: Option
+    eyesHistory: Option
+    eyesHistoryDetails: String
+    faintingDetails: String
+    faintingHistory: Option
+    foodAllergyDetails: String
+    foodAllergyHistory: Option
+    fracturesDetails: String
+    fracturesHistory: Option
+    gallbladderDiseaseDetails: String
+    gallbladderDiseaseHistory: Option
+    gender: Option
+    giDiverticulosisDetails: String
+    giDiverticulosisHistory: Option
+    giGastritisDetails: String
+    giGastritisHistory: Option
+    giIrritableBowelDetails: String
+    giIrritableBowelHistory: Option
+    giRectalBleedingDetails: String
+    giRectalBleedingHistory: Option
+    giUlcerativeColitisDetails: String
+    giUlcerativeColitisHistory: Option
+    giUlcerDetails: String
+    giUlcerHistory: Option
+    headacheDetails: String
+    seniorHeadacheHistory: Option
+    headInjuryDetails: String
+    seniorHeadInjuryHistory: Option
+    hearingHistory: Option
+    hearingHistoryDetails: String
+    heartCongenitalConditionDetails: String
+    heartCongenitalConditionHistory: Option
+    heartCoronaryDiseaseDetails: String
+    heartCoronaryDiseaseHistory: Option
+    heartFailureChronicDetails: String
+    heartFailureChronicHistory: Option
+    heartIrregularHeartRhythmHistory: Option
+    heartIrregularRhythmDetails: String
+    heartValveDiseaseDetails: String
+    heartValveDiseaseHistory: Option
+    hepatitisChronicDetails: String
+    hepatitisChronicHistory: Option
+    herniaDetails: String
+    herniaHistory: Option
+    hypertensionDetails: String
+    hypertensionHistory: Option
+    immunizationConcerns: String
+    immunizationRefusalReason: String
+    seniorImmunizationUnderstandingConfirmation: Option
+    jointOperationDetails: String
+    jointOperationHistory: Option
+    kidneyFailureDetails: String
+    kidneyFailureHistory: Option
+    kidneyInfectionsDetails: String
+    kidneyInfectionsHistory: Option
+    kidneyStonesDetails: String
+    kidneyStonesHistory: Option
+    leukemiaDetails: String
+    leukemiaHistory: Option
+    lossOfLimbDetails: String
+    lossOfLimbHistory: Option
+    lungsDetails: String
+    lungsHistory: Option
+    lupusOrArthritisDetails: String
+    lupusOrArthritisHistory: Option
+    medicationReactionDetails: String
+    medicationReaction: Option
+    memoryLossDetails: String
+    memoryLossHistory: Option
+    mouthProblemsDetails: String
+    mouthProblemsHistory: Option
+    name: String
+    organCancerDetails: String
+    organCancerHistory: Option
+    organTransplantDetails: String
+    organTransplantHistory: Option
+    osteoporosisDetails: String
+    osteoporosisHistory: Option
+    otherEndocrineIssuesDetails: String
+    otherEndocrineIssuesHistory: Option
+    otherHealthcareDetails: String
+    otherHealthcareIssues: Option
+    overweightDetails: String
+    overweightHistory: Option
+    paralysisDetails: String
+    paralysisHistory: Option
+    pneumoniaDetails: String
+    pneumoniaHistory: Option
+    problemTeethRemoved: Option
+    pulmonaryEmbolismDetails: String
+    pulmonaryEmbolismHistory: Option
+    reproductiveOrganIssueFemaleHistory: Option
+    reproductiveOrganIssueMaleHistory: Option
+    reproductiveOrganIssuesDetails: String
+    requireMobilityDeviceDetails: String
+    requireMobilityDeviceHistory: Option
+    scoliosisDetails: String
+    scoliosisHistory: Option
+    id: ID
+    sinusHistory: Option
+    sinusHistoryDetails: String
+    skinCancerDetails: String
+    skinCancerHistory: Option
+    skinConditionDetails: String
+    seniorSkinConditionHistory: Option
+    sleepApneaDetails: String
+    sleepApneaHistory: Option
+    spineOperationDetails: String
+    spineOperationHistory: Option
+    strokeDetails: String
+    strokeHistory: Option
+    thyroidDetails: String
+    thyroidHistory: Option
+    tuberculosisDetails: String
+    tuberculosisHistory: Option
+    tumorDetails: String
+    tumorHistory: Option
+    urinationIssuesDetails: String
+    urinationIssuesHistory: Option
+    urineIncontinenceDetails: String
+    urineIncontinenceHistory: Option
+    vascularDiseaseDetails: String
+    vascularDiseaseHistory: Option
+    visualImpairmentDetails: String
+    visualImpairmentHistory: Option
+    seniorWillReceiveImmunizations: Option
+}
+
+# ============================================================================
+# File: ServiceAssignment.graphqls
+# ============================================================================
+
+type ServiceAssignment {
+    "Service Assignment or service task of a missionary."
+    id: String
+    startDate: String
+    endDate: String
+    status: String
+    processState: String
+    position: [ServicePosition]
+    description: [ServiceDescription]
+    primaryLanguage: Language
+    operation: ServiceOperation
+    serviceType: String
+    hoursPerWeek: ServiceWorkHours
+    department: [Department]
+}
+
+# ============================================================================
+# File: ServiceDepartment.graphqls
+# ============================================================================
+
+enum serviceDepartment {
+    COMMUNITY_ORGANIZATIONS
+    AP
+    AUD
+    AVD
+    BPW
+    CCD
+    CES
+    CHD
+    COR
+    CPD
+    CSD
+    CUR
+    DTA
+    FHD
+    FLR
+    FRD
+    GSD
+    HQF
+    HRD
+    ICS
+    LBC
+    MFD
+    MIS
+    MMD
+    OCS
+    OFP
+    OGC
+    PAD
+    PBA
+    PCC
+    PFD
+    PRI
+    PSD
+    PTH
+    QSV
+    QTW
+    SAI
+    SMO
+    SPD
+    TBC
+    TPL
+    WSR
+}
+
+
+# ============================================================================
+# File: ServiceDescription.graphqls
+# ============================================================================
+
+type ServiceDescription {
+    "Description of a service Assignment position"
+    purpose: String
+    qualifications: String
+    responsibilities: String
+}
+
+# ============================================================================
+# File: ServiceOperation.graphqls
+# ============================================================================
+
+type ServiceOperation {
+    "Service Assignment operation information."
+    id: String
+    title: String
+    departmentId: String
+    associatedUnitNumber: String
+    mainContact: Contact
+    address: Address
+}
+
+# ============================================================================
+# File: ServicePosition.graphqls
+# ============================================================================
+
+type ServicePosition {
+    "Service Assignment Position data."
+    id: String
+    title: String
+    address: Address
+}
+
+# ============================================================================
+# File: ServiceWorkHours.graphqls
+# ============================================================================
+
+type ServiceWorkHours {
+    "Service work hours that a missionary can work."
+    lo: Int
+    hi: Int
+}
+
+# ============================================================================
+# File: SmmsOptions.graphqls
+# ============================================================================
+
+type SmmsOptions {
+    "SmmsOptions list of possible option values returned."
+    assignmentApprovalStates: [String]
+    assignmentStatuses: [String]
+    assignmentTypes: [String]
+    opportunityStatuses: [String]
+    opportunityTypeStatuses: [String]
+    serviceTypes: [String]
+}
+
+# ============================================================================
+# File: SurveyResponseId.graphqls
+# ============================================================================
+
+"""
+all MissionaryHealthSurvey information combined together. This is the data that is needed for medical response data for
+missionaries.
+"""
+type SurveyResponseId {
+    activityId: String
+    administrationDate: String
+    fastSurveyScore: String
+    faSurveyScore: String
+    moqSurveyScore: String
+    oqAnalystId: String
+    sdSurveyScore: String
+    stateCode: String
+    subject: String
+    irSurveyScore: String
+    srSurveyScore: String
+    surveyRequestId: String
+    totalSurveyScore: String
+    unAnsweredQuestions: String
+    statusCode: String
+    regardingObjectIdValue: String
+}
+
+# ============================================================================
+# File: TrainingCourse.graphqls
+# ============================================================================
+
+"""
+The training Course information from the missionary training at the MTC.
+"""
+type TrainingCourse {
+    id: Int
+    """Name of the course"""
+    name: String
+    """Id language is taught in"""
+    teachingLanguageId : Int
+    """This tells us what language the class is taught from.  So like in Provo, this is generally English"""
+    teachingLanguage: Language
+    isPhasedTraining: Boolean
+    phaseSequenceNumber: Int
+    duration: Int
+    subjectLanguageId: Int
+    effectiveDate: String
+    decommissionDate: String
+    isActive: Boolean
+    """
+    This is the attribute of a training curriculum that tells us if a missionary is learning a language during their MTC training. This is not always equal to their "mission language" which we do get.
+    """
+    subjectLanguage: Language
+}
+
+# ============================================================================
+# File: WorkStepResult.graphqls
+# ============================================================================
+
+type WorkStepResult {
+    id: ID
+    name: String
+}
+
+
+# ============================================================================
+# File: Zone.graphqls
+# ============================================================================
+
+type Zone {
+    id: ID
+    name: String
+    mission: Mission
+    districts: [District]
+}
+

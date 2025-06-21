@@ -81,6 +81,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Enabled Member', href: '/mogs-enabled-member', icon: '👤', description: 'Search MOGS enabled member details by ID' },
         { name: 'Leader', href: '/mogs-leader', icon: '👨‍💼', description: 'Search MOGS leader details by ID' },
         { name: 'Leader Attachment', href: '/mogs-leader-attachment', icon: '📎', description: 'Search MOGS leader attachment details by ID' },
+        { name: 'Missionary', href: '/mogs-missionary', icon: '🙏', description: 'Search MOGS missionary details by ID (legacy_miss_id)' },
       ]
     },
     {
