@@ -1248,7 +1248,23 @@ assignments{mission{name}}}}`}
                           <li>• Missionary number identification</li>
                           <li>• Skills and hobbies overview text</li>
                           <li>• Personal interests and talents</li>
-                          <li>• Background information for assignment planning</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-teal-50 border border-teal-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-teal-900 mb-3">⚙️ Missionary Component Query</h3>
+                      <p className="text-teal-700 mb-3">Access individual components of missionary assignments by comp_id.</p>
+                      <div className="text-sm text-teal-600">
+                        <strong>Query:</strong> <code>missionaryComponent(id: ID): MissionaryComponent</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Component identification and status</li>
+                          <li>• Missionary type requirements</li>
+                          <li>• Assignment location and unit numbers</li>
+                          <li>• Language requirements and codes</li>
+                          <li>• Position details and abbreviations</li>
+                          <li>• Responsible organization information</li>
                         </ul>
                       </div>
                     </div>
@@ -1265,6 +1281,7 @@ assignments{mission{name}}}}`}
                           <li>• <code>enabledMember(id: ID!)</code> - Member enabling details</li>
                           <li>• <code>leader(id: ID!)</code> - Leadership information</li>
                           <li>• <code>leaderAttachment(id: ID!)</code> - Leader documents</li>
+                          <li>• <code>missionaryComponent(id: ID)</code> - Missionary assignment components</li>
                           <li>• <code>missionaryHobbiesSkills(id: ID!)</code> - Missionary hobbies and skills</li>
                         </ul>
                       </div>
