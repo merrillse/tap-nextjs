@@ -22,27 +22,6 @@ interface MMSOrganization {
 interface AssignmentLocation {
   id: string;
   name?: string;
-  ecclesiasticAssignmentLocation?: AssignmentLocation;
-  effectiveDate?: string;
-  componentOvertolerancePercentage?: number;
-  type?: LabelValue;
-  status?: LabelValue;
-  colOrganization?: MMSOrganization;
-  faxRecommends?: boolean;
-  bikeCost?: number;
-  complement?: number;
-  maxTransfer?: number;
-  returnOnLaborRating?: string;
-  timeDiffMST?: string;
-  createdDate?: string;
-  airportCode?: number;
-  closingPlannedDate?: string;
-  privateFlag?: boolean;
-  transferDay?: string;
-  parent?: AssignmentLocation;
-  legacyId?: number;
-  pendingMapEffectiveDate?: string;
-  nameExportDate?: string;
   assignmentMeetingName?: string;
 }
 
@@ -102,7 +81,7 @@ export default function MOGSMyPlanMissionaryPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState<string>(getDefaultEnvironment('mogs'));
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
   const [missionaryId, setMissionaryId] = useState('');
-  const [missionaryData, setMissionaryData] = useState<MyPlanMissionary | null>(null);
+  const [myPlanData, setMyPlanData] = useState<MyPlanMissionary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -126,7 +105,7 @@ export default function MOGSMyPlanMissionaryPage() {
 
   // Load search history from localStorage on component mount
   useEffect(() => {
-    const saved = localStorage.getItem('mogs-myplan-missionary-search-history');
+    const saved = localStorage.getItem('mogs-myplan-search-history');
     if (saved) {
       try {
         setSearchHistory(JSON.parse(saved));
@@ -138,7 +117,7 @@ export default function MOGSMyPlanMissionaryPage() {
 
   // Save search history to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('mogs-myplan-missionary-search-history', JSON.stringify(searchHistory));
+    localStorage.setItem('mogs-myplan-search-history', JSON.stringify(searchHistory));
   }, [searchHistory]);
 
   const addToSearchHistory = (id: string, env: string) => {
@@ -152,7 +131,7 @@ export default function MOGSMyPlanMissionaryPage() {
 
   const clearSearchHistory = () => {
     setSearchHistory([]);
-    localStorage.removeItem('mogs-myplan-missionary-search-history');
+    localStorage.removeItem('mogs-myplan-search-history');
   };
 
   const toggleSection = (section: string) => {
@@ -167,7 +146,7 @@ export default function MOGSMyPlanMissionaryPage() {
     });
   };
 
-  const searchMissionary = async () => {
+  const searchMyPlanMissionary = async () => {
     if (!apiClient) {
       setError('API client not initialized');
       return;
@@ -180,7 +159,7 @@ export default function MOGSMyPlanMissionaryPage() {
 
     setLoading(true);
     setError(null);
-    setMissionaryData(null);
+    setMyPlanData(null);
 
     const query = `
       query GetMyPlanMissionary($id: ID!) {
@@ -198,22 +177,6 @@ export default function MOGSMyPlanMissionaryPage() {
             id
             name
             assignmentMeetingName
-            type {
-              value
-              label
-            }
-            status {
-              value
-              label
-            }
-            colOrganization {
-              id
-              organizationId
-              name
-              officialName
-              shortName
-              officialShortName
-            }
           }
           missionOrgNumber {
             id
@@ -264,9 +227,9 @@ export default function MOGSMyPlanMissionaryPage() {
 
       const data = response.data as MyPlanMissionaryData;
       if (data?.myPlanMissionary) {
-        setMissionaryData(data.myPlanMissionary);
+        setMyPlanData(data.myPlanMissionary);
         addToSearchHistory(missionaryId.trim(), selectedEnvironment);
-        setExpandedSections(new Set(['basic', 'mission', 'training', 'units'])); // Auto-expand main sections
+        setExpandedSections(new Set(['basic', 'mission', 'myplan', 'timestamps'])); // Auto-expand main sections
       } else {
         setError('No MyPlan missionary found with the provided ID');
       }
@@ -278,14 +241,14 @@ export default function MOGSMyPlanMissionaryPage() {
   };
 
   const exportToJson = () => {
-    if (!missionaryData) return;
+    if (!myPlanData) return;
 
-    const dataStr = JSON.stringify(missionaryData, null, 2);
+    const dataStr = JSON.stringify(myPlanData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `myplan-missionary-${missionaryData.id}.json`;
+    link.download = `myplan-missionary-${myPlanData.id}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -294,7 +257,7 @@ export default function MOGSMyPlanMissionaryPage() {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      searchMissionary();
+      searchMyPlanMissionary();
     }
   };
 
@@ -303,36 +266,22 @@ export default function MOGSMyPlanMissionaryPage() {
     setMissionaryId(item.id);
   };
 
-  const formatDateTime = (dateTime?: string) => {
-    if (!dateTime) return null;
-    try {
-      return new Date(dateTime).toLocaleString();
-    } catch {
-      return dateTime;
-    }
-  };
-
-  const formatDate = (date?: string) => {
-    if (!date) return null;
-    try {
-      return new Date(date).toLocaleDateString();
-    } catch {
-      return date;
+  const openMyPlanUrl = () => {
+    if (myPlanData?.myPlanURL) {
+      window.open(myPlanData.myPlanURL, '_blank');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-lg">
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900">MOGS MyPlan Missionary Query</h1>
             <p className="mt-1 text-sm text-gray-600">
-              Search for MyPlan missionary information using the myPlanMissionary(id: ID!) query
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Note: The ID parameter is legacy_miss_id
+              Search for MyPlan missionary information using the myPlanMissionary(id: ID!) query.
+              The ID parameter is legacy_miss_id.
             </p>
           </div>
 
@@ -378,19 +327,29 @@ export default function MOGSMyPlanMissionaryPage() {
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
-                onClick={searchMissionary}
+                onClick={searchMyPlanMissionary}
                 disabled={loading || !apiClient}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Searching...' : 'Search MyPlan Missionary'}
               </button>
-              {missionaryData && (
-                <button
-                  onClick={exportToJson}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  Export JSON
-                </button>
+              {myPlanData && (
+                <>
+                  <button
+                    onClick={exportToJson}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Export JSON
+                  </button>
+                  {myPlanData.myPlanURL && (
+                    <button
+                      onClick={openMyPlanUrl}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    >
+                      Open MyPlan URL
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -431,7 +390,7 @@ export default function MOGSMyPlanMissionaryPage() {
           )}
 
           {/* Results */}
-          {missionaryData && (
+          {myPlanData && (
             <div className="px-6 py-4">
               <div className="space-y-6">
                 {/* Basic Information */}
@@ -449,43 +408,57 @@ export default function MOGSMyPlanMissionaryPage() {
                   </button>
                   {expandedSections.has('basic') && (
                     <div className="px-4 py-3 border-t border-gray-200">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                          <dt className="text-sm font-medium text-gray-500">ID (legacy_miss_id)</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{missionaryData.id}</dd>
+                          <dt className="text-sm font-medium text-gray-500">Legacy Miss ID</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{myPlanData.id}</dd>
                         </div>
-                        {missionaryData.missionaryId && (
+                        {myPlanData.missionaryId && (
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Missionary ID</dt>
-                            <dd className="mt-1 text-sm text-gray-900">{missionaryData.missionaryId}</dd>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.missionaryId}</dd>
                           </div>
                         )}
-                        {missionaryData.cmisId && (
+                        {myPlanData.cmisId && (
                           <div>
                             <dt className="text-sm font-medium text-gray-500">CMIS ID</dt>
-                            <dd className="mt-1 text-sm text-gray-900">{missionaryData.cmisId}</dd>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.cmisId}</dd>
                           </div>
                         )}
-                        {missionaryData.ldsAccountId && (
+                        {myPlanData.ldsAccountId && (
                           <div>
                             <dt className="text-sm font-medium text-gray-500">LDS Account ID</dt>
-                            <dd className="mt-1 text-sm text-gray-900">{missionaryData.ldsAccountId}</dd>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.ldsAccountId}</dd>
                           </div>
                         )}
-                        {(missionaryData.firstName || missionaryData.lastName) && (
-                          <div className="sm:col-span-2">
-                            <dt className="text-sm font-medium text-gray-500">Name</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
-                              {[missionaryData.firstName, missionaryData.middleName, missionaryData.lastName, missionaryData.suffix]
-                                .filter(Boolean)
-                                .join(' ')}
-                            </dd>
+                        {myPlanData.firstName && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">First Name</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.firstName}</dd>
                           </div>
                         )}
-                        {missionaryData.missionaryType && (
+                        {myPlanData.middleName && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Middle Name</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.middleName}</dd>
+                          </div>
+                        )}
+                        {myPlanData.lastName && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Last Name</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.lastName}</dd>
+                          </div>
+                        )}
+                        {myPlanData.suffix && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Suffix</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.suffix}</dd>
+                          </div>
+                        )}
+                        {myPlanData.missionaryType && (
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Missionary Type</dt>
-                            <dd className="mt-1 text-sm text-gray-900">{missionaryData.missionaryType}</dd>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.missionaryType}</dd>
                           </div>
                         )}
                       </div>
@@ -494,7 +467,7 @@ export default function MOGSMyPlanMissionaryPage() {
                 </div>
 
                 {/* Mission Information */}
-                {(missionaryData.missionAssignmentLocation || missionaryData.missionOrgNumber || missionaryData.missionName || missionaryData.assignmentEndDate) && (
+                {(myPlanData.missionAssignmentLocation || myPlanData.missionOrgNumber || myPlanData.missionName || myPlanData.assignmentEndDate) && (
                   <div className="border border-gray-200 rounded-lg">
                     <button
                       onClick={() => toggleSection('mission')}
@@ -510,177 +483,77 @@ export default function MOGSMyPlanMissionaryPage() {
                     {expandedSections.has('mission') && (
                       <div className="px-4 py-3 border-t border-gray-200">
                         <div className="space-y-4">
-                          {missionaryData.missionName && (
+                          {myPlanData.missionName && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">Mission Name</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.missionName}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.missionName}</dd>
                             </div>
                           )}
-                          {missionaryData.assignmentEndDate && (
+                          {myPlanData.assignmentEndDate && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">Assignment End Date</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{formatDate(missionaryData.assignmentEndDate)}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.assignmentEndDate}</dd>
                             </div>
                           )}
-                          {missionaryData.missionAssignmentLocation && (
+                          {myPlanData.missionAssignmentLocation && (
                             <div>
-                              <dt className="text-sm font-medium text-gray-500 mb-2">Mission Assignment Location</dt>
+                              <dt className="text-sm font-medium text-gray-500 mb-2">Assignment Location</dt>
                               <dd className="pl-4 border-l-2 border-gray-200">
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                   <div>
                                     <span className="text-xs font-medium text-gray-400">ID:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.missionAssignmentLocation.id}</span>
+                                    <span className="ml-1 text-sm text-gray-900">{myPlanData.missionAssignmentLocation.id}</span>
                                   </div>
-                                  {missionaryData.missionAssignmentLocation.name && (
+                                  {myPlanData.missionAssignmentLocation.name && (
                                     <div>
                                       <span className="text-xs font-medium text-gray-400">Name:</span>
-                                      <span className="ml-1 text-sm text-gray-900">{missionaryData.missionAssignmentLocation.name}</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionAssignmentLocation.name}</span>
                                     </div>
                                   )}
-                                  {missionaryData.missionAssignmentLocation.assignmentMeetingName && (
-                                    <div>
-                                      <span className="text-xs font-medium text-gray-400">Meeting Name:</span>
-                                      <span className="ml-1 text-sm text-gray-900">{missionaryData.missionAssignmentLocation.assignmentMeetingName}</span>
-                                    </div>
-                                  )}
-                                  {missionaryData.missionAssignmentLocation.status && (
-                                    <div>
-                                      <span className="text-xs font-medium text-gray-400">Status:</span>
-                                      <span className="ml-1 text-sm text-gray-900">
-                                        {missionaryData.missionAssignmentLocation.status.label} ({missionaryData.missionAssignmentLocation.status.value})
-                                      </span>
+                                  {myPlanData.missionAssignmentLocation.assignmentMeetingName && (
+                                    <div className="sm:col-span-2">
+                                      <span className="text-xs font-medium text-gray-400">Assignment Meeting Name:</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionAssignmentLocation.assignmentMeetingName}</span>
                                     </div>
                                   )}
                                 </div>
                               </dd>
                             </div>
                           )}
-                          {missionaryData.missionOrgNumber && (
+                          {myPlanData.missionOrgNumber && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500 mb-2">Mission Organization</dt>
                               <dd className="pl-4 border-l-2 border-gray-200">
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                   <div>
                                     <span className="text-xs font-medium text-gray-400">ID:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.missionOrgNumber.id}</span>
+                                    <span className="ml-1 text-sm text-gray-900">{myPlanData.missionOrgNumber.id}</span>
                                   </div>
-                                  {missionaryData.missionOrgNumber.organizationId && (
+                                  {myPlanData.missionOrgNumber.organizationId && (
                                     <div>
                                       <span className="text-xs font-medium text-gray-400">Org ID:</span>
-                                      <span className="ml-1 text-sm text-gray-900">{missionaryData.missionOrgNumber.organizationId}</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionOrgNumber.organizationId}</span>
                                     </div>
                                   )}
-                                  {missionaryData.missionOrgNumber.name && (
+                                  {myPlanData.missionOrgNumber.name && (
                                     <div>
                                       <span className="text-xs font-medium text-gray-400">Name:</span>
-                                      <span className="ml-1 text-sm text-gray-900">{missionaryData.missionOrgNumber.name}</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionOrgNumber.name}</span>
                                     </div>
                                   )}
-                                  {missionaryData.missionOrgNumber.officialName && (
+                                  {myPlanData.missionOrgNumber.officialName && (
                                     <div>
                                       <span className="text-xs font-medium text-gray-400">Official Name:</span>
-                                      <span className="ml-1 text-sm text-gray-900">{missionaryData.missionOrgNumber.officialName}</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionOrgNumber.officialName}</span>
+                                    </div>
+                                  )}
+                                  {myPlanData.missionOrgNumber.shortName && (
+                                    <div>
+                                      <span className="text-xs font-medium text-gray-400">Short Name:</span>
+                                      <span className="ml-1 text-sm text-gray-900">{myPlanData.missionOrgNumber.shortName}</span>
                                     </div>
                                   )}
                                 </div>
-                              </dd>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Training & Learning */}
-                {(missionaryData.netdUid || missionaryData.imltModule || missionaryData.netdCourseId || 
-                  missionaryData.courseStatusCode || missionaryData.enrolledTimestamp || missionaryData.startTimestamp || 
-                  missionaryData.myPlanCompletionTimestamp || missionaryData.myPlanURL) && (
-                  <div className="border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => toggleSection('training')}
-                      className="w-full px-4 py-3 text-left font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Training & Learning</span>
-                        <span className="text-gray-500">
-                          {expandedSections.has('training') ? '−' : '+'}
-                        </span>
-                      </div>
-                    </button>
-                    {expandedSections.has('training') && (
-                      <div className="px-4 py-3 border-t border-gray-200">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {missionaryData.netdUid && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">NETD UID</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.netdUid}</dd>
-                            </div>
-                          )}
-                          {missionaryData.imltModule && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">IMLT Module</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.imltModule}</dd>
-                            </div>
-                          )}
-                          {missionaryData.netdCourseId && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">NETD Course ID</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.netdCourseId}</dd>
-                            </div>
-                          )}
-                          {missionaryData.courseStatusCode && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">Course Status</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
-                                {missionaryData.courseStatusName ? 
-                                  `${missionaryData.courseStatusName} (${missionaryData.courseStatusCode})` : 
-                                  missionaryData.courseStatusCode}
-                              </dd>
-                            </div>
-                          )}
-                          {missionaryData.enrolledTimestamp && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">Enrolled</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{formatDateTime(missionaryData.enrolledTimestamp)}</dd>
-                            </div>
-                          )}
-                          {missionaryData.startTimestamp && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">Started</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{formatDateTime(missionaryData.startTimestamp)}</dd>
-                            </div>
-                          )}
-                          {missionaryData.myPlanCompletionTimestamp && (
-                            <div>
-                              <dt className="text-sm font-medium text-gray-500">MyPlan Completed</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{formatDateTime(missionaryData.myPlanCompletionTimestamp)}</dd>
-                            </div>
-                          )}
-                          <div>
-                            <dt className="text-sm font-medium text-gray-500">MyPlan Sharing</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
-                              {missionaryData.myPlanSharing ? 'Enabled' : 'Disabled'}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className="text-sm font-medium text-gray-500">IMOS Report</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
-                              {missionaryData.imosReport ? 'Yes' : 'No'}
-                            </dd>
-                          </div>
-                          {missionaryData.myPlanURL && (
-                            <div className="sm:col-span-2">
-                              <dt className="text-sm font-medium text-gray-500">MyPlan URL</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
-                                <a 
-                                  href={missionaryData.myPlanURL} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline"
-                                >
-                                  {missionaryData.myPlanURL}
-                                </a>
                               </dd>
                             </div>
                           )}
@@ -691,14 +564,14 @@ export default function MOGSMyPlanMissionaryPage() {
                 )}
 
                 {/* Unit Information */}
-                {(missionaryData.cmisUnitId || missionaryData.parentUnitId || missionaryData.procstat) && (
+                {(myPlanData.cmisUnitId || myPlanData.cmisUnitName || myPlanData.parentUnitId || myPlanData.parentUnitName) && (
                   <div className="border border-gray-200 rounded-lg">
                     <button
                       onClick={() => toggleSection('units')}
                       className="w-full px-4 py-3 text-left font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-lg"
                     >
                       <div className="flex items-center justify-between">
-                        <span>Unit & Processing Information</span>
+                        <span>Unit Information</span>
                         <span className="text-gray-500">
                           {expandedSections.has('units') ? '−' : '+'}
                         </span>
@@ -707,70 +580,205 @@ export default function MOGSMyPlanMissionaryPage() {
                     {expandedSections.has('units') && (
                       <div className="px-4 py-3 border-t border-gray-200">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {missionaryData.cmisUnitId && (
+                          {myPlanData.cmisUnitId && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">CMIS Unit ID</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.cmisUnitId}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.cmisUnitId}</dd>
                             </div>
                           )}
-                          {missionaryData.cmisUnitName && (
+                          {myPlanData.cmisUnitName && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">CMIS Unit Name</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.cmisUnitName}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.cmisUnitName}</dd>
                             </div>
                           )}
-                          {missionaryData.parentUnitId && (
+                          {myPlanData.parentUnitId && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">Parent Unit ID</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.parentUnitId}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.parentUnitId}</dd>
                             </div>
                           )}
-                          {missionaryData.parentUnitName && (
+                          {myPlanData.parentUnitName && (
                             <div>
                               <dt className="text-sm font-medium text-gray-500">Parent Unit Name</dt>
-                              <dd className="mt-1 text-sm text-gray-900">{missionaryData.parentUnitName}</dd>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.parentUnitName}</dd>
                             </div>
                           )}
                         </div>
-                        {missionaryData.procstat && (
-                          <div className="mt-4">
-                            <dt className="text-sm font-medium text-gray-500 mb-2">Processing Status (Procstat)</dt>
-                            <dd className="pl-4 border-l-2 border-gray-200">
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                {missionaryData.procstat.id && (
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-400">ID:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.procstat.id}</span>
-                                  </div>
-                                )}
-                                {missionaryData.procstat.key && (
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-400">Key:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.procstat.key}</span>
-                                  </div>
-                                )}
-                                {missionaryData.procstat.description && (
-                                  <div className="sm:col-span-2">
-                                    <span className="text-xs font-medium text-gray-400">Description:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.procstat.description}</span>
-                                  </div>
-                                )}
-                                {missionaryData.procstat.shortDescription && (
-                                  <div className="sm:col-span-2">
-                                    <span className="text-xs font-medium text-gray-400">Short Description:</span>
-                                    <span className="ml-1 text-sm text-gray-900">{missionaryData.procstat.shortDescription}</span>
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="text-xs font-medium text-gray-400">Active:</span>
-                                  <span className="ml-1 text-sm text-gray-900">
-                                    {missionaryData.procstat.active ? 'Yes' : 'No'}
-                                  </span>
-                                </div>
-                              </div>
-                            </dd>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* MyPlan Course Information */}
+                {(myPlanData.netdUid || myPlanData.imltModule || myPlanData.netdCourseId || myPlanData.courseStatusCode || myPlanData.courseStatusName) && (
+                  <div className="border border-gray-200 rounded-lg">
+                    <button
+                      onClick={() => toggleSection('myplan')}
+                      className="w-full px-4 py-3 text-left font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>MyPlan Course Information</span>
+                        <span className="text-gray-500">
+                          {expandedSections.has('myplan') ? '−' : '+'}
+                        </span>
+                      </div>
+                    </button>
+                    {expandedSections.has('myplan') && (
+                      <div className="px-4 py-3 border-t border-gray-200">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {myPlanData.netdUid && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">NETD UID</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.netdUid}</dd>
+                            </div>
+                          )}
+                          {myPlanData.imltModule && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">IMLT Module</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.imltModule}</dd>
+                            </div>
+                          )}
+                          {myPlanData.netdCourseId && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">NETD Course ID</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.netdCourseId}</dd>
+                            </div>
+                          )}
+                          {myPlanData.courseStatusCode && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Course Status Code</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.courseStatusCode}</dd>
+                            </div>
+                          )}
+                          {myPlanData.courseStatusName && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Course Status Name</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.courseStatusName}</dd>
+                            </div>
+                          )}
+                          {myPlanData.myPlanURL && (
+                            <div className="sm:col-span-2">
+                              <dt className="text-sm font-medium text-gray-500">MyPlan URL</dt>
+                              <dd className="mt-1 text-sm text-gray-900">
+                                <a
+                                  href={myPlanData.myPlanURL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 underline break-all"
+                                >
+                                  {myPlanData.myPlanURL}
+                                </a>
+                              </dd>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Timestamps & Flags */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleSection('timestamps')}
+                    className="w-full px-4 py-3 text-left font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-lg"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Timestamps & Flags</span>
+                      <span className="text-gray-500">
+                        {expandedSections.has('timestamps') ? '−' : '+'}
+                      </span>
+                    </div>
+                  </button>
+                  {expandedSections.has('timestamps') && (
+                    <div className="px-4 py-3 border-t border-gray-200">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {myPlanData.enrolledTimestamp && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Enrolled Timestamp</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.enrolledTimestamp}</dd>
                           </div>
                         )}
+                        {myPlanData.startTimestamp && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Start Timestamp</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.startTimestamp}</dd>
+                          </div>
+                        )}
+                        {myPlanData.myPlanCompletionTimestamp && (
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">MyPlan Completion Timestamp</dt>
+                            <dd className="mt-1 text-sm text-gray-900">{myPlanData.myPlanCompletionTimestamp}</dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">MyPlan Sharing</dt>
+                          <dd className="mt-1 text-sm text-gray-900">
+                            {myPlanData.myPlanSharing ? 'Yes' : 'No'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">IMOS Report</dt>
+                          <dd className="mt-1 text-sm text-gray-900">
+                            {myPlanData.imosReport ? 'Yes' : 'No'}
+                          </dd>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Procstat Information */}
+                {myPlanData.procstat && (
+                  <div className="border border-gray-200 rounded-lg">
+                    <button
+                      onClick={() => toggleSection('procstat')}
+                      className="w-full px-4 py-3 text-left font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>Processing Status</span>
+                        <span className="text-gray-500">
+                          {expandedSections.has('procstat') ? '−' : '+'}
+                        </span>
+                      </div>
+                    </button>
+                    {expandedSections.has('procstat') && (
+                      <div className="px-4 py-3 border-t border-gray-200">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {myPlanData.procstat.id && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">ID</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.procstat.id}</dd>
+                            </div>
+                          )}
+                          {myPlanData.procstat.description && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Description</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.procstat.description}</dd>
+                            </div>
+                          )}
+                          {myPlanData.procstat.shortDescription && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Short Description</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.procstat.shortDescription}</dd>
+                            </div>
+                          )}
+                          {myPlanData.procstat.key && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Key</dt>
+                              <dd className="mt-1 text-sm text-gray-900">{myPlanData.procstat.key}</dd>
+                            </div>
+                          )}
+                          {myPlanData.procstat.active !== undefined && (
+                            <div>
+                              <dt className="text-sm font-medium text-gray-500">Active</dt>
+                              <dd className="mt-1 text-sm text-gray-900">
+                                {myPlanData.procstat.active ? 'Yes' : 'No'}
+                              </dd>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

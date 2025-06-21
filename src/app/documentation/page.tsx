@@ -11,6 +11,7 @@ export default function DocumentationPage() {
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
     { id: 'api-testing', title: 'API Testing Tools', icon: '🧪' },
     { id: 'schema-browser', title: 'MGQL Schema Browser', icon: '🔍' },
+    { id: 'mogs-queries', title: 'MOGS Query Pages', icon: '🏛️' },
     { id: 'organizational-search', title: 'Organizational Search Tools', icon: '🏢' },
     { id: 'local-storage', title: 'Local Storage Manager', icon: '💾' },
     { id: 'schemas', title: 'Schema Containers', icon: '📋' },
@@ -61,7 +62,7 @@ export default function DocumentationPage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
                   <p className="text-gray-600 mb-6">
                     This application integrates with MIS (Missionary Information System) GraphQL APIs 
-                    across multiple environments using secure OAuth 2.0 authentication.
+                    and MOGS (Missionary Oracle Graph Service) across multiple environments using secure OAuth 2.0 authentication.
                   </p>
                   
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">Key Features</h3>
@@ -72,13 +73,15 @@ export default function DocumentationPage() {
                     <li>Real-time environment switching</li>
                     <li>Built-in testing and debugging tools</li>
                     <li>Comprehensive missionary data search</li>
+                    <li>Direct MOGS schema query interfaces</li>
                   </ul>
 
                   <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">Architecture</h3>
                   <p className="text-gray-600">
                     The application uses Next.js 13+ App Router with server-side API routes to handle 
-                    authentication and proxy requests to MIS GraphQL endpoints. This ensures that 
-                    client secrets remain secure and CORS issues are avoided.
+                    authentication and proxy requests to MIS GraphQL and MOGS endpoints. This ensures that 
+                    client secrets remain secure and CORS issues are avoided. The MOGS integration provides 
+                    direct access to missionary assignment data, training curricula, and organizational structures.
                   </p>
                 </div>
               )}
@@ -903,6 +906,142 @@ assignments{mission{name}}}}`}
                       <li>• Data persists across browser sessions but may be cleared by browser cleanup</li>
                       <li>• Storage limits vary by browser (typically 5-10MB for localStorage)</li>
                       <li>• Private/incognito browsing may not persist localStorage data</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'mogs-queries' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">MOGS Query Pages</h2>
+                  
+                  <p className="text-gray-600 mb-6">
+                    The MOGS (Missionary Oracle Graph Service) section provides direct access to individual GraphQL queries from the MOGS schema. 
+                    Each page is designed to query a specific top-level query with comprehensive result display and data export capabilities.
+                  </p>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-3">🏛️ About MOGS</h3>
+                    <p className="text-blue-700 mb-3">
+                      MOGS is the core GraphQL service that provides access to missionary assignment data, organizational structures, 
+                      and training information. These pages offer direct access to MOGS queries with user-friendly interfaces.
+                    </p>
+                    <div className="text-sm text-blue-600">
+                      <strong>Common Features Across All MOGS Pages:</strong>
+                      <ul className="mt-2 space-y-1">
+                        <li>• Environment selection (Development, Local, Production)</li>
+                        <li>• Real-time connection status indicator</li>
+                        <li>• Search history with localStorage persistence</li>
+                        <li>• Collapsible result sections for organized data display</li>
+                        <li>• JSON export functionality</li>
+                        <li>• Comprehensive error handling and validation</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-3">🙏 Missionary Query</h3>
+                      <p className="text-green-700 mb-3">Access detailed missionary information using legacy_miss_id.</p>
+                      <div className="text-sm text-green-600">
+                        <strong>Query:</strong> <code>missionary(id: ID!): Missionary</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Personal information and identifiers</li>
+                          <li>• Enabled member details and processing status</li>
+                          <li>• Assignment history and locations</li>
+                          <li>• Identity documents and contact information</li>
+                          <li>• MyPlan integration and training data</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-purple-900 mb-3">📚 Curriculum Query</h3>
+                      <p className="text-purple-700 mb-3">Search curriculum details and training requirements by ID.</p>
+                      <div className="text-sm text-purple-600">
+                        <strong>Query:</strong> <code>curriculum(id: ID!): Curriculum</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Curriculum description and type</li>
+                          <li>• Effective and decommission dates</li>
+                          <li>• Language requirements and translations</li>
+                          <li>• Assignment capabilities and phases</li>
+                          <li>• Associated facilities and overlap information</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-indigo-900 mb-3">📖 MyPlan Missionary Query</h3>
+                      <p className="text-indigo-700 mb-3">Access MyPlan training data and course progress by legacy_miss_id.</p>
+                      <div className="text-sm text-indigo-600">
+                        <strong>Query:</strong> <code>myPlanMissionary(id: ID!): MyPlanMissionary</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Basic missionary information and identifiers</li>
+                          <li>• Mission assignment and organizational details</li>
+                          <li>• Course enrollment and completion status</li>
+                          <li>• MyPlan URL and sharing preferences</li>
+                          <li>• Processing status and timestamps</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-orange-900 mb-3">📋 Additional MOGS Queries</h3>
+                      <p className="text-orange-700 mb-3">Several other MOGS queries are available for specialized data access.</p>
+                      <div className="text-sm text-orange-600">
+                        <strong>Available Queries:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• <code>assignment(id: ID!)</code> - Assignment details</li>
+                          <li>• <code>assignmentLocation(id: ID!)</code> - Location information</li>
+                          <li>• <code>component(id: ID!)</code> - Component data with filters</li>
+                          <li>• <code>enabledMember(id: ID!)</code> - Member enabling details</li>
+                          <li>• <code>leader(id: ID!)</code> - Leadership information</li>
+                          <li>• <code>leaderAttachment(id: ID!)</code> - Leader documents</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">🔧 Technical Implementation</h3>
+                    <p className="text-gray-700 mb-4">
+                      All MOGS pages are built using a consistent architecture that ensures reliability and user experience:
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Frontend Features</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• TypeScript interfaces matching GraphQL schema</li>
+                          <li>• React hooks for state management</li>
+                          <li>• Tailwind CSS for responsive design</li>
+                          <li>• Local storage for search history</li>
+                          <li>• Error boundaries and loading states</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Backend Integration</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• ApiClient for authenticated requests</li>
+                          <li>• Environment-specific configuration</li>
+                          <li>• OAuth 2.0 token management</li>
+                          <li>• GraphQL query validation</li>
+                          <li>• Comprehensive error handling</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-amber-800 mb-2">💡 Usage Tips</h4>
+                    <ul className="text-sm text-amber-700 space-y-1">
+                      <li>• Use the search history to quickly re-run previous queries</li>
+                      <li>• Export data as JSON for further analysis or documentation</li>
+                      <li>• Check connection status before running queries</li>
+                      <li>• Expand/collapse sections to focus on relevant data</li>
+                      <li>• Switch environments to test against different data sets</li>
                     </ul>
                   </div>
                 </div>
