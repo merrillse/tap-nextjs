@@ -7,6 +7,7 @@ export default function DocumentationPage() {
 
   const sections = [
     { id: 'overview', title: 'Overview', icon: '📖' },
+    { id: 'system-introduction', title: 'System Introduction', icon: '🌟' },
     { id: 'environments', title: 'Environments', icon: '🌐' },
     { id: 'authentication', title: 'Authentication', icon: '🔐' },
     { id: 'api-testing', title: 'API Testing Tools', icon: '🧪' },
@@ -83,6 +84,256 @@ export default function DocumentationPage() {
                     client secrets remain secure and CORS issues are avoided. The MOGS integration provides 
                     direct access to missionary assignment data, training curricula, and organizational structures.
                   </p>
+                </div>
+              )}
+
+              {activeSection === 'system-introduction' && (
+                <div className="prose prose-blue max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Understanding the TAP System: MGQL and MOGS</h2>
+                  
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
+                    <h3 className="text-xl font-semibold text-blue-900 mb-4">🌟 Welcome to the Technical Access Portal (TAP)</h3>
+                    <p className="text-blue-800 leading-relaxed">
+                      This system serves as your gateway to The Church of Jesus Christ of Latter-day Saints' missionary 
+                      management infrastructure. Whether you're a developer, system administrator, or data analyst, this guide 
+                      will help you understand how TAP integrates with two critical backend systems: <strong>MGQL</strong> (Missionary 
+                      GraphQL) and <strong>MOGS</strong> (Missionary Oracle Graph Service).
+                    </p>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">🏗️ System Architecture Overview</h3>
+                  <p className="text-gray-700 mb-6">
+                    The missionary management ecosystem consists of multiple interconnected systems that handle everything from 
+                    missionary applications and training to field assignments and reporting. TAP acts as a unified interface 
+                    that allows authorized users to access and interact with this data through modern web technologies.
+                  </p>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-emerald-900 mb-3">📊 MGQL: Missionary GraphQL Service</h4>
+                      <p className="text-emerald-800 mb-4">
+                        MGQL is the primary GraphQL interface for missionary information system data. Think of it as the 
+                        "front door" to missionary-related information across the Church's systems.
+                      </p>
+                      <div className="text-sm text-emerald-700">
+                        <strong>What MGQL Provides:</strong>
+                        <ul className="mt-2 space-y-1 list-disc list-inside">
+                          <li>Missionary assignment and location data</li>
+                          <li>Leadership and organizational hierarchy</li>
+                          <li>Mission boundary and geographic information</li>
+                          <li>Real-time missionary status and movements</li>
+                          <li>Training and curriculum assignment data</li>
+                          <li>Unit and ecclesiastical organization details</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-purple-900 mb-3">🏛️ MOGS: Missionary Oracle Graph Service</h4>
+                      <p className="text-purple-800 mb-4">
+                        MOGS provides deep access to the core missionary management database, offering detailed historical 
+                        data and complex relationship queries that power mission administration.
+                      </p>
+                      <div className="text-sm text-purple-700">
+                        <strong>What MOGS Provides:</strong>
+                        <ul className="mt-2 space-y-1 list-disc list-inside">
+                          <li>Individual missionary profiles and histories</li>
+                          <li>Assignment components and requirements</li>
+                          <li>Training curricula and MyPlan integration</li>
+                          <li>Enabled member processing workflows</li>
+                          <li>Leader assignments and attachments</li>
+                          <li>Complex data relationships and analytics</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">🔄 Data Flow and Integration</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+                    <p className="text-gray-700 mb-4">
+                      Understanding how data flows through these systems is crucial for effective development and troubleshooting:
+                    </p>
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">User Authentication</h5>
+                          <p className="text-gray-600 text-sm">TAP authenticates users via OAuth 2.0, obtaining access tokens for API calls</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">2</div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Query Processing</h5>
+                          <p className="text-gray-600 text-sm">GraphQL queries are validated, optimized, and routed to appropriate backend services</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">3</div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Data Retrieval</h5>
+                          <p className="text-gray-600 text-sm">Backend services query databases, apply business logic, and return structured data</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">4</div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Response Formatting</h5>
+                          <p className="text-gray-600 text-sm">TAP formats and presents data in user-friendly interfaces with export capabilities</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 Key Concepts for Developers</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                      <h4 className="font-semibold text-blue-900 mb-3">🔗 GraphQL Schemas</h4>
+                      <p className="text-blue-800 text-sm mb-3">
+                        Both MGQL and MOGS expose their data through GraphQL schemas - strongly-typed contracts that define 
+                        available queries, mutations, and data structures.
+                      </p>
+                      <div className="text-xs text-blue-700">
+                        <strong>Why GraphQL?</strong>
+                        <ul className="mt-1 space-y-1">
+                          <li>• Precise data fetching (request only what you need)</li>
+                          <li>• Strong typing and validation</li>
+                          <li>• Single endpoint for multiple data sources</li>
+                          <li>• Built-in documentation and introspection</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+                      <h4 className="font-semibold text-green-900 mb-3">🔐 Security & Access Control</h4>
+                      <p className="text-green-800 text-sm mb-3">
+                        Access to missionary data is strictly controlled through multiple layers of authentication and 
+                        authorization to protect sensitive personal information.
+                      </p>
+                      <div className="text-xs text-green-700">
+                        <strong>Security Features:</strong>
+                        <ul className="mt-1 space-y-1">
+                          <li>• OAuth 2.0 client credentials flow</li>
+                          <li>• Environment-specific access tokens</li>
+                          <li>• Server-side API proxying</li>
+                          <li>• Audit logging and monitoring</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">📋 Common Data Entities</h3>
+                  <p className="text-gray-700 mb-4">
+                    Understanding the core data entities will help you navigate the system more effectively:
+                  </p>
+                  <div className="overflow-x-auto mb-8">
+                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Identifiers</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary System</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">Missionary</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">Individual serving a mission</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">legacy_miss_id, cmis_id, lds_account_id</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">MOGS</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">Assignment</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">Missionary's current or historical assignment</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">assignment_id, component_id</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">MOGS</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">Mission</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">Geographic and administrative mission unit</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">mission_id, unit_number</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">MGQL</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">Leader</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">Mission leadership (presidents, assistants, etc.)</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">leader_id, cmis_id</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">MOGS</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">Curriculum</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">Training programs and courses</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">curriculum_id, course_code</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">MOGS</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">🚀 Getting Started as a Developer</h3>
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-8">
+                    <p className="text-indigo-800 mb-4">
+                      Ready to start working with the TAP system? Here's your roadmap:
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
+                        <span className="text-indigo-700"><strong>Explore the Schema Browser:</strong> Understand available queries and data structures</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
+                        <span className="text-indigo-700"><strong>Try the MOGS Pages:</strong> See real queries in action with sample data</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
+                        <span className="text-indigo-700"><strong>Use API Testing Tools:</strong> Experiment with custom queries and mutations</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">4</div>
+                        <span className="text-indigo-700"><strong>Review Authentication:</strong> Understand security patterns and token management</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">5</div>
+                        <span className="text-indigo-700"><strong>Study the Code:</strong> Examine page implementations to understand patterns</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">💡 Best Practices & Tips</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3">🎯 Query Optimization</h4>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Only request fields you actually need</li>
+                        <li>• Use fragments for reusable query parts</li>
+                        <li>• Understand pagination for large datasets</li>
+                        <li>• Test queries in different environments</li>
+                        <li>• Monitor query performance and complexity</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3">🔒 Data Security</h4>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Never expose sensitive data in logs</li>
+                        <li>• Always validate input parameters</li>
+                        <li>• Use appropriate environment for testing</li>
+                        <li>• Follow principle of least privilege</li>
+                        <li>• Keep authentication tokens secure</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-amber-800 mb-3">⚠️ Important Considerations</h4>
+                    <ul className="text-sm text-amber-700 space-y-2">
+                      <li>• <strong>Data Sensitivity:</strong> All missionary data is confidential and should be handled with appropriate care</li>
+                      <li>• <strong>Environment Awareness:</strong> Always verify you're working in the correct environment (dev/staging/prod)</li>
+                      <li>• <strong>Rate Limiting:</strong> Be mindful of API rate limits and implement appropriate retry logic</li>
+                      <li>• <strong>Error Handling:</strong> Always implement comprehensive error handling for production systems</li>
+                      <li>• <strong>Documentation:</strong> Keep your custom queries and integrations well-documented for team collaboration</li>
+                    </ul>
+                  </div>
                 </div>
               )}
 
@@ -983,7 +1234,21 @@ assignments{mission{name}}}}`}
                           <li>• Mission assignment and organizational details</li>
                           <li>• Course enrollment and completion status</li>
                           <li>• MyPlan URL and sharing preferences</li>
-                          <li>• Processing status and timestamps</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-cyan-900 mb-3">🎨 Missionary Hobbies & Skills Query</h3>
+                      <p className="text-cyan-700 mb-3">Access missionary hobbies and skills overview by legacy_miss_id.</p>
+                      <div className="text-sm text-cyan-600">
+                        <strong>Query:</strong> <code>missionaryHobbiesSkills(id: ID!): MissionaryHobbiesSkills</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Missionary number identification</li>
+                          <li>• Skills and hobbies overview text</li>
+                          <li>• Personal interests and talents</li>
+                          <li>• Background information for assignment planning</li>
                         </ul>
                       </div>
                     </div>
@@ -1000,6 +1265,7 @@ assignments{mission{name}}}}`}
                           <li>• <code>enabledMember(id: ID!)</code> - Member enabling details</li>
                           <li>• <code>leader(id: ID!)</code> - Leadership information</li>
                           <li>• <code>leaderAttachment(id: ID!)</code> - Leader documents</li>
+                          <li>• <code>missionaryHobbiesSkills(id: ID!)</code> - Missionary hobbies and skills</li>
                         </ul>
                       </div>
                     </div>
