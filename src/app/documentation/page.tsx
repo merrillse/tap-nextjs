@@ -1238,6 +1238,25 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-emerald-900 mb-3">🌐 WS Missionary Query</h3>
+                      <p className="text-emerald-700 mb-3">Access comprehensive Web Service missionary information by legacy_miss_id.</p>
+                      <div className="text-sm text-emerald-600">
+                        <strong>Query:</strong> <code>wsMissionary(id: ID!): WSMissionary</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Complete personal information (preferred and official names)</li>
+                          <li>• Mission assignment details and timeline</li>
+                          <li>• Contact information (email addresses)</li>
+                          <li>• Driving status and license information</li>
+                          <li>• MyPlan completion and sharing settings</li>
+                          <li>• Current assignment location and position</li>
+                          <li>• Missionary identity records</li>
+                          <li>• Historical assignment information</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-cyan-900 mb-3">🎨 Missionary Hobbies & Skills Query</h3>
                       <p className="text-cyan-700 mb-3">Access missionary hobbies and skills overview by legacy_miss_id.</p>
