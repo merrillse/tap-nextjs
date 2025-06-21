@@ -83,6 +83,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Leader', href: '/mogs-leader', icon: '👨‍💼', description: 'Search MOGS leader details by ID' },
         { name: 'Leader Attachment', href: '/mogs-leader-attachment', icon: '📎', description: 'Search MOGS leader attachment details by ID' },
         { name: 'Missionary', href: '/mogs-missionary', icon: '🙏', description: 'Search MOGS missionary details by ID (legacy_miss_id)' },
+        { name: 'MyPlan Missionary', href: '/mogs-myplan-missionary', icon: '📋', description: 'Search MOGS MyPlan missionary details by ID (legacy_miss_id)' },
       ]
     },
     {
