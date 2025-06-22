@@ -78,12 +78,23 @@ export default function DocumentationPage() {
                   </ul>
 
                   <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">Architecture</h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 mb-4">
                     The application uses Next.js 13+ App Router with server-side API routes to handle 
                     authentication and proxy requests to MIS GraphQL and MOGS endpoints. This ensures that 
                     client secrets remain secure and CORS issues are avoided. The MOGS integration provides 
                     direct access to missionary assignment data, training curricula, and organizational structures.
                   </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-blue-600">🏗️</span>
+                      <p className="text-blue-800 font-medium">
+                        For a comprehensive visual overview of the three-tiered architecture, see the dedicated{' '}
+                        <a href="/architecture" className="text-blue-600 hover:text-blue-800 underline font-semibold">
+                          Architecture Page
+                        </a>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
