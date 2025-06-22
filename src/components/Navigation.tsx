@@ -96,6 +96,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       items: [
         { name: 'Missionary Test Data', href: '/missionary-test-data', icon: '📊', description: 'Generate random missionary IDs and test data for API testing' },
         { name: 'GraphQL Testing', href: '/api-testing', icon: '🔧', description: 'Execute GraphQL queries with authentication and schema browser' },
+        { name: 'Schema Browser', href: '/schema-browser', icon: '📊', description: 'Interactive GraphQL schema explorer with jump-to-definition' },
         { name: 'Schema Visualizer', href: '/schema-visualizer', icon: '🕸️', description: 'Interactive GraphQL schema graph visualization' },
         { name: 'Load Testing', href: '/load-testing', icon: '⚡', description: 'Performance testing' },
         { name: 'Debug Tools', href: '/debug', icon: '🐛', description: 'OAuth & API debugging' },

@@ -1,0 +1,1386 @@
+# Missionary Oracle Graph Service - Combined GraphQL Schema Files
+# Generated from: /Users/merrillse/projects/missionary-graph/missionary-oracle-graph-service/src/main/resources/graphql/
+# Combined on: June 19, 2025
+
+# =============================================================================
+# SCHEMA.GRAPHQLS - Main Schema Definitions
+# =============================================================================
+type Query {
+    assignment(id: ID!): Assignment
+    assignmentLocation(id: ID!): AssignmentLocation
+    """ type-ahead search for assignment locations each with a component matching specified missionary types (and active status) """
+    assignmentLocationsWithComponents(nameSearch: String, missionaryTypes: [MissionaryTypeEnum]): [AssignmentLocation]
+    component(id: ID!, missionaryTypes: [MissionaryTypeEnum], statuses: [ComponentStatusEnum]): Component!
+    enabledMember(id: ID!): EnabledMember
+    leader(id: ID!): Leader
+    leaderAttachment(id: ID!): LeaderAttachment
+    missionary(id: ID!): Missionary
+    curriculum(id: ID!): Curriculum
+    """ id is legacy_miss_id """
+    myPlanMissionary(id: ID!): MyPlanMissionary
+    """ id is legacy_miss_id """
+    missionaryHobbiesSkills(id: ID!): MissionaryHobbiesSkills
+    """ id is component id which is comp_id  """
+    missionaryComponent(id: ID): MissionaryComponent
+    wsMissionary(id: ID!): WSMissionary
+    wsMission(id: ID!): WSMission
+    wsZone(id: ID!): WSZone
+    wsDistrict(id: ID!): WSDistrict
+    wsProselytingArea(id: ID!): WSProselytingArea
+    wsEcclesiasticalUnit(id: ID!): WSEcclesiasticalUnit
+    missionaryAttachment(id: ID!): [MissionaryAttachment]
+    """This query accepts an ecclesiastical unit id such as for a ward or stake and returns a list
+    of missionaries who are assigned to serve in that unit boundaries."""
+    missionariesByAssignmentLocation(id: ID): MissionariesByAssignmentLocation
+    """ A list of languages used worldwide. (MSSW) """
+    mmsLang(mcsLangId: ID, langId: ID, iso3Cd: String): MMSLang
+    mmsLangs: [MMSLang]
+    candidatesByMembershipUnit(id: ID): [Candidate]
+    """ Returns a random unit id for candidate testing """
+    randomCandidateMissionaryUnitId: ID
+    """An array of a history of addresses where the missionary has been. """
+    missionaryAddressHistories(id: ID): [MissionaryAddressHistory]
+    """Proselyting Area Assigned to an EcclesiasticalUnit that is active in PMG"""
+    pmgProselytingAreaByEcclesiasticalUnit(id: ID): [WSProselytingArea]
+    trainingCourse(id: ID!): TrainingCourse
+    countries(input: CountriesFilters): [Countries]
+    """ Returns a proselyting area suitable for testing """
+    wsTestProselytingArea: WSProselytingArea
+    "Process data around a candidate to getting their first missionary assignment (NAPI)."
+    assignmentProcessing(id: ID): AssignmentProcess
+    """get a list of Options for a given entity"""
+    options(entity: Entity): [Option]
+}
+
+type Mutation {
+    """ returns the number of rows updated """
+    updateAssignment(input: AssignmentInput!): Int!
+    updateEnabledMember(id: ID!, input: EnabledMemberInput!): Int!
+}
+
+scalar Long
+scalar Date
+scalar DateTime
+scalar BigInteger
+
+# =============================================================================
+# TYPE DEFINITIONS
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ArrivalDate.graphqls
+# -----------------------------------------------------------------------------
+type ArrivalDate {
+    id: ID!
+}
+
+# -----------------------------------------------------------------------------
+# Assignment.graphqls
+# -----------------------------------------------------------------------------
+type Assignment {
+    id: ID!
+    assignmentLocation: AssignmentLocation
+    component: Component
+    enabledMember: EnabledMember
+    callType: AssignmentCallType
+    status: AssignmentStatus
+    statusDate: DateTime
+    earlyRelease: Boolean
+    createdBy: String
+    dateCreated: DateTime
+    modifiedBy: String
+    dateModified: DateTime
+    trainingFacility: TrainingFacility
+    arrivalDate: ArrivalDate
+    onleaveReason: LabelValueOrder
+    onleave: Boolean
+    missionarySupported: Boolean
+    startDate: Date
+    endDate: Date
+    position: PositionNameTranslation
+    spousePosition: PositionNameTranslation
+    trackSchedule: TrackSchedule
+    approver: String
+    releaseType: LabelValue
+    mtcDate: Date
+    chqPaysTravelTo: Boolean
+    chqPaysTravelFrom: Boolean
+    seniorSlot: SeniorSlot
+    twoTransfer: Boolean
+    hush: Boolean
+    shortTerm: Boolean
+    procstatReason: ProcstatReason
+    reassignmentStatus: Int
+    seniorDelayedStart: Boolean
+    seniorDelayedReason: LabelValueOrder
+    onleaveAudit: OnleaveAudit
+}
+
+enum AssignmentCallTypeEnum {
+    P
+    T
+    PMT
+    CSM
+}
+
+# -----------------------------------------------------------------------------
+# AssignmentCallType.graphqls
+# -----------------------------------------------------------------------------
+type AssignmentCallType {
+    id: ID!
+    code: String
+    description: String
+    hushDays: Int
+    hushOverrideDaysPrior: Int
+}
+
+# -----------------------------------------------------------------------------
+# AssignmentInput.graphqls
+# -----------------------------------------------------------------------------
+input AssignmentInput {
+    id: ID!
+    assignmentLocationId: Long
+    componentId: Long
+    enabledMemberId: Long
+    callTypeId: Long
+    statusId: Long
+    statusDate: DateTime
+    earlyRelease: Boolean
+    createdBy: String
+#    dateCreated: Date
+    modifiedBy: String
+#    dateModified: Date
+    mtcId: Long
+    arrivalId: Long
+    onleaveReasonId: Long
+    onleave: Boolean
+    missionarySupported: Boolean
+    startDate: Date
+    endDate: Date
+    elderPositionId: Int
+    sisterPositionId: Int
+    trackScheduleId: Long
+    approver: String
+    releaseTypeId: Int
+    mtcDate: Date
+    chqPaysTravelTo: Boolean
+    chqPaysTravelFrom: Boolean
+    seniorSlotId: Long
+    twoTransfer: Boolean
+    hush: Boolean
+    shortTerm: Boolean
+    procstatReasonId: Long
+    reassignmentStatus: Long
+    seniorDelayedStart: Boolean
+    seniorDelayedReason: Long
+}
+
+# -----------------------------------------------------------------------------
+# AssignmentLocation.graphqls
+# -----------------------------------------------------------------------------
+type AssignmentLocation {
+    id: ID!
+    ecclesiasticAssignmentLocation: AssignmentLocation
+    effectiveDate: Date
+    componentOvertolerancePercentage: Int
+    type: LabelValue
+    status: LabelValue
+    colOrganization: MMSOrganization
+    "This Mission President wants his recommends faxed to him"
+    faxRecommends: Boolean
+    bikeCost: Int
+    complement: Int
+    maxTransfer: Int
+    returnOnLaborRating: String
+    timeDiffMST: String
+    createdDate: DateTime
+    airportCode: Int
+    closingPlannedDate: Date
+    privateFlag: Boolean
+    transferDay: String
+    parent: AssignmentLocation
+    legacyId: Int
+    pendingMapEffectiveDate: Date
+    nameExportDate: Date
+    name: String
+    assignmentMeetingName: String
+    components(missionaryTypes: [MissionaryTypeEnum], statuses: [ComponentStatusEnum]): [Component]
+    # if intendedAudience is not supplied return both junior and senior (should be enum)
+    curricula(missionaryType: MissionaryTypeEnum): [LabelValue]
+    missionaryHistories: [MissionaryHistory]
+}
+
+# -----------------------------------------------------------------------------
+# AssignmentProcess.graphqls
+# -----------------------------------------------------------------------------
+type AssignmentProcess {
+    missionaryNumber: Int
+    restrictions: [Restriction]
+    medicallyUnsuitable: Boolean
+
+}
+
+# -----------------------------------------------------------------------------
+# AssignmentStatus.graphqls
+# -----------------------------------------------------------------------------
+type AssignmentStatus {
+    id: ID!
+    description: String
+    sortNumber: Int
+}
+
+# -----------------------------------------------------------------------------
+# Candidate.graphqls
+# -----------------------------------------------------------------------------
+type Candidate {
+    # Missionary Identifier
+    missionaryNumber: Int
+    # Unit ID where candidate's membership record is
+    membershipUnitId: Int
+    # Unit ID where candidate's membership record was when recommend was started
+    homeUnitId: Int
+    # Unit ID where the recommend was activated
+    submittingUnitId: Int
+    # LDS Account ID for matching with member
+    ldsAccountId:String
+    # Missionary Type Id
+    missionaryTypeId: Int
+    # Missionary Type Description for developer use only
+    missionaryTypeDescription: String
+    # Legacy CMIS ID
+    cmisId: Long
+    # Email Address Submitted on recommend
+    emailAddress: String
+    # The data the recommend was started
+    recommendStartDate: String
+    # The last name entered on the recommend form
+    recommendLastName: String
+    # The first name entered on the recommend form
+    recommendFirstName: String
+    # The middle name entered on the recommend form
+    recommendMiddleName: String
+    # The name suffix entered on the recommend form
+    recommendNameSuffix: String
+    # The date of birth entered on the recommend form
+    birthdate: String
+    # The date the missionary is available entered on the recommend form
+    currentAvailabilityDate: String
+}
+
+# -----------------------------------------------------------------------------
+# CitizenshipSet.graphqls
+# -----------------------------------------------------------------------------
+type CitizenshipSet {
+    id: ID!
+    name: String!
+    description: String!
+    code: String!
+    defaultSet: Boolean!
+    createDate: Date!
+}
+
+# -----------------------------------------------------------------------------
+# Companion.graphqls
+# -----------------------------------------------------------------------------
+type Companion {
+    name: String
+    legacyMissId: Long
+}
+
+# -----------------------------------------------------------------------------
+# Component.graphqls
+# -----------------------------------------------------------------------------
+type Component {
+    id: ID!
+    missionaryType: MissionaryType!
+    department: Department!
+    assignmentLocation: AssignmentLocation!
+    priority: ComponentPriority
+    position: PositionNameTranslation!
+    complement: Int!
+    replacement: Boolean
+    origin: CitizenshipSet!
+    status: LabelValue!
+    facilityOverTransfer: Boolean
+    plannedTransferNumber: Int
+    noTrainingAvailable: Boolean!
+    language: LanguageAddendum!
+    description: String
+    assignmentLocationDefault: Boolean
+    assignmentMeetingName: String
+    createdBy: String!
+    dateCreated: DateTime!
+    modifiedBy: String!
+    dateModified: DateTime
+    spouseCallPhrase: String
+    responsibleOrgNumber: Long
+    firstMonthExpense: Int
+    subMissionType: Int
+    subCode: String
+    transportation: ComponentTransportation
+    housing: ComponentHousing
+    needsDisplayRange: Int
+    subMissionName: String
+    spousePosition: PositionNameTranslation
+    notes: String
+    filterSet: String
+    housingExpense: Int
+    transportationExpense: Int
+    personalExpense: Int
+    sweep: Boolean
+    assignmentMeetingShortName: String
+    sixMonthCompatible: Boolean!
+    notesModifiedBy: String
+    notesModifiedDate: DateTime
+    availableMedicalCare: MedicalCare
+    topComplementNumber: Int
+    highComplementNumber: Int
+    mediumComplementNumber: Int
+    lowComplementNumber: Int
+    defaultTransferLocation: MMSLocation
+    urgentComplementNumber: Int
+    urgentComplementEndDate: Date
+    growthDirection: GrowthDirection
+    displayInSeniorMissionaryWebsite: Boolean!
+    languageImportanceId: Int
+    shortTerm: Boolean!
+#    position: PositionNameTranslation
+}
+
+enum GrowthDirection {
+    UP
+    DOWN
+}
+
+# -----------------------------------------------------------------------------
+# ComponentHousing.graphqls
+# -----------------------------------------------------------------------------
+type ComponentHousing {
+    id: ID!
+    sortOrder: Int!
+    description: String!
+    active: Boolean!
+}
+
+# -----------------------------------------------------------------------------
+# ComponentPriority.graphqls
+# -----------------------------------------------------------------------------
+type ComponentPriority {
+    id: ID!
+    sortOrder: Int!
+    description: String!
+    active: Boolean!
+}
+
+# -----------------------------------------------------------------------------
+# ComponentTransportation.graphqls
+# -----------------------------------------------------------------------------
+type ComponentTransportation {
+    id: ID!
+    sortOrder: Int!
+    description: String!
+    active: Boolean!
+}
+
+# -----------------------------------------------------------------------------
+# Countries.graphqls
+# -----------------------------------------------------------------------------
+type Countries {
+    id: Int
+    name: String
+    shortName: String
+    parentId: Int
+    iso2Code: String
+    iso3Code: String
+    effectiveIso2Code: String
+    effectiveIso3Code: String
+}
+
+# -----------------------------------------------------------------------------
+# CountriesFilters.graphqls
+# -----------------------------------------------------------------------------
+input CountriesFilters {
+    ids: [Int]
+    effectiveIso2Codes: [String]
+    effectiveIso3Codes: [String]
+    iso2Codes: [String]
+    iso3Codes: [String]
+}
+
+# -----------------------------------------------------------------------------
+# Curriculum.graphqls
+# -----------------------------------------------------------------------------
+type Curriculum {
+    id: ID!
+    description: String
+    effectiveDate: String
+    decommissionDate: String
+    canAssign: Boolean
+    phased: Boolean
+    duration: Int
+    languagePrerequisitePhrase: String
+    teachingLanguage: LanguageTranslation
+    subjectLanguage: LanguageTranslation
+    type: String
+    status: LabelValue
+    intendedAudience: String
+    overlap: CurriculumOverlap
+    facilities: [Facility]
+}
+
+# -----------------------------------------------------------------------------
+# CurriculumOverlap.graphqls
+# -----------------------------------------------------------------------------
+type CurriculumOverlap {
+    id: ID!
+    name: String
+    description: String
+}
+
+# -----------------------------------------------------------------------------
+# Department.graphqls
+# -----------------------------------------------------------------------------
+type Department {
+    id: ID!
+    name: String!
+    activationDate: Date
+    colOrganization: MMSOrganization
+}
+
+# -----------------------------------------------------------------------------
+# DocumentType.graphqls
+# -----------------------------------------------------------------------------
+type DocumentType {
+    id: ID!
+    description: String
+    noteType: Boolean
+    attachmentType: Boolean
+    addPermissionId: Long
+    deletePermissionId: Long
+    editPermissionId: Long
+    viewPermissionId: Long
+    confidential: Boolean
+}
+
+# -----------------------------------------------------------------------------
+# EnabledMember.graphqls
+# -----------------------------------------------------------------------------
+type EnabledMember {
+    id: ID!
+    "Enabled Date: Time (in mountain time) when the candidate was enabled (allowed to enter recommend data) online."
+    enabledMemberDate: String
+    homeUnit: MMSOrganization
+    tempUnit: MMSOrganization
+    missionaryType: MissionaryType
+    language: LanguageAddendum
+    procstat: Procstat
+    inindrfn: String
+    spouseInindrfn: String
+    procstatDate: String
+    legacyMissId: Long
+    legacySpouseMissId: Long
+    currentAvailabilityDate: String
+    releaseInfoAuthDate: String
+    enabledByRoleId: Long
+    pendingPapers: Boolean
+    alert: String
+    spouseReleaseInfoAuthDate: String
+    callLetterSentDate: String
+    hold: Boolean
+    createdBy: String
+    dateCreated: String
+    modifiedBy: String
+    dateModified: String
+    legacy: Boolean
+    initiatedVersion: Long
+    pendingTranslationState: Long
+    missionStartDate: String
+    releaseDate: String
+    anniversaryDate: String
+    releaseDateChangeDate: String
+    leaderVisibility: Boolean
+    termMonths: Int
+    recommendFormTypeId: Int
+    addressConfirmPending: Boolean
+    initialAssignmentDate: String
+    otxSyncCol: String
+    imageProcessed: Boolean
+    missionaryAuthPin: Long
+    pinEnteredDate: String
+    callPacketImmunization: Boolean
+    callPacketPortal: Boolean
+    cmisUnitId: Long
+    missionarySearchOTX: Boolean
+    ldsAccountId: String
+    spouseLdsAccountId: String
+    cmisId: String
+    spouseCmisId: String
+    doNotPurge: Boolean
+    hushEndDate: String
+    callNotificationId: Long
+    callLetterPageVisitTimestamp: String
+    inqMigrationDate: String
+    inHushPeriod: InHushPeriod
+    missionaries: [Missionary]
+    assignments: [Assignment]
+}
+
+# -----------------------------------------------------------------------------
+# EnabledMemberInput.graphqls
+# -----------------------------------------------------------------------------
+input EnabledMemberInput {
+    id: ID
+    hold: Boolean
+    assignments: [AssignmentInput]
+}
+
+# -----------------------------------------------------------------------------
+# Facility.graphqls
+# -----------------------------------------------------------------------------
+type Facility {
+    id: String
+    name: String
+}
+
+# -----------------------------------------------------------------------------
+# InHushPeriod.graphqls
+# -----------------------------------------------------------------------------
+type InHushPeriod {
+    id: ID!
+    procstat: Procstat
+    missionaryType: MissionaryType
+    callLetterSentDate: Date
+    enabledMemberMissionStartDate: Date
+}
+
+# -----------------------------------------------------------------------------
+# LabelValue.graphqls
+# -----------------------------------------------------------------------------
+type LabelValue {
+    value: Int!
+    label: String!
+}
+
+enum ComponentStatusEnum {
+    ACTIVE
+    PENDING_ACTIVATION
+    DEACTIVATED
+    PENDING_DEACTIVATION
+}
+
+# -----------------------------------------------------------------------------
+# LabelValueOrder.graphqls
+# -----------------------------------------------------------------------------
+type LabelValueOrder {
+    value: Int!
+    label: String!
+    order: Int!
+}
+
+enum OnleaveReasonEnum {
+    PERSONAL
+    HEALTH_PHYSICAL
+    HEALTH_MENTAL
+    OTHER
+    SERVICE_MISSION
+    COVID_19
+    RETURN_ASAP
+    SERVING_REMOTE
+}
+
+# -----------------------------------------------------------------------------
+# LanguageAddendum.graphqls
+# -----------------------------------------------------------------------------
+type LanguageAddendum {
+    id: ID!
+    languageGroupId: Long
+    lastUpdateDate: String
+    recentryLanguage: Boolean
+    metadataTranslated: Boolean
+    seniorSiteLanguageStatus: Int
+    napiLanguageStatus: Int
+}
+
+# -----------------------------------------------------------------------------
+# LanguageTranslation.graphqls
+# -----------------------------------------------------------------------------
+type LanguageTranslation {
+    id: ID!
+    langId: Int
+    text: String
+    translateDate: String
+#    translateStatus: TranslateStatus
+    createdBy: String
+    dateCreated: String
+    modifiedBy: String
+    dateModified: String
+}
+
+# -----------------------------------------------------------------------------
+# Leader.graphqls
+# -----------------------------------------------------------------------------
+type Leader {
+    id: ID!
+    spouseCmisId: Long
+    mrn: String
+    genderCode: String
+    homeUnit: MMSOrganization
+    surname: String
+    givenName: String
+    preferredSurname: String
+    preferredGivenName: String
+    unit: MMSOrganization
+    startDate: String
+    endDate: String
+    ldsEmail: String
+    personalEmail: String
+    phone: String
+    homeAddress: String
+    homeLocation: MMSLocation
+    birthDate: String
+    birthPlace: String
+    birthLocation: MMSLocation
+    passportNumber: String
+    passportExpirationDate: String
+    contactName: String
+    contactRelationship: String
+    contactAddress: String
+    contactEmail: String
+    contactPhone: String
+    loadDate: String
+    updateDate: String
+    attachments: [LeaderAttachment]
+    citizenships: [LeaderCitizenship]
+    notes: [LeaderNote]
+    photo: LeaderPhoto
+}
+
+# -----------------------------------------------------------------------------
+# LeaderAttachment.graphqls
+# -----------------------------------------------------------------------------
+type LeaderAttachment {
+    id: ID!
+    cmisId: Long
+    documentType: DocumentType
+    title: String
+    sourceFileLocation: String
+    fileType: String
+    fileSize: Long
+    fileContent: String
+    createDate: String
+    createdBy: String
+    updateDate: String
+    updatedBy: String
+}
+
+# -----------------------------------------------------------------------------
+# LeaderCitizenship.graphqls
+# -----------------------------------------------------------------------------
+type LeaderCitizenship {
+    id: ID!
+    cmisId: Long
+    location: MMSLocation
+    current: Boolean
+    loadDate: String
+    updateDate: String
+}
+
+# -----------------------------------------------------------------------------
+# LeaderNote.graphqls
+# -----------------------------------------------------------------------------
+type LeaderNote {
+    id: ID!
+    cmisId: Long
+    subNotes: [LeaderNote]
+    documentType: DocumentType
+    title: String
+    content: String
+    createdDate: String
+    createdBy: String
+    updatedDate: String
+    updatedBy: String
+}
+
+# -----------------------------------------------------------------------------
+# LeaderPhoto.graphqls
+# -----------------------------------------------------------------------------
+type LeaderPhoto {
+    id: ID!
+    cmisId: Long
+    photo: String
+    createdDate: String
+    updatedDate: String
+}
+
+# -----------------------------------------------------------------------------
+# MedicalCare.graphqls
+# -----------------------------------------------------------------------------
+type MedicalCare {
+    id: ID!
+    code: String!
+    name: String!
+    shortName: String!
+}
+
+# -----------------------------------------------------------------------------
+# MissionariesByAssignmentLocation.graphqls
+# -----------------------------------------------------------------------------
+type MissionariesByAssignmentLocation {
+    missionaries: [Long]
+}
+
+# -----------------------------------------------------------------------------
+# Missionary.graphqls
+# -----------------------------------------------------------------------------
+type Missionary {
+    """ legacy_miss_id """
+    id: ID!
+    missionaryId: Long
+    enabledMember: EnabledMember
+    appMissionaryType: String
+    lastName: String
+    middleName: String
+    firstName: String
+    birthDate: Date
+    mrn: String
+    appLivesWith: String
+    ifOtherWho: String
+    legacyMissId: Long
+    churchCallings: String
+    passportExpireDate: Date
+    driverLicenseExpireDate: Date
+    suffix: String
+    confirmationDate: Date
+    callLetterLanguageId: Long
+    placeOfBirth: String
+    passportNumber: String
+    preferredLastName: String
+    preferredMiddleName: String
+    preferredFirstName: String
+    genderCode: String
+    emailAddress: String
+    preferredSuffix: String
+    ldsAccountId: String
+    mobilePhone: String
+    cmisId: Long
+    driverLicenseState: String
+    #driverLicenseExpirationDate: String (why two of these?)
+    homeAirportCode: String
+    homeAirportText: String
+    "The ID of the personal mobile device profile override applied to this missionary. References msny_pmd_prfl_ovrd.pmd_prfl_ovrd_id column."
+    personalMobileDeviceProfileOverrideId: Long
+    birthLocationId: Long
+    driverLicenseLocationId: Long
+    passportLocationId: Long
+    personalEmailAddress: String
+    mobilePhoneLocation: MMSLocation
+    canReceiveTextMessage: Boolean
+#    proselytingEmailAddress: PROS_EMAIL_ADDR         as (SUBSTR("EMAIL_ADDRESS", 1)),
+    dentalEvaluationOralExamDate: Date
+    healthEvaluationPhysicalExamDate: Date
+    caseManagementTypeId: Long #CASE_MANAGEMENT_TYPE_ID NUMBER(20)
+    workforceEnabled: Boolean
+    loadDate: Date
+    certificateRequestDate: Date
+    #CAND_UUID               RAW(16)
+    myPlanMissionary: MyPlanMissionary
+    missionaryIdentity: [MissionaryIdentity]
+    wsMissionaryHistories: [WSMissionaryHistory]
+    missionaryHistories: [MissionaryHistory]
+    "This is a string of list of permissions that a mission leader should have for a given missionary."
+    leaderPermissionData: String
+    proselytingEmailStatus: String
+    assignmentPackageXml: String
+    afabEnabledYN: String
+    onlineProselytingEnabledYN: String
+    pmdProfileOverride: String
+    pmdEnabledYN: String
+    socialMediaSpecialistOrganizations: String
+    missionComponentLanguagesList: String
+    englishConnectEligible: Boolean
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryAddressHistory.graphqls
+# -----------------------------------------------------------------------------
+type MissionaryAddressHistory {
+    id: Long
+    missionaryNumber: Int
+    mission: Int
+    startDate: Date
+    endDate: Date
+    address1: String
+    addressCity: String
+    addressState: String
+    addressDistrict: String
+    addressPostal: String
+    addressCountry: Int
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryAttachment.graphqls
+# -----------------------------------------------------------------------------
+""" individual components of a missionary assignment. """
+type MissionaryAttachment {
+    """ id is legacy_mis_id  """
+    id: ID
+    """ Type of attachment like pdf. """
+    attachmentType: String
+    """ The actual file that was attached in string form """
+    attachment: String
+    """ Id of the attachment """
+    attachmentId: Long
+    """ Name the end user gave the file. """
+    fileName: String
+    """ File type like pdf """
+    fileType: String
+    """ Text end user entered to associate with the file. """
+    fileDescription: String
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryComponent.graphqls
+# -----------------------------------------------------------------------------
+""" individual components of a missionary assignment. """
+type MissionaryComponent {
+    """ id is component id which is comp_id  """
+    id: ID
+    """ Type of missionaries that can be assigned to this component. """
+    missionaryTypeId: Long
+    """ Description of type of missionaries that can be assigned to this component. """
+    missionaryType: String
+    """ CDOL org number of the assignment location this component is part of. """
+    unitNumber: Long
+    """ CDOL org number of the parent assignment location number this component is part of. """
+    parentUnitNumber: Long
+    """ Status of the component. """
+    status: String
+    """ Name of component. """
+    name: String
+    """ CDSCODE Language ID of the primary language spoken in this mission. """
+    missionMcsLanguageId: Long
+    """ This is the ASGLOC id. """
+    assignmentLocationId: Long @deprecated(reason: "Use CDOL unitNumber")
+    missionLanguageId: Long
+    withinMissionUnitNumber: Long
+    assignmentMeetingName: String
+    assignmentMeetingShortName: String
+    componentMcsLanguageId: Long
+    componentLanguageId: Long
+    positionId: Int
+    positionAbbreviation: String
+    positionName: String
+    positionNameLangId: Int
+    responsibleOrganizationNumber: Int
+    responsibleOrganizationName: String
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryHistory.graphqls
+# -----------------------------------------------------------------------------
+type MissionaryHistory {
+    legacyMissId: Long
+    assignmentLocationId: Long
+    assignmentLocationName: String
+    assignmentLocation: AssignmentLocation
+    effectiveDate: Date
+    effectiveEndDate: Date
+    proselytingAreaId: Long
+    wsProselytingArea: WSProselytingArea
+    areaName: String
+    areaDate: Date
+    areaEndDate: Date
+    roleId: Long
+    roleType: String
+    roleDate: Date
+    roleEndDate: Date
+    companions: [Companion]
+    companionshipDate: Date
+    companionshipEndDate: Date
+    unitNumber: Long
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryHobbiesSkills.graphqls
+# -----------------------------------------------------------------------------
+type MissionaryHobbiesSkills {
+    """ id is the Legacy Missionary Id for this Missionary """
+    missionaryNumber: ID
+    skillsHobbiesOverview: String
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryIdentity.graphqls
+# -----------------------------------------------------------------------------
+type MissionaryIdentity {
+    """ legacy_miss_id """
+    id: ID!
+    missionaryNameId: Long
+    enabledMember: EnabledMember
+    legacyMissId: Long
+    issueCountry: MMSLocation
+    issueState: String
+    suspended: Boolean
+    documentExpireDate: Date
+    documentId: String
+    altIdType: String
+    nameTypeCode: String
+    firstName: String
+    lastName: String
+    middleName: String
+    suffix: String
+}
+
+# -----------------------------------------------------------------------------
+# MissionaryType.graphqls
+# -----------------------------------------------------------------------------
+type MissionaryType {
+    id: ID!
+    minimumMonthsSinceRelease: Int
+    minimumAgeDefault: Int
+    maximumAgeDefault: Int
+    abbreviation: String
+    senior: Boolean
+    seniorAssignmentMeetingAbbreviation: String
+    missionaryTypeGroup: String
+    missionaryTypeName: String
+    missionaryTypeCode: String
+}
+
+enum MissionaryTypeEnum {
+    ELDER
+    SISTER
+    SR_SISTER
+    SR_COUPLE
+    SR_ELDER
+    PT_ELDER
+    PT_SISTER
+    PT_COUPLE
+}
+
+# -----------------------------------------------------------------------------
+# MMSLang.graphqls
+# -----------------------------------------------------------------------------
+"""
+   MSSW.MMS_LANG: A list of languages used worldwide.
+"""
+type MMSLang {
+    "Language ID: Surrogate key for the table. Values come from MDM_LANGUAGE."
+    langId: ID
+    "Language Name: The name of the language"
+    langName: String
+    "Language Abbreviation: Short code to identify the language and provide backwards compatibility with the CDOL language abbreviation."
+    langAbbreviation: String
+    "MCS Language ID"
+    mcsLangId: Int
+    "ISO 3 Code: ISO 3 character code used to identify the language."
+    iso3Code: String
+    "Missionary Call System Language ID: Logical FK to mcs_language_addendum.lang_id. This value also matches what's know as the CDS Code from the PIN system."
+    ianaLangSubtag: String
+    "Load Date: The date the record was last modified by the MDMI refresh process."
+    loadDate: String
+    "Approved Yes/No: Indicates if MDM considers this a current, approved language."
+    approved: Boolean
+    "TrueNorth Assessment Name: The name of the TrueNorth assessment for this language."
+    trueNorthAssessmentName: String
+    "Spoken Language Y/N: Flag to designate whether a language is a spoken language (Y) or not (N)."
+    spokenLanguage: Boolean
+}
+
+# -----------------------------------------------------------------------------
+# MMSLangs.graphqls
+# -----------------------------------------------------------------------------
+"""
+   MSSW.MMS_LANG: A list of languages used worldwide.
+"""
+type MMSLangs {
+    "List of one or more MMS Languages"
+    mmsLanguages: [MMSLang]
+}
+
+# -----------------------------------------------------------------------------
+# MMSLocation.graphqls
+# -----------------------------------------------------------------------------
+""" individual components of a missionary assignment. """
+type MMSLocation {
+    """ loc_id """
+    id: ID!
+    iso3Code: String
+    name: String
+    shortName: String
+    abbreviation: String
+    smsIso3Code: String
+}
+
+# -----------------------------------------------------------------------------
+# MMSOrganization.graphqls
+# -----------------------------------------------------------------------------
+type MMSOrganization {
+    id: ID!
+    organizationId: Long
+    name: String
+    officialName: String
+    shortName: String
+    officialShortName: String
+}
+
+# -----------------------------------------------------------------------------
+# MyPlanMissionary.graphqls
+# -----------------------------------------------------------------------------
+type MyPlanMissionary {
+    """ id is legacy_miss_id """
+    id: ID!
+    missionaryId: Long
+    cmisId: Long
+    ldsAccountId: String
+    lastName: String
+    firstName: String
+    middleName: String
+    suffix: String
+    missionaryType: String
+    missionAssignmentLocation: AssignmentLocation
+    missionOrgNumber: MMSOrganization
+    missionName: String
+    assignmentEndDate: Date
+    procstat: Procstat
+    cmisUnitId: Long
+    cmisUnitName: String
+    parentUnitId: Long
+    parentUnitName: String
+    netdUid: String
+    imltModule: String
+    netdCourseId: String
+    courseStatusCode: String
+    courseStatusName: String
+    enrolledTimestamp: DateTime
+    startTimestamp: DateTime
+    myPlanCompletionTimestamp: DateTime
+    myPlanSharing: Boolean
+    imosReport: Boolean
+    myPlanURL: String
+}
+
+# -----------------------------------------------------------------------------
+# OnleaveAudit.graphqls
+# -----------------------------------------------------------------------------
+type OnleaveAudit {
+    id: ID!
+    assignment: Assignment!
+    onleaveProcstat: Procstat!
+    onleaveDate: Date!
+    createdBy: String!
+    createdDate: DateTime!
+    reason: LabelValueOrder!
+    endDate: Date
+    endDateCreatedBy: String
+    endCreatedDate: DateTime
+    endProcstat: Procstat
+    newAssignment: Assignment
+}
+
+# -----------------------------------------------------------------------------
+# Option.graphqls
+# -----------------------------------------------------------------------------
+type Option {
+    "Description of the option"
+    label: String
+    "Int Value of the option"
+    value: Int
+}
+"""
+The option attributes fall under one of the following entities.
+"""
+enum Entity {
+    "restrictions of a candidate"
+    RESTRICTION
+}
+
+# -----------------------------------------------------------------------------
+# PositionNameTranslation.graphqls
+# -----------------------------------------------------------------------------
+type PositionNameTranslation {
+    id: ID!
+    positionSpecialty: PositionSpecialty
+    name: String
+    description: String
+}
+
+# -----------------------------------------------------------------------------
+# PositionSpecialty.graphqls
+# -----------------------------------------------------------------------------
+type PositionSpecialty {
+    id: ID!
+    name: String
+    description: String
+}
+
+# -----------------------------------------------------------------------------
+# Procstat.graphqls
+# -----------------------------------------------------------------------------
+type Procstat {
+    id: Int
+    description: String
+    enabledMemberProcstatLocationId: Long
+    key: String
+    dataArchitectComment: String
+    active: Boolean
+    shortDescription: String
+}
+
+# -----------------------------------------------------------------------------
+# ProcstatReason.graphqls
+# -----------------------------------------------------------------------------
+type ProcstatReason {
+    id: ID!
+}
+
+# -----------------------------------------------------------------------------
+# Restriction.graphqls
+# -----------------------------------------------------------------------------
+type Restriction {
+    # Missionary Identifier
+    missionaryNumber: Int
+    # Description of restriction
+    description: String
+    # Alert Description
+    alertDescription: String
+}
+
+# -----------------------------------------------------------------------------
+# SeniorSlot.graphqls
+# -----------------------------------------------------------------------------
+type SeniorSlot {
+    id: ID!
+}
+
+# -----------------------------------------------------------------------------
+# Track.graphqls
+# -----------------------------------------------------------------------------
+type Track {
+    scheduleId: Int
+    arrivalId: Int
+
+}
+
+# -----------------------------------------------------------------------------
+# TrackSchedule.graphqls
+# -----------------------------------------------------------------------------
+type TrackSchedule {
+    id: ID!
+}
+
+# -----------------------------------------------------------------------------
+# TrainingCourse.graphqls
+# -----------------------------------------------------------------------------
+type TrainingCourse {
+    id: Int
+    name: String
+    teachingLanguageId: Int
+    isPhasedTraining: Boolean
+    phaseSequenceNumber: Int
+    duration: Int
+    subjectLanguageId: Int
+    effectiveDate: String
+    decommissionDate: String
+    isActive: Boolean
+}
+
+# -----------------------------------------------------------------------------
+# TrainingFacility.graphqls
+# -----------------------------------------------------------------------------
+type TrainingFacility {
+    id: ID!
+}
+
+# -----------------------------------------------------------------------------
+# WS (Web Service) Types
+# -----------------------------------------------------------------------------
+
+# WSDistrict.graphqls
+type WSDistrict {
+    id: ID!
+    name: String
+    wsZone: WSZone
+    wsProselytingAreas: [WSProselytingArea]
+}
+
+# WSEcclesiasticalUnit.graphqls
+type WSEcclesiasticalUnit {
+    id: ID
+    missionaryDeptUnitId: Long
+    name: String
+    type: String
+    cdolUnitTypeId: Int
+    cdolParentUnit: Int
+    cdolParentUnitTypeId: Int
+    wsParentUnit: WSEcclesiasticalUnit
+    wsChildUnits: [WSEcclesiasticalUnit]
+    missionOrgNumber: Int
+    wsProselytingAreas: [WSProselytingArea]
+    wsMissionaries: [WSMissionary]
+    # Teaching Area Name
+    proselytingAreaName: String
+    proselytingAreaId: Long
+    districtId: Long
+    # District
+    district: WSDistrict
+    # Missionaries Assigned To Teaching Area
+    wsMissionaryAssignments : [WSMissionaryAssignment]
+}
+
+# WSMission.graphqls
+type WSMission {
+    id: ID!
+    name: String
+    address: String
+    mailingAddress: String
+    phoneInternationalCode: String
+    phone: String
+    phoneExtension: String
+    faxInternationalCode: String
+    fax: String
+    faxExtension: String
+    email: String
+    leaderCmisId: Long
+    leaderName: String
+    leaderHomeAddress: String
+    leaderPhoneInternationalCode: String
+    leaderPhone: String
+    leaderPhoneExtension: String
+    leaderCellInternationalCode: String
+    leaderCell: String
+    leaderCellExtension: String
+    leaderEmail: String
+    mobileDevice: Boolean
+    missionaryAllocation: Int
+    assignmentLocationStatusId: Int
+    assignmentLocationStatusDescription: String
+    wsZones: [WSZone]
+}
+
+# WSMissionary.graphqls
+type WSMissionary {
+    """ legacy_miss_id """
+    id: ID!
+    missionaryId: Long
+    cmisId: Long
+    applicationId: Int
+    mrn: String
+    preferredFirstName: String
+    preferredMiddleName: String
+    preferredLastName: String
+    preferredSuffix: String
+    officialFirstName: String
+    officialMiddleName: String
+    officialLastName: String
+    officialSuffix: String
+    birthDate: String
+    homeUnitNumber: Int
+    missionStartDate: String
+    releaseDate: String
+    emailAddress: String
+    proselytingEmailAddress: String
+    missionaryStatus: Int
+    typeCode: String
+    drivingStatus: Boolean
+    designatedDriver: Boolean
+    issuingStateOrCountry: String
+    issuingState: String
+    issuingCountry: String
+    licenseExpirationDate: String
+    ecclesiasticalUnitNumber: Int
+    myPlanCompletionTimestamp: String
+    myPlanSharing: Boolean
+    myPlanURL: String
+    callLetterLanguageISO3: String
+    legacyMissId: Long
+    seniorDelayStart: Boolean
+    wsMissionaryAssignment: WSMissionaryAssignment
+    missionaryIdentity: [MissionaryIdentity]
+    wsMissionaryHistories: [WSMissionaryHistory]
+}
+
+# WSMissionaryAssignment.graphqls
+type WSMissionaryAssignment {
+    id: ID!
+    cmisId: Long
+    wsMission: WSMission
+    assignmentTypeCode: String
+    assignmentStatusCode: String
+    assignmentComponentId: Int
+    assignmentStartDate: String
+    assignmentEndDate: String
+    wsProselytingArea: WSProselytingArea
+    roleId: Int
+    assignmentLocationUnitNumber: Int
+    positionId: Int
+    positionAbbreviation: String
+    positionDescription: String
+    assignmentComponentDescription: String
+    assignmentLocationTypeId: Int
+    assignmentLocationTypeDescription: String
+    legacyMissId: Int
+    wsMissionary: WSMissionary
+}
+
+# WSMissionaryHistory.graphqls
+type WSMissionaryHistory {
+    """ hist_id """
+    id: ID!
+    legacyMissId: Long
+    cmisId: Long
+    missionary: Missionary
+    wsMissionary: WSMissionary
+    missionUnit: MMSOrganization
+    assignmentLocation: AssignmentLocation
+    startDate: Date
+    position: String
+    companionship: String
+    areaName: String
+}
+
+# WSProselytingArea.graphqls
+type WSProselytingArea {
+    id: ID
+    name: String
+    wsDistrict: WSDistrict
+    address: String
+    city: String
+    stateProvince: String
+    postalCode: String
+    countryLocationCode: Int
+    countryLocationId: Int
+    vehicleId: String
+    vehicleUnitOfMeasureCode: String
+    vehicleUnitOfMeasureLimit: Int
+    vehicleSTWD: Boolean
+    emailAddress: String
+    wsEcclesiasticalUnits: [WSEcclesiasticalUnit]
+    wsMissionaryAssignments: [WSMissionaryAssignment]
+    wsProselytingAreaPhones: [WSProselytingAreaPhone]
+    ecclesiasticalUnitsList: String
+    updatedDate: String
+    ecclesiasticalAreaNumber: Int
+    ecclesiasticalAreaName: String
+}
+
+# WSProselytingAreaPhone.graphqls
+type WSProselytingAreaPhone {
+    """ phone_id """
+    id: ID!
+    wsProselytingArea: WSProselytingArea
+    phoneNumber: String
+    primary: Boolean
+}
+
+# WSZone.graphqls
+type WSZone {
+    id: ID!
+    name: String
+    wsMission: WSMission
+    wsDistricts: [WSDistrict]
+}
+
+# =============================================================================
+# END OF COMBINED SCHEMA
+# =============================================================================
