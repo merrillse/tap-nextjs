@@ -198,7 +198,7 @@ export default function MOGSMissionaryPage() {
   };
 
   const handleLoadFromHistory = (entry: SearchHistory) => {
-    setMissionaryId(entry.missionaryId || '');
+    setMissionaryId(entry.missionaryId);
   };
 
   // Load search history from localStorage
@@ -209,8 +209,7 @@ export default function MOGSMissionaryPage() {
         const parsed = JSON.parse(saved);
         setSearchHistory(parsed.map((item: any) => ({
           ...item,
-          timestamp: new Date(item.timestamp),
-          missionaryId: item.missionaryId || '' // Ensure missionaryId is never undefined
+          timestamp: new Date(item.timestamp)
         })));
       } catch (error) {
         console.error('Error loading search history:', error);
@@ -249,7 +248,7 @@ export default function MOGSMissionaryPage() {
   };
 
   const searchMissionary = async () => {
-    if (!missionaryId?.trim()) {
+    if (!missionaryId.trim()) {
       setError('Please enter a Missionary ID');
       return;
     }
@@ -391,7 +390,7 @@ export default function MOGSMissionaryPage() {
       }
     `;
 
-    const variables = { id: missionaryId?.trim() || '' };
+    const variables = { id: missionaryId.trim() };
 
     try {
       const response = await apiClient.executeGraphQLQuery(query, variables);
@@ -404,15 +403,15 @@ export default function MOGSMissionaryPage() {
         const missionaryData = (response.data as any).missionary;
         setMissionary(missionaryData);
         const fullName = `${missionaryData.firstName || ''} ${missionaryData.lastName || ''}`.trim();
-        saveSearchHistory(missionaryId?.trim() || '', true, fullName || undefined);
+        saveSearchHistory(missionaryId.trim(), true, fullName || undefined);
       } else {
         setError('No missionary found with the provided ID');
-        saveSearchHistory(missionaryId?.trim() || '', false);
+        saveSearchHistory(missionaryId.trim(), false);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
-      saveSearchHistory(missionaryId?.trim() || '', false);
+      saveSearchHistory(missionaryId.trim(), false);
     } finally {
       setLoading(false);
     }
@@ -455,15 +454,15 @@ export default function MOGSMissionaryPage() {
               id="missionary-id"
               type="text"
               placeholder="Enter missionary ID"
-              value={missionaryId || ''}
-              onChange={(e) => setMissionaryId(e.target.value || '')}
+              value={missionaryId}
+              onChange={(e) => setMissionaryId(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && searchMissionary()}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <button
             onClick={searchMissionary}
-            disabled={loading || !missionaryId?.trim()}
+            disabled={loading || !missionaryId.trim()}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Searching...' : 'Search'}
