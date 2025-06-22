@@ -1257,6 +1257,25 @@ assignments{mission{name}}}}`}
                       </div>
                     </div>
 
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-purple-900 mb-3">🏢 WS Mission Query</h3>
+                      <p className="text-purple-700 mb-3">Access comprehensive Web Service mission information by mission ID.</p>
+                      <div className="text-sm text-purple-600">
+                        <strong>Query:</strong> <code>wsMission(id: ID!): WSMission</code><br/>
+                        <strong>Data Includes:</strong>
+                        <ul className="mt-2 space-y-1">
+                          <li>• Basic mission information and identification</li>
+                          <li>• Mission address and mailing address</li>
+                          <li>• Phone and fax contact information</li>
+                          <li>• Mission leader details (CMIS ID, name, contact info)</li>
+                          <li>• Mobile device capabilities and restrictions</li>
+                          <li>• Missionary allocation and assignment status</li>
+                          <li>• Complete zone hierarchy with districts</li>
+                          <li>• Proselyting areas within each district</li>
+                        </ul>
+                      </div>
+                    </div>
+
                     <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-cyan-900 mb-3">🎨 Missionary Hobbies & Skills Query</h3>
                       <p className="text-cyan-700 mb-3">Access missionary hobbies and skills overview by legacy_miss_id.</p>

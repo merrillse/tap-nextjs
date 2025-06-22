@@ -44,8 +44,8 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
   // Navigation structure with logical groupings
   const navGroups: NavGroup[] = [
     {
-      name: 'Search & Data',
-      icon: '🔍',
+      name: 'MGQL',
+      icon: '🔎',
       items: [
         { name: 'Active Assignment', href: '/active-assignment', icon: '📋', description: 'Search missionary active assignment by missionary number' },
         { name: 'Assignment Location', href: '/assignment-location', icon: '📍', description: 'Search assignment location details by ID' },
@@ -86,6 +86,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         { name: 'Missionary Component', href: '/mogs-missionary-component', icon: '⚙️', description: 'Search MOGS missionary component details by comp_id' },
         { name: 'Missionary Hobbies & Skills', href: '/mogs-missionary-hobbies-skills', icon: '🎨', description: 'Search MOGS missionary hobbies and skills by legacy_miss_id' },
         { name: 'MyPlan Missionary', href: '/mogs-myplan-missionary', icon: '📖', description: 'Search MOGS MyPlan missionary details by legacy_miss_id' },
+        { name: 'WS Mission', href: '/mogs-ws-mission', icon: '🏢', description: 'Search Web Service mission information by ID' },
         { name: 'WS Missionary', href: '/mogs-ws-missionary', icon: '🌐', description: 'Search Web Service missionary information by ID (legacy_miss_id)' },
       ]
     },
