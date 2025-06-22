@@ -580,6 +580,17 @@ export default function MOGSComponentPage() {
             <option value="mogs-gql-local">MOGS Local</option>
             <option value="mogs-gql-prod">MOGS Production</option>
           </select>
+          {apiClient ? (
+            <span className="text-sm text-green-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Connected
+            </span>
+          ) : (
+            <span className="text-sm text-yellow-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+              Initializing...
+            </span>
+          )}
         </div>
       </div>
 

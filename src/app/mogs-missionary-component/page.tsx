@@ -1,41 +1,18 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { 
-  ExpandMore, 
-  ExpandLess, 
-  Engineering, 
-  CheckCircle, 
-  Warning, 
-  FileDownload, 
-  PersonPin,
-  BusinessCenter,
-  Language,
-  LocationOn,
-  Group
-} from '@mui/icons-material';
+import { useState, useEffect } from 'react';
 import { ApiClient } from '@/lib/api-client';
-import { getEnvironmentConfigSafe, getDefaultEnvironment, getEnvironmentNames } from '@/lib/environments';
+import { ENVIRONMENTS } from '@/lib/environments';
 
-// Types based on the GraphQL schema
 interface MissionaryComponent {
-  /** id is component id which is comp_id */
-  id?: string;
-  /** Type of missionaries that can be assigned to this component */
+  id: string;
   missionaryTypeId?: number;
-  /** Description of type of missionaries that can be assigned to this component */
   missionaryType?: string;
-  /** CDOL org number of the assignment location this component is part of */
   unitNumber?: number;
-  /** CDOL org number of the parent assignment location number this component is part of */
   parentUnitNumber?: number;
-  /** Status of the component */
   status?: string;
-  /** Name of component */
   name?: string;
-  /** CDSCODE Language ID of the primary language spoken in this mission */
   missionMcsLanguageId?: number;
-  /** This is the ASGLOC id (deprecated: use CDOL unitNumber) */
   assignmentLocationId?: number;
   missionLanguageId?: number;
   withinMissionUnitNumber?: number;
@@ -51,498 +28,430 @@ interface MissionaryComponent {
   responsibleOrganizationName?: string;
 }
 
-interface SearchHistoryItem {
+interface SearchHistory {
   id: string;
-  timestamp: string;
-  found: boolean;
+  componentId: string;
+  timestamp: Date;
+  resultFound: boolean;
+  componentName?: string;
 }
 
-const STORAGE_KEY = 'mogs-missionary-component-history';
-
-const MISSIONARY_COMPONENT_QUERY = `
-  query GetMissionaryComponent($id: ID) {
-    missionaryComponent(id: $id) {
-      id
-      missionaryTypeId
-      missionaryType
-      unitNumber
-      parentUnitNumber
-      status
-      name
-      missionMcsLanguageId
-      assignmentLocationId
-      missionLanguageId
-      withinMissionUnitNumber
-      assignmentMeetingName
-      assignmentMeetingShortName
-      componentMcsLanguageId
-      componentLanguageId
-      positionId
-      positionAbbreviation
-      positionName
-      positionNameLangId
-      responsibleOrganizationNumber
-      responsibleOrganizationName
-    }
-  }
-`;
-
-export default function MissionaryComponentPage() {
-  const [selectedEnvironment, setSelectedEnvironment] = useState(getDefaultEnvironment('mogs'));
-  const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+export default function MOGSMissionaryComponentPage() {
   const [componentId, setComponentId] = useState('');
+  const [missionaryComponent, setMissionaryComponent] = useState<MissionaryComponent | null>(null);
   const [loading, setLoading] = useState(false);
-  const [component, setComponent] = useState<MissionaryComponent | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic', 'assignment', 'language', 'position']));
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mogs-gql-dev');
+  const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  const resultRef = useRef<HTMLDivElement>(null);
-
-  // Initialize API client
+  // Load search history from localStorage
   useEffect(() => {
-    try {
-      const { config, key } = getEnvironmentConfigSafe(selectedEnvironment, 'mogs');
-      console.log(`Initializing API client for environment: ${key}`);
-      setApiClient(new ApiClient(config, key));
-      setError(null);
-      
-      // Update selected environment if it was corrected
-      if (key !== selectedEnvironment) {
-        setSelectedEnvironment(key);
-      }
-    } catch (error) {
-      console.error('Failed to initialize API client:', error);
-      setError(error instanceof Error ? error.message : 'Failed to initialize API client');
-      setApiClient(null);
-    }
-  }, [selectedEnvironment]);
-
-  // Load search history on component mount
-  useEffect(() => {
-    const savedHistory = localStorage.getItem(STORAGE_KEY);
-    if (savedHistory) {
+    const saved = localStorage.getItem('mogs-missionary-component-search-history');
+    if (saved) {
       try {
-        const history = JSON.parse(savedHistory);
-        setSearchHistory(history);
+        const parsed = JSON.parse(saved);
+        setSearchHistory(parsed.map((item: any) => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        })));
       } catch (error) {
-        console.error('Failed to parse search history:', error);
+        console.error('Error loading search history:', error);
       }
     }
   }, []);
 
-  // Save search to history
-  const saveSearchHistory = (id: string, found: boolean) => {
-    const newItem: SearchHistoryItem = {
-      id,
-      timestamp: new Date().toISOString(),
-      found
+  // Initialize API client when environment changes
+  useEffect(() => {
+    try {
+      const config = ENVIRONMENTS[selectedEnvironment];
+      if (!config) {
+        setError(`Environment "${selectedEnvironment}" not found`);
+        return;
+      }
+      setApiClient(new ApiClient(config, selectedEnvironment));
+      setError(null);
+    } catch (err) {
+      console.error('Error initializing API client:', err);
+      setError('Failed to initialize API client');
+    }
+  }, [selectedEnvironment]);
+
+  const saveSearchHistory = (compId: string, found: boolean, name?: string) => {
+    const newEntry: SearchHistory = {
+      id: Date.now().toString(),
+      componentId: compId,
+      timestamp: new Date(),
+      resultFound: found,
+      componentName: name
     };
     
-    const updatedHistory = [newItem, ...searchHistory.filter(item => item.id !== id)].slice(0, 10);
+    const updatedHistory = [newEntry, ...searchHistory.slice(0, 9)]; // Keep last 10 searches
     setSearchHistory(updatedHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedHistory));
+    localStorage.setItem('mogs-missionary-component-search-history', JSON.stringify(updatedHistory));
   };
 
-  // Clear search history
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
-  };
-
-  const toggleSection = (section: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(section)) {
-      newExpanded.delete(section);
-    } else {
-      newExpanded.add(section);
+  const searchMissionaryComponent = async () => {
+    if (!apiClient) {
+      setError('API client not initialized. Please refresh the page.');
+      return;
     }
-    setExpandedSections(newExpanded);
-  };
 
-  const handleSearch = async () => {
     if (!componentId.trim()) {
       setError('Please enter a Component ID');
       return;
     }
 
-    if (!apiClient) {
-      setError('API client not initialized. Please wait a moment or try refreshing the page.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
-    setComponent(null);
+    setMissionaryComponent(null);
+
+    const query = `
+      query GetMissionaryComponent($id: ID!) {
+        missionaryComponent(id: $id) {
+          id
+          missionaryTypeId
+          missionaryType
+          unitNumber
+          parentUnitNumber
+          status
+          name
+          missionMcsLanguageId
+          assignmentLocationId
+          missionLanguageId
+          withinMissionUnitNumber
+          assignmentMeetingName
+          assignmentMeetingShortName
+          componentMcsLanguageId
+          componentLanguageId
+          positionId
+          positionAbbreviation
+          positionName
+          positionNameLangId
+          responsibleOrganizationNumber
+          responsibleOrganizationName
+        }
+      }
+    `;
 
     try {
-      const variables = { id: componentId.trim() };
-      const response = await apiClient.executeGraphQLQuery(MISSIONARY_COMPONENT_QUERY, variables);
-
-      if (response.errors && response.errors.length > 0) {
-        throw new Error(response.errors[0].message);
-      }
-
-      const result = response.data as { missionaryComponent: MissionaryComponent };
+      const variables = { id: componentId };
       
-      if (result.missionaryComponent) {
-        setComponent(result.missionaryComponent);
-        saveSearchHistory(componentId.trim(), true);
-        
-        // Scroll to results
-        setTimeout(() => {
-          resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      } else {
-        setError('Missionary component not found');
-        saveSearchHistory(componentId.trim(), false);
+      const result = await apiClient.executeGraphQLQuery(query, variables);
+      
+      const data = result.data as { missionaryComponent: MissionaryComponent | null };
+      setMissionaryComponent(data.missionaryComponent);
+      
+      const name = data.missionaryComponent?.name || data.missionaryComponent?.assignmentMeetingName || 'Missionary Component';
+      saveSearchHistory(componentId, !!data.missionaryComponent, name);
+      
+      if (!data.missionaryComponent) {
+        setError(`No missionary component found with ID: ${componentId}`);
       }
+      
     } catch (err) {
-      console.error('Search error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred during search');
-      saveSearchHistory(componentId.trim(), false);
+      console.error('Error fetching missionary component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch missionary component');
+      saveSearchHistory(componentId, false);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const handleLoadFromHistory = (historyEntry: SearchHistory) => {
+    setComponentId(historyEntry.componentId);
+  };
+
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('mogs-missionary-component-search-history');
+  };
+
+  const clearSearch = () => {
+    setComponentId('');
+    setMissionaryComponent(null);
+    setError(null);
   };
 
   const exportToJson = () => {
-    if (!component) return;
-
-    const dataStr = JSON.stringify(component, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `missionary-component-${component.id}-${new Date().toISOString().split('T')[0]}.json`;
+    if (!missionaryComponent) return;
     
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
-  const useHistoryItem = (id: string) => {
-    setComponentId(id);
+    const dataStr = JSON.stringify(missionaryComponent, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `missionary-component-${missionaryComponent.id}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <Engineering className="text-3xl text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">MOGS Missionary Component</h1>
-              <p className="text-lg text-gray-600 mt-1">
-                Query missionary component details by Component ID (comp_id)
-              </p>
-            </div>
-          </div>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <BusinessCenter className="text-blue-600 mt-1" />
-              <div className="text-blue-800">
-                <p className="font-medium mb-2">MOGS Missionary Component Query</p>
-                <p className="text-sm mb-2">
-                  This page queries the <code className="bg-blue-100 px-2 py-1 rounded">missionaryComponent(id: ID)</code> endpoint from MOGS.
-                </p>
-                <p className="text-sm">
-                  <strong>Input:</strong> Component ID (comp_id)<br/>
-                  <strong>Returns:</strong> Individual components of a missionary assignment with organizational details
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">🎯</span>
+        <h1 className="text-2xl font-bold">MOGS Missionary Component</h1>
+        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Missionary Oracle Graph Service</span>
+      </div>
 
-        {/* Search Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-              {/* Environment Selection */}
-              <div className="md:col-span-3">
-                <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
-                  Environment
-                </label>
-                <select
-                  id="environment"
-                  value={selectedEnvironment}
-                  onChange={(e) => setSelectedEnvironment(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {getEnvironmentNames().map(env => (
-                    <option key={env.key} value={env.key}>{env.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search Input */}
-              <div className="md:col-span-7">
-                <label htmlFor="componentId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Component ID (comp_id)
-                </label>
-                <input
-                  type="text"
-                  id="componentId"
-                  value={componentId}
-                  onChange={(e) => setComponentId(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Enter Component ID..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Search Button */}
-              <div className="md:col-span-2">
-                <button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search History */}
-        {searchHistory.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Searches</h3>
-                <button
-                  onClick={clearSearchHistory}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                >
-                  Clear History
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {searchHistory.slice(0, 10).map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => useHistoryItem(item.id)}
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm transition-colors duration-200 ${
-                      item.found 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}
-                  >
-                    {item.found ? <CheckCircle className="w-4 h-4 mr-1" /> : <Warning className="w-4 h-4 mr-1" />}
-                    {item.id}
-                    <span className="ml-2 text-xs opacity-70">
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <div className="flex items-start space-x-3">
-              <Warning className="text-red-600 mt-1" />
-              <div>
-                <h3 className="text-lg font-semibold text-red-800">Error</h3>
-                <p className="text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Results */}
-        {component && (
-          <div ref={resultRef} className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Engineering className="text-2xl text-green-600" />
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Missionary Component</h2>
-                    <p className="text-gray-600">Component ID: {component.id}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={exportToJson}
-                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200"
-                >
-                  <FileDownload className="w-4 h-4 mr-2" />
-                  Export JSON
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Basic Information */}
-              <div className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleSection('basic')}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <PersonPin className="text-gray-600" />
-                    <span className="text-lg font-semibold text-gray-900">Basic Information</span>
-                  </div>
-                  {expandedSections.has('basic') ? <ExpandLess /> : <ExpandMore />}
-                </button>
-                
-                {expandedSections.has('basic') && (
-                  <div className="p-6 border-t border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Component Details</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">ID:</span> {component.id || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Name:</span> {component.name || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Status:</span> {component.status || 'Not specified'}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Missionary Type</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Type ID:</span> {component.missionaryTypeId || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Type Description:</span> {component.missionaryType || 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Assignment Location */}
-              <div className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleSection('assignment')}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <LocationOn className="text-gray-600" />
-                    <span className="text-lg font-semibold text-gray-900">Assignment Location</span>
-                  </div>
-                  {expandedSections.has('assignment') ? <ExpandLess /> : <ExpandMore />}
-                </button>
-                
-                {expandedSections.has('assignment') && (
-                  <div className="p-6 border-t border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Unit Numbers</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Unit Number:</span> {component.unitNumber || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Parent Unit Number:</span> {component.parentUnitNumber || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Within Mission Unit:</span> {component.withinMissionUnitNumber || 'Not specified'}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Assignment Meeting</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Meeting Name:</span> {component.assignmentMeetingName || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Short Name:</span> {component.assignmentMeetingShortName || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Assignment Location ID:</span> {component.assignmentLocationId || 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Language Information */}
-              <div className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleSection('language')}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Language className="text-gray-600" />
-                    <span className="text-lg font-semibold text-gray-900">Language Information</span>
-                  </div>
-                  {expandedSections.has('language') ? <ExpandLess /> : <ExpandMore />}
-                </button>
-                
-                {expandedSections.has('language') && (
-                  <div className="p-6 border-t border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Mission Languages</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Mission MCS Language ID:</span> {component.missionMcsLanguageId || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Mission Language ID:</span> {component.missionLanguageId || 'Not specified'}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Component Languages</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Component MCS Language ID:</span> {component.componentMcsLanguageId || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Component Language ID:</span> {component.componentLanguageId || 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Position & Organization */}
-              <div className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleSection('position')}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Group className="text-gray-600" />
-                    <span className="text-lg font-semibold text-gray-900">Position & Organization</span>
-                  </div>
-                  {expandedSections.has('position') ? <ExpandLess /> : <ExpandMore />}
-                </button>
-                
-                {expandedSections.has('position') && (
-                  <div className="p-6 border-t border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Position Details</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Position ID:</span> {component.positionId || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Position Name:</span> {component.positionName || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Position Abbreviation:</span> {component.positionAbbreviation || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Position Name Language ID:</span> {component.positionNameLangId || 'Not specified'}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Responsible Organization</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Organization Number:</span> {component.responsibleOrganizationNumber || 'Not specified'}</p>
-                          <p className="text-sm"><span className="font-medium">Organization Name:</span> {component.responsibleOrganizationName || 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Usage Information */}
-        <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-amber-800 mb-3">Usage Information</h3>
-          <div className="text-amber-700 space-y-2">
-            <p><strong>Query:</strong> <code>missionaryComponent(id: ID): MissionaryComponent</code></p>
-            <p><strong>Input:</strong> Component ID (comp_id)</p>
-            <p><strong>Returns:</strong> Individual components of a missionary assignment</p>
-            <p><strong>Use Case:</strong> Access detailed information about missionary assignment components including organizational structure, language requirements, and position details</p>
-            <p><strong>Note:</strong> The assignmentLocationId field is deprecated; use unitNumber instead</p>
-          </div>
+      {/* Environment Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+          <select
+            id="environment"
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="mogs-gql-dev">MOGS Development</option>
+            <option value="mogs-gql-local">MOGS Local</option>
+            <option value="mogs-gql-prod">MOGS Production</option>
+          </select>
+          {apiClient ? (
+            <span className="text-sm text-green-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Connected
+            </span>
+          ) : (
+            <span className="text-sm text-yellow-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+              Initializing...
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Search Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search Missionary Component by ID</h2>
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label htmlFor="component-id" className="block text-sm font-medium text-gray-700 mb-1">Component ID (Required)</label>
+            <input
+              id="component-id"
+              type="text"
+              placeholder="Enter missionary component ID"
+              value={componentId}
+              onChange={(e) => setComponentId(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && searchMissionaryComponent()}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            onClick={searchMissionaryComponent}
+            disabled={loading || !componentId.trim() || !apiClient}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+          <button
+            onClick={clearSearch}
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">{error}</div>
+        </div>
+      )}
+
+      {/* Missionary Component Details */}
+      {missionaryComponent && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Missionary Component Details</h2>
+            <button
+              onClick={exportToJson}
+              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+            >
+              📥 Export JSON
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Component ID:</span>
+                      <span className="font-mono">{missionaryComponent.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Name:</span>
+                      <span>{missionaryComponent.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        missionaryComponent.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
+                        missionaryComponent.status === 'INACTIVE' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {missionaryComponent.status || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Missionary Type:</span>
+                      <span>{missionaryComponent.missionaryType || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Missionary Type ID:</span>
+                      <span>{missionaryComponent.missionaryTypeId || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Assignment Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Meeting Name:</span>
+                      <span>{missionaryComponent.assignmentMeetingName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Meeting Short Name:</span>
+                      <span>{missionaryComponent.assignmentMeetingShortName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assignment Location ID:</span>
+                      <span>{missionaryComponent.assignmentLocationId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Unit Number:</span>
+                      <span>{missionaryComponent.unitNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Parent Unit Number:</span>
+                      <span>{missionaryComponent.parentUnitNumber || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Position Information */}
+            {(missionaryComponent.positionName || missionaryComponent.positionAbbreviation || missionaryComponent.positionId) && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Position Information</h3>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Position ID: {missionaryComponent.positionId || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Position Name: {missionaryComponent.positionName || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Position Abbreviation: {missionaryComponent.positionAbbreviation || 'N/A'}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Position Name Lang ID: {missionaryComponent.positionNameLangId || 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Language Information */}
+            {(missionaryComponent.missionMcsLanguageId || missionaryComponent.missionLanguageId || missionaryComponent.componentMcsLanguageId || missionaryComponent.componentLanguageId) && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Language Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Mission Languages</h4>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Mission MCS Language ID: {missionaryComponent.missionMcsLanguageId || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Mission Language ID: {missionaryComponent.missionLanguageId || 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Component Languages</h4>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Component MCS Language ID: {missionaryComponent.componentMcsLanguageId || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Component Language ID: {missionaryComponent.componentLanguageId || 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Organization Information */}
+            {(missionaryComponent.responsibleOrganizationNumber || missionaryComponent.responsibleOrganizationName || missionaryComponent.withinMissionUnitNumber) && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Organization Information</h3>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Responsible Org Number:</span>
+                        <span>{missionaryComponent.responsibleOrganizationNumber || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Responsible Org Name:</span>
+                        <span>{missionaryComponent.responsibleOrganizationName || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Within Mission Unit Number:</span>
+                        <span>{missionaryComponent.withinMissionUnitNumber || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📜 Search History</h2>
+            <button
+              onClick={clearHistory}
+              className="px-3 py-1 text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+            >
+              🗑️ Clear History
+            </button>
+          </div>
+          <div className="space-y-2">
+            {searchHistory.map((entry) => (
+              <div key={entry.id} className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => handleLoadFromHistory(entry)}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">Component ID: {entry.componentId}</div>
+                    {entry.componentName && (
+                      <div className="text-sm text-gray-600">{entry.componentName}</div>
+                    )}
+                    <div className="text-sm text-gray-500">
+                      {entry.timestamp.toLocaleDateString()} at {entry.timestamp.toLocaleTimeString()}
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded ${entry.resultFound ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    {entry.resultFound ? "Found" : "Not Found"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && !missionaryComponent && !error && (
+        <div className="text-center py-8 text-gray-500">
+          Enter a Component ID to search for missionary component details.
+        </div>
+      )}
     </div>
   );
 }
