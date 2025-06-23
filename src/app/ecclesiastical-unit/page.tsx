@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, TextField, Button, Chip, FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress, Paper, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import { Search, Business, LocationOn, History, Clear, ExpandMore, AccountTree, Groups, Map } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
 import { ENVIRONMENTS } from '@/lib/environments';
 
@@ -185,11 +183,6 @@ export default function EcclesiasticalUnitPage() {
     setHasSearched(false);
   };
 
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('ecclesiastical-unit-search-history');
-  };
-
   const useHistoryValue = (fieldName: string, value: string) => {
     if (fieldName === 'unitId') {
       setUnitId(value);
@@ -207,38 +200,38 @@ export default function EcclesiasticalUnitPage() {
     if (!units || units.length === 0) return null;
 
     return (
-      <Box>
-        <Typography variant="h6" gutterBottom color="primary" sx={{ mt: 3 }}>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">
           Child Units ({units.length})
-        </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {units.map((unit, index) => (
-            <Paper key={unit.id || index} sx={{ p: 2, backgroundColor: 'blue.50' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AccountTree sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
-                <Typography variant="subtitle1" fontWeight="bold">
+            <div key={unit.id || index} className="p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-center mb-2">
+                <span className="text-blue-600 mr-2">🏢</span>
+                <div className="font-semibold text-gray-900">
                   {unit.name || 'Unknown Unit'}
-                </Typography>
-              </Box>
+                </div>
+              </div>
               {unit.type && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Type:</strong> {unit.type}
-                </Typography>
+                <div className="text-sm text-gray-600 mb-1">
+                  <span className="font-medium">Type:</span> {unit.type}
+                </div>
               )}
               {unit.id && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>ID:</strong> {unit.id}
-                </Typography>
+                <div className="text-sm text-gray-600 mb-1">
+                  <span className="font-medium">ID:</span> {unit.id}
+                </div>
               )}
               {unit.missionaryDeptUnitId && (
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Dept Unit ID:</strong> {unit.missionaryDeptUnitId}
-                </Typography>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Dept Unit ID:</span> {unit.missionaryDeptUnitId}
+                </div>
               )}
-            </Paper>
+            </div>
           ))}
-        </Box>
-      </Box>
+        </div>
+      </div>
     );
   };
 
@@ -246,346 +239,303 @@ export default function EcclesiasticalUnitPage() {
     if (!missionaries || missionaries.length === 0) return null;
 
     return (
-      <Box>
-        <Typography variant="h6" gutterBottom color="primary" sx={{ mt: 3 }}>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">
           Missionaries ({missionaries.length})
-        </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {missionaries.map((missionary, index) => (
-            <Paper key={missionary.id || index} sx={{ p: 2, backgroundColor: 'green.50' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Groups sx={{ mr: 1, color: 'success.main', fontSize: 20 }} />
-                <Typography variant="subtitle1" fontWeight="bold">
+            <div key={missionary.id || index} className="p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center mb-2">
+                <span className="text-green-600 mr-2">👥</span>
+                <div className="font-semibold text-gray-900">
                   {`${missionary.recommendFirstName || ''} ${missionary.recommendLastName || ''}`.trim() || 'Unknown'}
-                </Typography>
-              </Box>
+                </div>
+              </div>
               {missionary.missionaryNumber && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Missionary #:</strong> {missionary.missionaryNumber}
-                </Typography>
+                <div className="text-sm text-gray-600 mb-1">
+                  <span className="font-medium">Missionary #:</span> {missionary.missionaryNumber}
+                </div>
               )}
               {missionary.id && (
-                <Typography variant="body2" color="text.secondary">
-                  <strong>ID:</strong> {missionary.id}
-                </Typography>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">ID:</span> {missionary.id}
+                </div>
               )}
-            </Paper>
+            </div>
           ))}
-        </Box>
-      </Box>
+        </div>
+      </div>
     );
   };
 
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('ecclesiastical-unit-search-history');
+  };
+
+  const exportToJson = () => {
+    if (!ecclesiasticalUnit) return;
+    
+    const dataStr = JSON.stringify(ecclesiasticalUnit, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `ecclesiastical-unit-${ecclesiasticalUnit.id}-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 3 }}>
-        {/* Header */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Ecclesiastical Unit Search
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Search for ecclesiastical unit details including hierarchy and assignments
-          </Typography>
-        </Box>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">🏛️</span>
+        <h1 className="text-2xl font-bold">Ecclesiastical Unit Search</h1>
+        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Missionary Information System</span>
+      </div>
 
-        {/* Environment Selection */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <FormControl fullWidth>
-              <InputLabel>Environment</InputLabel>
-              <Select
-                value={selectedEnvironment}
-                label="Environment"
-                onChange={(e) => setSelectedEnvironment(e.target.value)}
+      {/* Environment Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+          <select
+            id="environment"
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {Object.entries(ENVIRONMENTS).map(([key, env]) => (
+              <option key={key} value={key}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Search Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search by Unit ID</h2>
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label htmlFor="unit-id" className="block text-sm font-medium text-gray-700 mb-1">Ecclesiastical Unit ID (Required)</label>
+            <input
+              id="unit-id"
+              type="text"
+              placeholder="Enter unit ID"
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">Enter the unique identifier for the ecclesiastical unit</p>
+          </div>
+          <button
+            onClick={handleSearch}
+            disabled={loading || !unitId.trim()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+          <button
+            onClick={clearSearch}
+            disabled={loading}
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📜 Recent Searches</h2>
+            <button
+              onClick={clearSearchHistory}
+              className="px-3 py-1 text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+            >
+              🗑️ Clear History
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {searchHistory.map((entry, index) => (
+              <button
+                key={`${entry.fieldName}-${entry.value}-${index}`}
+                onClick={() => useHistoryValue(entry.fieldName, entry.value)}
+                className="px-3 py-1 text-sm border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 cursor-pointer"
               >
-                {Object.entries(ENVIRONMENTS).map(([key, env]) => (
-                  <MenuItem key={key} value={key}>
-                    {env.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </CardContent>
-        </Card>
+                {getFieldLabel(entry.fieldName)}: {entry.value}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Click any value to use it in your search</p>
+        </div>
+      )}
 
-        {/* Search Input */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Search by Unit ID
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
-              <TextField
-                fullWidth
-                label="Ecclesiastical Unit ID"
-                value={unitId}
-                onChange={(e) => setUnitId(e.target.value)}
-                placeholder="Enter unit ID"
-                helperText="Enter the unique identifier for the ecclesiastical unit"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-              />
-              
-              <Button
-                variant="contained"
-                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
-                onClick={handleSearch}
-                disabled={loading || !unitId.trim()}
-                size="large"
-                sx={{ minWidth: '140px' }}
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </Button>
-              
-              <Button
-                variant="outlined"
-                onClick={clearSearch}
-                disabled={loading}
-                size="large"
-              >
-                Clear
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">{error}</div>
+        </div>
+      )}
 
-        {/* Search History */}
-        {searchHistory.length > 0 && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <History sx={{ mr: 1 }} />
-                  <Typography variant="h6">
-                    Recent Searches
-                  </Typography>
-                </Box>
-                <Button
-                  size="small"
-                  startIcon={<Clear />}
-                  onClick={clearSearchHistory}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear History
-                </Button>
-              </Box>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {searchHistory.map((entry, index) => (
-                  <Chip
-                    key={`${entry.fieldName}-${entry.value}-${index}`}
-                    label={`${getFieldLabel(entry.fieldName)}: ${entry.value}`}
-                    variant="outlined"
-                    size="small"
-                    onClick={() => useHistoryValue(entry.fieldName, entry.value)}
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: '#1976d2',
-                        color: '#ffffff',
-                        borderColor: '#1976d2'
-                      }
-                    }}
-                  />
-                ))}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Click any value to use it in your search
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Results */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Ecclesiastical Unit Details
-            </Typography>
-            
-            {!hasSearched ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Business sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Ready to Search
-                </Typography>
-                <Typography color="text.secondary">
-                  Enter a unit ID above and click "Search" to find ecclesiastical unit information
-                </Typography>
-              </Box>
-            ) : !ecclesiasticalUnit && !loading ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Business sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No unit found
-                </Typography>
-                <Typography color="text.secondary">
-                  No ecclesiastical unit found for this ID
-                </Typography>
-              </Box>
-            ) : ecclesiasticalUnit ? (
-              <Box sx={{ maxWidth: '1000px', mx: 'auto' }}>
-                <Paper sx={{ p: 4 }}>
-                  {/* Unit Header */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Business sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                    <Box>
-                      <Typography variant="h4" component="h2" gutterBottom>
-                        {ecclesiasticalUnit.name || 'Unknown Unit'}
-                      </Typography>
-                      {ecclesiasticalUnit.type && (
-                        <Typography variant="subtitle1" color="text.secondary">
-                          Type: {ecclesiasticalUnit.type}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Divider sx={{ my: 3 }} />
-
-                  {/* Unit Basic Information */}
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
-                    <Box>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        Basic Information
-                      </Typography>
-                      
-                      {ecclesiasticalUnit.id && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Business sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>ID:</strong> {ecclesiasticalUnit.id}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {ecclesiasticalUnit.missionaryDeptUnitId && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Business sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Missionary Dept Unit ID:</strong> {ecclesiasticalUnit.missionaryDeptUnitId}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {ecclesiasticalUnit.missionOrgNumber && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Map sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Mission Org Number:</strong> {ecclesiasticalUnit.missionOrgNumber}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Box>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        CDOL Information
-                      </Typography>
-                      
-                      {ecclesiasticalUnit.cdolUnitTypeId && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Business sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>CDOL Unit Type ID:</strong> {ecclesiasticalUnit.cdolUnitTypeId}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {ecclesiasticalUnit.cdolParentUnit && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <AccountTree sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>CDOL Parent Unit:</strong> {ecclesiasticalUnit.cdolParentUnit}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {ecclesiasticalUnit.cdolParentUnitTypeId && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <AccountTree sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>CDOL Parent Unit Type ID:</strong> {ecclesiasticalUnit.cdolParentUnitTypeId}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-
-                  {/* Parent Unit */}
-                  {ecclesiasticalUnit.parentUnit && (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        Parent Unit
-                      </Typography>
-                      <Paper sx={{ p: 3, backgroundColor: 'orange.50' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <AccountTree sx={{ mr: 2, color: 'warning.main' }} />
-                          <Typography variant="h6">
-                            {ecclesiasticalUnit.parentUnit.name || 'Unknown Parent Unit'}
-                          </Typography>
-                        </Box>
-                        {ecclesiasticalUnit.parentUnit.type && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            <strong>Type:</strong> {ecclesiasticalUnit.parentUnit.type}
-                          </Typography>
-                        )}
-                        {ecclesiasticalUnit.parentUnit.id && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            <strong>ID:</strong> {ecclesiasticalUnit.parentUnit.id}
-                          </Typography>
-                        )}
-                        {ecclesiasticalUnit.parentUnit.missionaryDeptUnitId && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Dept Unit ID:</strong> {ecclesiasticalUnit.parentUnit.missionaryDeptUnitId}
-                          </Typography>
-                        )}
-                      </Paper>
-                    </Box>
+      {/* Results */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Ecclesiastical Unit Details</h2>
+        
+        {!hasSearched ? (
+          <div className="text-center py-8">
+            <span className="text-6xl text-gray-400 mb-4 block">🏛️</span>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ready to Search</h3>
+            <p className="text-gray-500">
+              Enter a unit ID above and click "Search" to find ecclesiastical unit information
+            </p>
+          </div>
+        ) : !ecclesiasticalUnit && !loading ? (
+          <div className="text-center py-8">
+            <span className="text-6xl text-gray-400 mb-4 block">🏛️</span>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No unit found</h3>
+            <p className="text-gray-500">
+              No ecclesiastical unit found for this ID
+            </p>
+          </div>
+        ) : ecclesiasticalUnit ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🏛️</span>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {ecclesiasticalUnit.name || 'Unknown Unit'}
+                  </h3>
+                  {ecclesiasticalUnit.type && (
+                    <p className="text-gray-600">Type: {ecclesiasticalUnit.type}</p>
                   )}
+                </div>
+              </div>
+              <button
+                onClick={exportToJson}
+                className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+              >
+                📥 Export JSON
+              </button>
+            </div>
 
-                  {/* Child Units */}
-                  {ecclesiasticalUnit.childUnits && ecclesiasticalUnit.childUnits.length > 0 && 
-                    renderChildUnits(ecclesiasticalUnit.childUnits)
-                  }
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h4>
+                  <div className="space-y-2">
+                    {ecclesiasticalUnit.id && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">ID:</span>
+                        <span className="font-mono">{ecclesiasticalUnit.id}</span>
+                      </div>
+                    )}
+                    {ecclesiasticalUnit.missionaryDeptUnitId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Missionary Dept Unit ID:</span>
+                        <span>{ecclesiasticalUnit.missionaryDeptUnitId}</span>
+                      </div>
+                    )}
+                    {ecclesiasticalUnit.missionOrgNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mission Org Number:</span>
+                        <span>{ecclesiasticalUnit.missionOrgNumber}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-                  {/* Missionaries */}
-                  {ecclesiasticalUnit.missionaries && ecclesiasticalUnit.missionaries.length > 0 && 
-                    renderMissionaries(ecclesiasticalUnit.missionaries)
-                  }
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">CDOL Information</h4>
+                  <div className="space-y-2">
+                    {ecclesiasticalUnit.cdolUnitTypeId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">CDOL Unit Type ID:</span>
+                        <span>{ecclesiasticalUnit.cdolUnitTypeId}</span>
+                      </div>
+                    )}
+                    {ecclesiasticalUnit.cdolParentUnit && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">CDOL Parent Unit:</span>
+                        <span>{ecclesiasticalUnit.cdolParentUnit}</span>
+                      </div>
+                    )}
+                    {ecclesiasticalUnit.cdolParentUnitTypeId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">CDOL Parent Unit Type ID:</span>
+                        <span>{ecclesiasticalUnit.cdolParentUnitTypeId}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  {/* Proselyting Areas */}
-                  {ecclesiasticalUnit.proselytingAreas && ecclesiasticalUnit.proselytingAreas.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        Proselyting Areas ({ecclesiasticalUnit.proselytingAreas.length})
-                      </Typography>
-                      <Paper sx={{ p: 2, backgroundColor: 'purple.50' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {ecclesiasticalUnit.proselytingAreas.length} proselyting area(s) associated with this unit
-                        </Typography>
-                      </Paper>
-                    </Box>
+            {/* Parent Unit */}
+            {ecclesiasticalUnit.parentUnit && (
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Parent Unit</h4>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <span className="text-orange-600 mr-2">🔗</span>
+                    <div className="font-semibold text-gray-900">
+                      {ecclesiasticalUnit.parentUnit.name || 'Unknown Parent Unit'}
+                    </div>
+                  </div>
+                  {ecclesiasticalUnit.parentUnit.type && (
+                    <div className="text-sm text-gray-600 mb-1">
+                      <span className="font-medium">Type:</span> {ecclesiasticalUnit.parentUnit.type}
+                    </div>
                   )}
-                </Paper>
-              </Box>
-            ) : null}
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
+                  {ecclesiasticalUnit.parentUnit.id && (
+                    <div className="text-sm text-gray-600 mb-1">
+                      <span className="font-medium">ID:</span> {ecclesiasticalUnit.parentUnit.id}
+                    </div>
+                  )}
+                  {ecclesiasticalUnit.parentUnit.missionaryDeptUnitId && (
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Dept Unit ID:</span> {ecclesiasticalUnit.parentUnit.missionaryDeptUnitId}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Child Units */}
+            {ecclesiasticalUnit.childUnits && ecclesiasticalUnit.childUnits.length > 0 && 
+              renderChildUnits(ecclesiasticalUnit.childUnits)
+            }
+
+            {/* Missionaries */}
+            {ecclesiasticalUnit.missionaries && ecclesiasticalUnit.missionaries.length > 0 && 
+              renderMissionaries(ecclesiasticalUnit.missionaries)
+            }
+
+            {/* Proselyting Areas */}
+            {ecclesiasticalUnit.proselytingAreas && ecclesiasticalUnit.proselytingAreas.length > 0 && (
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                  Proselyting Areas ({ecclesiasticalUnit.proselytingAreas.length})
+                </h4>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    {ecclesiasticalUnit.proselytingAreas.length} proselyting area(s) associated with this unit
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
