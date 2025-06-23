@@ -411,7 +411,7 @@ export default function OptionsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {options.map((option, index) => (
-                    <tr key={`${option.value}-${index}`} className="hover:bg-gray-50">
+                    <tr key={`option-${index}-${option.value || 'undefined'}-${option.label || 'undefined'}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
                           {option.value || 'N/A'}
