@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, Button, TextField, Alert, CircularProgress, Chip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { Search, Clear, History, Assignment, LocationOn, Person, Groups, Phone, Email, CalendarToday, Info } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
-import { ENVIRONMENTS, getEnvironmentKeysByService } from '@/lib/environments';
+import { ENVIRONMENTS } from '@/lib/environments';
 
 interface Option {
   value: string;
@@ -266,402 +264,343 @@ export default function ActiveAssignmentPage() {
     setMissionaryNumber(historyItem.missionaryNumber);
   };
 
+  const exportToJson = () => {
+    if (!assignment) return;
+    
+    const dataStr = JSON.stringify(assignment, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `active-assignment-${assignment.missionary?.missionaryNumber}-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', p: 3 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Assignment color="primary" />
-            Active Assignment Search
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Find a missionary's current active assignment by their missionary number
-          </Typography>
-        </Box>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">📋</span>
+        <h1 className="text-2xl font-bold">Active Assignment Search</h1>
+        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Missionary Information System</span>
+      </div>
 
-        {/* Environment Selection */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <FormControl fullWidth>
-              <InputLabel>Environment</InputLabel>
-              <Select
-                value={selectedEnvironment}
-                label="Environment"
-                onChange={(e) => setSelectedEnvironment(e.target.value)}
-              >
-                {mgqlEnvironments.map(([key, env]) => (
-                  <MenuItem key={key} value={key}>
-                    {env.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </CardContent>
-        </Card>
+      {/* Environment Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+          <select
+            id="environment"
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {mgqlEnvironments.map(([key, env]) => (
+              <option key={key} value={key}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-        {/* Search Form */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box component="form" onSubmit={handleSearch} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
-              <TextField
-                fullWidth
-                label="Missionary Number / Legacy Miss ID"
-                value={missionaryNumber}
-                onChange={(e) => setMissionaryNumber(e.target.value)}
-                placeholder="Enter missionary number (e.g., 123456)"
-                required
-                variant="outlined"
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={loading || !missionaryNumber.trim()}
-                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
-                sx={{ minWidth: 150 }}
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={handleClear}
-                startIcon={<Clear />}
-                disabled={loading}
-              >
-                Clear
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+      {/* Search Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search Active Assignment by Missionary Number</h2>
+        <form onSubmit={handleSearch} className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label htmlFor="missionary-number" className="block text-sm font-medium text-gray-700 mb-1">Missionary Number / Legacy Miss ID (Required)</label>
+            <input
+              id="missionary-number"
+              type="text"
+              placeholder="Enter missionary number (e.g., 123456)"
+              value={missionaryNumber}
+              onChange={(e) => setMissionaryNumber(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !missionaryNumber.trim()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={loading}
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Clear
+          </button>
+        </form>
+      </div>
 
-        {/* Search History */}
-        {searchHistory.length > 0 && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <History color="action" />
-                  Recent Searches
-                </Typography>
-                <Button
-                  onClick={clearSearchHistory}
-                  color="error"
-                  size="small"
-                  startIcon={<Clear />}
-                >
-                  Clear History
-                </Button>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {searchHistory.map((item, index) => (
-                  <Chip
-                    key={index}
-                    label={`Missionary #${item.missionaryNumber} - ${item.resultFound ? 'Found' : 'Not Found'}`}
-                    onClick={() => useHistorySearch(item)}
-                    onDelete={() => removeFromHistory(item.missionaryNumber)}
-                    variant="outlined"
-                    color={item.resultFound ? 'success' : 'error'}
-                    sx={{ cursor: 'pointer' }}
-                  />
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        )}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">{error}</div>
+        </div>
+      )}
 
-        {/* Error Message */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            <strong>Search Error:</strong> {error}
-          </Alert>
-        )}
+      {/* Assignment Results */}
+      {assignment && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Active Assignment Details</h2>
+            <button
+              onClick={exportToJson}
+              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+            >
+              📥 Export JSON
+            </button>
+          </div>
 
-        {/* Assignment Results */}
-        {assignment && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ bgcolor: 'primary.50', borderBottom: 1, borderColor: 'divider' }}>
-              <Typography variant="h5" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Assignment />
-                Active Assignment Details
-              </Typography>
-              <Typography color="primary.dark">Assignment ID: {assignment.id}</Typography>
-            </CardContent>
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Assignment Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assignment ID:</span>
+                      <span className="font-mono">{assignment.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assignment Type:</span>
+                      <span>{assignment.assignmentType?.label || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assignment Status:</span>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        assignment.assignmentStatus?.label === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
+                        assignment.assignmentStatus?.label === 'INACTIVE' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {assignment.assignmentStatus?.label || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Service Method:</span>
+                      <span>{assignment.serviceMethod?.label || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Is Permanent:</span>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        assignment.isPermanent ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {assignment.isPermanent ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <CardContent sx={{ p: 3 }}>
-              {/* Missionary Information */}
-              {assignment.missionary && (
-                <Box sx={{ mb: 4 }}>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Person color="primary" />
-                    Missionary Information
-                  </Typography>
-                  <Card variant="outlined" sx={{ bgcolor: 'grey.50', p: 2 }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">Missionary Number:</Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {assignment.missionary.missionaryNumber}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">Name:</Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {assignment.missionary.latinFirstName} {assignment.missionary.latinLastName}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Card>
-                </Box>
-              )}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Assignment Timeline</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start Date:</span>
+                      <span>{formatDate(assignment.assignmentStartDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">End Date:</span>
+                      <span>{formatDate(assignment.assignmentEndDate)}</span>
+                    </div>
+                    {assignment.assignmentChurchUnitNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Church Unit Number:</span>
+                        <span>{assignment.assignmentChurchUnitNumber}</span>
+                      </div>
+                    )}
+                    {assignment.callId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Call ID:</span>
+                        <span>{assignment.callId}</span>
+                      </div>
+                    )}
+                    {assignment.positionId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Position ID:</span>
+                        <span>{assignment.positionId}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              {/* Assignment Details */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Assignment color="primary" />
-                  Assignment Details
-                </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
-                  <Card sx={{ bgcolor: 'primary.50', p: 2 }}>
-                    <Typography variant="caption" color="primary.main">Assignment Type:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="primary.dark">
-                      {assignment.assignmentType?.label || 'Not specified'}
-                    </Typography>
-                  </Card>
-                  <Card sx={{ bgcolor: 'success.50', p: 2 }}>
-                    <Typography variant="caption" color="success.main">Assignment Status:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="success.dark">
-                      {assignment.assignmentStatus?.label || 'Not specified'}
-                    </Typography>
-                  </Card>
-                  <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
-                    <Typography variant="caption" color="secondary.main">Service Method:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="secondary.dark">
-                      {assignment.serviceMethod?.label || 'Not specified'}
-                    </Typography>
-                  </Card>
-                  <Card sx={{ bgcolor: 'warning.50', p: 2 }}>
-                    <Typography variant="caption" color="warning.main">Start Date:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="warning.dark">
-                      {formatDate(assignment.assignmentStartDate)}
-                    </Typography>
-                  </Card>
-                  <Card sx={{ bgcolor: 'error.50', p: 2 }}>
-                    <Typography variant="caption" color="error.main">End Date:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="error.dark">
-                      {formatDate(assignment.assignmentEndDate)}
-                    </Typography>
-                  </Card>
-                  <Card sx={{ bgcolor: 'grey.100', p: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Is Permanent:</Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {assignment.isPermanent ? 'Yes' : 'No'}
-                    </Typography>
-                  </Card>
-                </Box>
-              </Box>
+            {/* Missionary Information */}
+            {assignment.missionary && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Missionary Information</h3>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-600">Missionary Number: {assignment.missionary.missionaryNumber}</div>
+                      <div className="text-sm text-gray-600">Name: {assignment.missionary.latinFirstName} {assignment.missionary.latinLastName}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              {/* Assignment Location Component */}
-              {assignment.component && (
-                <Box sx={{ mb: 4 }}>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LocationOn color="primary" />
-                    Assignment Location Component
-                  </Typography>
-                  <Card variant="outlined" sx={{ bgcolor: 'primary.50', p: 2 }}>
-                    <Typography variant="caption" color="primary.main">Component ID:</Typography>
-                    <Typography variant="body2" fontWeight="medium" color="primary.dark">
-                      {assignment.component.id}
-                    </Typography>
-                  </Card>
-                </Box>
-              )}
+            {/* Assignment Location Component */}
+            {assignment.component && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Assignment Location Component</h3>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-sm text-gray-600">Component ID: {assignment.component.id}</div>
+                </div>
+              </div>
+            )}
 
-              {/* Mission Information */}
-              {assignment.mission && (
-                <Box sx={{ mb: 4 }}>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LocationOn color="success" />
-                    Mission Information
-                  </Typography>
-                  <Card variant="outlined" sx={{ bgcolor: 'success.50', p: 2 }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2, mb: 2 }}>
-                      <Box>
-                        <Typography variant="caption" color="success.main">Mission Name:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="success.dark">
-                          {assignment.mission.name}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="success.main">Mission ID:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="success.dark">
-                          {assignment.mission.id}
-                        </Typography>
-                      </Box>
+            {/* Mission Information */}
+            {assignment.mission && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Mission Information</h3>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="text-sm text-gray-600">Mission ID: {assignment.mission.id}</div>
+                      <div className="text-sm text-gray-600">Mission Name: {assignment.mission.name || 'N/A'}</div>
+                    </div>
+                    <div>
                       {assignment.mission.address && (
-                        <Box>
-                          <Typography variant="caption" color="success.main">Address:</Typography>
-                          <Typography variant="body2" fontWeight="medium" color="success.dark">
-                            {assignment.mission.address}
-                          </Typography>
-                        </Box>
+                        <div className="text-sm text-gray-600">Address: {assignment.mission.address}</div>
                       )}
                       {assignment.mission.phone && (
-                        <Box>
-                          <Typography variant="caption" color="success.main">Phone:</Typography>
-                          <Typography variant="body2" fontWeight="medium" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Phone fontSize="small" />
-                            {assignment.mission.phone}
-                          </Typography>
-                        </Box>
+                        <div className="text-sm text-gray-600">Phone: {assignment.mission.phone}</div>
                       )}
-                      {assignment.mission.email && (
-                        <Box>
-                          <Typography variant="caption" color="success.main">Email:</Typography>
-                          <Typography variant="body2" fontWeight="medium" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Email fontSize="small" />
-                            {assignment.mission.email}
-                          </Typography>
-                        </Box>
-                      )}
-                      {assignment.mission.leaderName && (
-                        <Box>
-                          <Typography variant="caption" color="success.main">Mission Leader:</Typography>
-                          <Typography variant="body2" fontWeight="medium" color="success.dark">
-                            {assignment.mission.leaderName}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                    
-                    {assignment.mission.zones && assignment.mission.zones.length > 0 && (
-                      <Box>
-                        <Typography variant="caption" color="success.main">
-                          Zones ({assignment.mission.zones.length}):
-                        </Typography>
-                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {assignment.mission.zones.map((zone) => (
-                            <Chip
-                              key={zone.id}
-                              label={zone.name}
-                              color="success"
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </Box>
-                      </Box>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {assignment.mission.email && (
+                      <div>
+                        <div className="text-sm text-gray-600">Email: {assignment.mission.email}</div>
+                      </div>
                     )}
-                  </Card>
-                </Box>
-              )}
-
-              {/* Training Information */}
-              {(assignment.curriculumName || assignment.trainingTrackName || assignment.courseName || assignment.trainingFacilityName) && (
-                <Box sx={{ mb: 4 }}>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Groups color="secondary" />
-                    Training Information
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
-                    {assignment.curriculumName && (
-                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
-                        <Typography variant="caption" color="secondary.main">Curriculum:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
-                          {assignment.curriculumName}
-                        </Typography>
-                      </Card>
+                    {assignment.mission.leaderName && (
+                      <div>
+                        <div className="text-sm text-gray-600">Mission Leader: {assignment.mission.leaderName}</div>
+                        {assignment.mission.leaderEmail && (
+                          <div className="text-sm text-gray-600">Leader Email: {assignment.mission.leaderEmail}</div>
+                        )}
+                      </div>
                     )}
-                    {assignment.trainingTrackName && (
-                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
-                        <Typography variant="caption" color="secondary.main">Training Track:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
-                          {assignment.trainingTrackName}
-                        </Typography>
-                      </Card>
-                    )}
-                    {assignment.courseName && (
-                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
-                        <Typography variant="caption" color="secondary.main">Course:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
-                          {assignment.courseName}
-                        </Typography>
-                      </Card>
-                    )}
-                    {assignment.trainingFacilityName && (
-                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
-                        <Typography variant="caption" color="secondary.main">Training Facility:</Typography>
-                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
-                          {assignment.trainingFacilityName}
-                        </Typography>
-                      </Card>
-                    )}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Additional IDs */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Info color="action" />
-                  System Identifiers
-                </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
-                  {assignment.assignmentChurchUnitNumber && (
-                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
-                      <Typography variant="caption" color="text.secondary">Church Unit Number:</Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {assignment.assignmentChurchUnitNumber}
-                      </Typography>
-                    </Card>
+                  </div>
+                  
+                  {assignment.mission.zones && assignment.mission.zones.length > 0 && (
+                    <div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        Zones ({assignment.mission.zones.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {assignment.mission.zones.map((zone) => (
+                          <span
+                            key={zone.id}
+                            className="px-2 py-1 text-xs rounded bg-green-100 text-green-800"
+                          >
+                            {zone.name} (ID: {zone.id})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                  {assignment.callId && (
-                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
-                      <Typography variant="caption" color="text.secondary">Call ID:</Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {assignment.callId}
-                      </Typography>
-                    </Card>
-                  )}
-                  {assignment.positionId && (
-                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
-                      <Typography variant="caption" color="text.secondary">Position ID:</Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {assignment.positionId}
-                      </Typography>
-                    </Card>
-                  )}
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+              </div>
+            )}
 
-        {/* Help Section */}
-        <Card sx={{ bgcolor: 'info.50', border: 1, borderColor: 'info.200' }}>
-          <CardContent>
-            <Typography variant="h6" color="info.main" gutterBottom>
-              💡 How to Use Active Assignment Search
-            </Typography>
-            <Box sx={{ '& > *': { mb: 1 } }}>
-              <Typography variant="body2" color="info.dark">
-                • Enter a missionary number (also known as Legacy Miss ID) to find their current active assignment
-              </Typography>
-              <Typography variant="body2" color="info.dark">
-                • The search will return comprehensive assignment details including mission, location, training, and status information
-              </Typography>
-              <Typography variant="body2" color="info.dark">
-                • Recent searches are automatically saved and can be accessed from the search history section
-              </Typography>
-              <Typography variant="body2" color="info.dark">
-                • Click on any item in the search history to quickly repeat that search
-              </Typography>
-              <Typography variant="body2" color="info.dark">
-                • Assignment data includes current mission details, assignment location, training information, and system identifiers
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
+            {/* Training Information */}
+            {(assignment.curriculumName || assignment.trainingTrackName || assignment.courseName || assignment.trainingFacilityName) && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Training Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {assignment.curriculumName && (
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-900">Curriculum</div>
+                      <div className="text-sm text-gray-600">{assignment.curriculumName}</div>
+                    </div>
+                  )}
+                  {assignment.trainingTrackName && (
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-900">Training Track</div>
+                      <div className="text-sm text-gray-600">{assignment.trainingTrackName}</div>
+                    </div>
+                  )}
+                  {assignment.courseName && (
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-900">Course</div>
+                      <div className="text-sm text-gray-600">{assignment.courseName}</div>
+                    </div>
+                  )}
+                  {assignment.trainingFacilityName && (
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="text-sm font-medium text-gray-900">Training Facility</div>
+                      <div className="text-sm text-gray-600">{assignment.trainingFacilityName}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📜 Search History</h2>
+            <button
+              onClick={clearSearchHistory}
+              className="px-3 py-1 text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+            >
+              🗑️ Clear History
+            </button>
+          </div>
+          <div className="space-y-2">
+            {searchHistory.map((entry, index) => (
+              <div key={index} className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => useHistorySearch(entry)}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">Missionary Number: {entry.missionaryNumber}</div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(entry.timestamp).toLocaleDateString()} at {new Date(entry.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded ${entry.resultFound ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    {entry.resultFound ? "Found" : "Not Found"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && !assignment && !error && (
+        <div className="text-center py-8 text-gray-500">
+          Enter a Missionary Number to search for their active assignment.
+        </div>
+      )}
+
+      {/* Help Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-blue-900 mb-3">💡 How to Use Active Assignment Search</h2>
+        <ul className="text-blue-800 space-y-1 text-sm">
+          <li>• Enter a missionary number (also known as Legacy Miss ID) to find their current active assignment</li>
+          <li>• The search will return comprehensive assignment details including mission, location, training, and status information</li>
+          <li>• Recent searches are automatically saved and can be accessed from the search history section</li>
+          <li>• Click on any item in the search history to quickly repeat that search</li>
+          <li>• Assignment data includes current mission details, assignment location, training information, and system identifiers</li>
+        </ul>
+      </div>
+    </div>
   );
 }
