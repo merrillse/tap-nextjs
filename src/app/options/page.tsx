@@ -267,6 +267,7 @@ export default function OptionsPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <span className="text-2xl">⚙️</span>
         <h1 className="text-2xl font-bold">Options Search</h1>
