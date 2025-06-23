@@ -1,14 +1,28 @@
-# Material-UI Pattern and Template for Search Pages
+# Material UI Pattern Reference
 
-This document outlines the standardized Material-UI pattern used across all search pages in the TAP Next.js application. Follow this template when creating new search/data pages to ensure consistency.
+**⚠️ This document is deprecated. Please refer to [HYBRID_STYLING_GUIDE.md](./HYBRID_STYLING_GUIDE.md) for the comprehensive styling guide.**
 
-## 🎯 Design Principles
+## Quick Reference
 
-1. **Consistent Visual Language**: Use Material-UI components exclusively for all UI elements
-2. **Responsive Design**: All layouts should work on mobile, tablet, and desktop
-3. **Accessibility**: Proper semantic HTML and ARIA labels through Material-UI components
-4. **Color-coded Information**: Use Material-UI's color system to categorize different types of data
-5. **Clear Hierarchy**: Typography scales and component organization should guide the user's attention
+This project uses a **dual styling architecture**:
+- **Material-UI**: For complex form-heavy pages (assignment-location, active-assignment)
+- **Tailwind CSS**: For simple data display pages (mogs-curriculum, district, homepage)
+- **Hybrid approach**: For developer tools and complex interactive pages (api-testing)
+
+## Migration Path
+
+When refactoring existing pages:
+
+1. **Check [HYBRID_STYLING_GUIDE.md](./HYBRID_STYLING_GUIDE.md)** for the decision tree
+2. **Follow the implementation patterns** provided in the guide
+3. **Use the component usage matrix** to determine Tailwind vs MUI for each element
+4. **Reference the code examples** for your specific page type
+
+## Existing Page Examples
+
+- **Pure Tailwind**: `/mogs-curriculum/page.tsx`, `/district/page.tsx`
+- **Pure Material-UI**: `/assignment-location/page.tsx`, `/active-assignment/page.tsx`  
+- **Hybrid**: `/api-testing/page.tsx`
 
 ## 📁 Page Structure Template
 
@@ -343,10 +357,13 @@ const formatDate = (dateString: string) => { /* ... */ };
 
 ## 🎯 Examples
 
-Reference these pages as examples of the established pattern:
-- `/district` - Basic search with nested data display
+Reference these pages as examples of the established Material-UI pattern for MIS/MGQL pages:
 - `/assignment-location` - Complex nested data with grouping
 - `/active-assignment` - Multiple data sections with different content types
 - `/mission` - Clean implementation of the base pattern
 
-This pattern ensures all pages have a consistent look, feel, and behavior while maintaining the flexibility to display different types of data appropriately.
+**Note**: The `/district` page now uses Tailwind CSS to match the project's architecture where MIS/MGQL pages can use either Material-UI or Tailwind depending on their specific needs.
+
+For MOGS pages, refer to existing Tailwind CSS implementations like `/mogs-curriculum` and `/mogs-ws-missionary`.
+
+This pattern ensures all MIS/MGQL pages have a consistent look, feel, and behavior while maintaining the flexibility to display different types of data appropriately.
