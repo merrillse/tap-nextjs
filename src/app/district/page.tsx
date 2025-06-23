@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Typography, Button, TextField, Alert, CircularProgress, Chip, Accordion, AccordionSummary, AccordionDetails, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { Search, Clear, History, ExpandMore, Business, LocationOn, Phone, Email, Person, Groups, Assignment, Info, Map } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
-import { ENVIRONMENTS } from '@/lib/environments';
+import { ENVIRONMENTS, getEnvironmentKeysByService } from '@/lib/environments';
 
 interface GeopoliticalLocation {
   locationCodeNumber: number;
@@ -71,14 +71,35 @@ export default function DistrictPage() {
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
-  const [selectedEnvironment, setSelectedEnvironment] = useState('development');
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  // Initialize API client when environment changes
+  // Get only MGQL/MIS environments (no MOGS)
+  const mgqlEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+    key.startsWith('mis-gql-')
+  );
+
+  // Initialize API client with default MIS development environment
+  useEffect(() => {
+    const savedEnvironment = localStorage.getItem('selectedEnvironment');
+    const environmentToUse = (savedEnvironment && ENVIRONMENTS[savedEnvironment] && savedEnvironment.startsWith('mis-gql-')) 
+      ? savedEnvironment 
+      : 'mis-gql-dev';
+    
+    setSelectedEnvironment(environmentToUse);
+    const config = ENVIRONMENTS[environmentToUse];
+    
+    if (config) {
+      setApiClient(new ApiClient(config, environmentToUse));
+    }
+  }, []);
+
+  // Update API client when environment changes
   useEffect(() => {
     const config = ENVIRONMENTS[selectedEnvironment];
     if (config) {
       setApiClient(new ApiClient(config, selectedEnvironment));
+      localStorage.setItem('selectedEnvironment', selectedEnvironment);
     }
   }, [selectedEnvironment]);
 
@@ -193,9 +214,13 @@ export default function DistrictPage() {
 
       const variables = { id: idToSearch };
       const response = await apiClient.executeGraphQLQuery(query, variables);
-      const data = response.data as { district: District };
+      
+      if (response.errors && response.errors.length > 0) {
+        throw new Error(response.errors[0].message);
+      }
 
-      if (data?.district) {
+      const data = response.data as { district: District | null };
+      if (data.district) {
         setDistrict(data.district);
         addToHistory(idToSearch);
         if (searchId) {
@@ -204,8 +229,8 @@ export default function DistrictPage() {
       } else {
         setError('No district found with that ID');
       }
-    } catch (err) {
-      console.error('GraphQL Error:', err);
+    } catch (err: any) {
+      console.error('Error searching for district:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while searching');
     } finally {
       setLoading(false);
@@ -223,11 +248,6 @@ export default function DistrictPage() {
     setError(null);
   };
 
-  const formatAddress = (area: ProselytingArea) => {
-    const parts = [area.address, area.city, area.stateProvince, area.postalCode].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'N/A';
-  };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     try {
@@ -235,6 +255,11 @@ export default function DistrictPage() {
     } catch {
       return dateString;
     }
+  };
+
+  const formatAddress = (area: ProselytingArea) => {
+    const parts = [area.address, area.city, area.stateProvince, area.postalCode].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'N/A';
   };
 
   return (
@@ -246,7 +271,7 @@ export default function DistrictPage() {
             District Search
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Retrieve detailed district information including zone, mission, and proselyting areas
+            Find detailed information about a district by ID
           </Typography>
         </Box>
 
@@ -256,14 +281,14 @@ export default function DistrictPage() {
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>
                 <FormControl sx={{ minWidth: 200 }}>
-                  <InputLabel>Environment</InputLabel>
+                  <InputLabel>Environment (MGQL/MIS only)</InputLabel>
                   <Select
                     value={selectedEnvironment}
-                    label="Environment"
+                    label="Environment (MGQL/MIS only)"
                     onChange={(e) => setSelectedEnvironment(e.target.value)}
                     disabled={loading}
                   >
-                    {Object.entries(ENVIRONMENTS).map(([key, env]) => (
+                    {mgqlEnvironments.map(([key, env]) => (
                       <MenuItem key={key} value={key}>
                         {env.name}
                       </MenuItem>
@@ -276,7 +301,7 @@ export default function DistrictPage() {
                   label="District ID"
                   value={districtId}
                   onChange={(e) => setDistrictId(e.target.value)}
-                  placeholder="Enter district ID"
+                  placeholder="Enter district ID (e.g., 12345)"
                   variant="outlined"
                   sx={{ flexGrow: 1, minWidth: '300px' }}
                   disabled={loading}

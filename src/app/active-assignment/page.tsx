@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Box, Card, CardContent, Typography, Button, TextField, Alert, CircularProgress, Chip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Search, Clear, History, Assignment, LocationOn, Person, Groups, Phone, Email, CalendarToday, Info } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
-import { ENVIRONMENTS } from '@/lib/environments';
+import { ENVIRONMENTS, getEnvironmentKeysByService } from '@/lib/environments';
 
 interface Option {
   value: string;
@@ -65,48 +67,85 @@ export default function ActiveAssignmentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  // Initialize API client
+  // Get only MGQL/MIS environments (no MOGS)
+  const mgqlEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+    key.startsWith('mis-gql-')
+  );
+
+  // Initialize API client with default MIS development environment
   useEffect(() => {
-    const selectedEnvironment = localStorage.getItem('selectedEnvironment') || 'development';
-    const config = ENVIRONMENTS[selectedEnvironment as keyof typeof ENVIRONMENTS];
+    const savedEnvironment = localStorage.getItem('selectedEnvironment');
+    const environmentToUse = (savedEnvironment && ENVIRONMENTS[savedEnvironment] && savedEnvironment.startsWith('mis-gql-')) 
+      ? savedEnvironment 
+      : 'mis-gql-dev';
+    
+    setSelectedEnvironment(environmentToUse);
+    const config = ENVIRONMENTS[environmentToUse];
     
     if (config) {
-      setApiClient(new ApiClient(config, selectedEnvironment));
+      setApiClient(new ApiClient(config, environmentToUse));
     }
   }, []);
 
-  // Load search history from localStorage on component mount
+  // Update API client when environment changes
+  useEffect(() => {
+    const config = ENVIRONMENTS[selectedEnvironment];
+    if (config) {
+      setApiClient(new ApiClient(config, selectedEnvironment));
+      localStorage.setItem('selectedEnvironment', selectedEnvironment);
+    }
+  }, [selectedEnvironment]);
+
+  // Load search history from localStorage
   useEffect(() => {
     const savedHistory = localStorage.getItem('activeAssignmentSearchHistory');
     if (savedHistory) {
       try {
-        setSearchHistory(JSON.parse(savedHistory));
+        const parsed = JSON.parse(savedHistory);
+        setSearchHistory(parsed);
       } catch (e) {
-        console.error('Failed to parse search history:', e);
+        console.error('Error parsing search history:', e);
       }
     }
+    setIsHistoryLoaded(true);
   }, []);
 
   // Save search history to localStorage
-  const saveSearchHistory = (history: SearchHistory[]) => {
-    localStorage.setItem('activeAssignmentSearchHistory', JSON.stringify(history));
-    setSearchHistory(history);
-  };
+  useEffect(() => {
+    if (isHistoryLoaded) {
+      localStorage.setItem('activeAssignmentSearchHistory', JSON.stringify(searchHistory));
+    }
+  }, [searchHistory, isHistoryLoaded]);
 
-  const addToSearchHistory = (missionaryNum: string, resultFound: boolean) => {
-    const newEntry: SearchHistory = {
-      missionaryNumber: missionaryNum,
+  const addToHistory = (missionaryNum: string, resultFound: boolean) => {
+    if (!missionaryNum.trim()) return;
+    
+    const newHistoryItem: SearchHistory = {
+      missionaryNumber: missionaryNum.trim(),
       timestamp: new Date().toISOString(),
       resultFound
     };
-    const updatedHistory = [newEntry, ...searchHistory.slice(0, 9)]; // Keep last 10 searches
-    saveSearchHistory(updatedHistory);
+
+    setSearchHistory(prev => {
+      // Remove existing entry if it exists
+      const filtered = prev.filter(item => item.missionaryNumber !== missionaryNum.trim());
+      // Add new entry at the beginning
+      const updated = [newHistoryItem, ...filtered];
+      // Keep only the last 10 items
+      return updated.slice(0, 10);
+    });
   };
 
-  const clearSearchHistory = () => {
-    localStorage.removeItem('activeAssignmentSearchHistory');
+  const removeFromHistory = (missionaryNum: string) => {
+    setSearchHistory(prev => prev.filter(item => item.missionaryNumber !== missionaryNum));
+  };
+
+  const clearHistory = () => {
     setSearchHistory([]);
   };
 
@@ -185,15 +224,15 @@ export default function ActiveAssignmentPage() {
       const data = response.data as { activeAssignment: Assignment | null };
       if (data.activeAssignment) {
         setAssignment(data.activeAssignment);
-        addToSearchHistory(missionaryNumber, true);
+        addToHistory(missionaryNumber, true);
       } else {
         setError('No active assignment found for this missionary number');
-        addToSearchHistory(missionaryNumber, false);
+        addToHistory(missionaryNumber, false);
       }
     } catch (err: any) {
       console.error('Error searching for active assignment:', err);
       setError(err.message || 'Failed to search for active assignment');
-      addToSearchHistory(missionaryNumber, false);
+      addToHistory(missionaryNumber, false);
     } finally {
       setLoading(false);
     }
@@ -213,335 +252,416 @@ export default function ActiveAssignmentPage() {
     }
   };
 
+  const handleClear = () => {
+    setMissionaryNumber('');
+    setAssignment(null);
+    setError(null);
+  };
+
+  const clearSearchHistory = () => {
+    clearHistory();
+  };
+
   const useHistorySearch = (historyItem: SearchHistory) => {
     setMissionaryNumber(historyItem.missionaryNumber);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Active Assignment Search</h1>
-          <p className="mt-2 text-lg text-gray-600">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', p: 3 }}>
+      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Assignment color="primary" />
+            Active Assignment Search
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
             Find a missionary's current active assignment by their missionary number
-          </p>
-        </div>
+          </Typography>
+        </Box>
+
+        {/* Environment Selection */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <FormControl fullWidth>
+              <InputLabel>Environment</InputLabel>
+              <Select
+                value={selectedEnvironment}
+                label="Environment"
+                onChange={(e) => setSelectedEnvironment(e.target.value)}
+              >
+                {mgqlEnvironments.map(([key, env]) => (
+                  <MenuItem key={key} value={key}>
+                    {env.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
 
         {/* Search Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div>
-              <label htmlFor="missionaryNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Missionary Number / Legacy Miss ID
-              </label>
-              <input
-                type="text"
-                id="missionaryNumber"
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box component="form" onSubmit={handleSearch} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+              <TextField
+                fullWidth
+                label="Missionary Number / Legacy Miss ID"
                 value={missionaryNumber}
                 onChange={(e) => setMissionaryNumber(e.target.value)}
                 placeholder="Enter missionary number (e.g., 123456)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
+                variant="outlined"
               />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !missionaryNumber.trim()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  Search Assignment
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={loading || !missionaryNumber.trim()}
+                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
+                sx={{ minWidth: 150 }}
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleClear}
+                startIcon={<Clear />}
+                disabled={loading}
+              >
+                Clear
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* Search History */}
         {searchHistory.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Recent Searches</h3>
-              <button
-                onClick={clearSearchHistory}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Clear History
-              </button>
-            </div>
-            <div className="space-y-2">
-              {searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                  onClick={() => useHistorySearch(item)}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <History color="action" />
+                  Recent Searches
+                </Typography>
+                <Button
+                  onClick={clearSearchHistory}
+                  color="error"
+                  size="small"
+                  startIcon={<Clear />}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-900">
-                      Missionary #{item.missionaryNumber}
-                    </span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      item.resultFound 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {item.resultFound ? 'Found' : 'Not Found'}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                  Clear History
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {searchHistory.map((item, index) => (
+                  <Chip
+                    key={index}
+                    label={`Missionary #${item.missionaryNumber} - ${item.resultFound ? 'Found' : 'Not Found'}`}
+                    onClick={() => useHistorySearch(item)}
+                    onDelete={() => removeFromHistory(item.missionaryNumber)}
+                    variant="outlined"
+                    color={item.resultFound ? 'success' : 'error'}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <div className="flex">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Search Error</h3>
-                <p className="mt-1 text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <strong>Search Error:</strong> {error}
+          </Alert>
         )}
 
         {/* Assignment Results */}
         {assignment && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-blue-50 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-blue-900">Active Assignment Details</h2>
-              <p className="text-blue-700">Assignment ID: {assignment.id}</p>
-            </div>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ bgcolor: 'primary.50', borderBottom: 1, borderColor: 'divider' }}>
+              <Typography variant="h5" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Assignment />
+                Active Assignment Details
+              </Typography>
+              <Typography color="primary.dark">Assignment ID: {assignment.id}</Typography>
+            </CardContent>
 
-            <div className="p-6">
+            <CardContent sx={{ p: 3 }}>
               {/* Missionary Information */}
               {assignment.missionary && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">👤 Missionary Information</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-gray-500">Missionary Number:</span>
-                        <p className="font-medium">{assignment.missionary.missionaryNumber}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Name:</span>
-                        <p className="font-medium">
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Person color="primary" />
+                    Missionary Information
+                  </Typography>
+                  <Card variant="outlined" sx={{ bgcolor: 'grey.50', p: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Missionary Number:</Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {assignment.missionary.missionaryNumber}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Name:</Typography>
+                        <Typography variant="body2" fontWeight="medium">
                           {assignment.missionary.latinFirstName} {assignment.missionary.latinLastName}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Box>
               )}
 
               {/* Assignment Details */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">📋 Assignment Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <span className="text-sm text-blue-600">Assignment Type:</span>
-                    <p className="font-medium text-blue-900">
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Assignment color="primary" />
+                  Assignment Details
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                  <Card sx={{ bgcolor: 'primary.50', p: 2 }}>
+                    <Typography variant="caption" color="primary.main">Assignment Type:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="primary.dark">
                       {assignment.assignmentType?.label || 'Not specified'}
-                    </p>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <span className="text-sm text-green-600">Assignment Status:</span>
-                    <p className="font-medium text-green-900">
+                    </Typography>
+                  </Card>
+                  <Card sx={{ bgcolor: 'success.50', p: 2 }}>
+                    <Typography variant="caption" color="success.main">Assignment Status:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="success.dark">
                       {assignment.assignmentStatus?.label || 'Not specified'}
-                    </p>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <span className="text-sm text-purple-600">Service Method:</span>
-                    <p className="font-medium text-purple-900">
+                    </Typography>
+                  </Card>
+                  <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
+                    <Typography variant="caption" color="secondary.main">Service Method:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="secondary.dark">
                       {assignment.serviceMethod?.label || 'Not specified'}
-                    </p>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <span className="text-sm text-orange-600">Start Date:</span>
-                    <p className="font-medium text-orange-900">
+                    </Typography>
+                  </Card>
+                  <Card sx={{ bgcolor: 'warning.50', p: 2 }}>
+                    <Typography variant="caption" color="warning.main">Start Date:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="warning.dark">
                       {formatDate(assignment.assignmentStartDate)}
-                    </p>
-                  </div>
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <span className="text-sm text-red-600">End Date:</span>
-                    <p className="font-medium text-red-900">
+                    </Typography>
+                  </Card>
+                  <Card sx={{ bgcolor: 'error.50', p: 2 }}>
+                    <Typography variant="caption" color="error.main">End Date:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="error.dark">
                       {formatDate(assignment.assignmentEndDate)}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <span className="text-sm text-gray-600">Is Permanent:</span>
-                    <p className="font-medium text-gray-900">
+                    </Typography>
+                  </Card>
+                  <Card sx={{ bgcolor: 'grey.100', p: 2 }}>
+                    <Typography variant="caption" color="text.secondary">Is Permanent:</Typography>
+                    <Typography variant="body2" fontWeight="medium">
                       {assignment.isPermanent ? 'Yes' : 'No'}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                    </Typography>
+                  </Card>
+                </Box>
+              </Box>
 
               {/* Assignment Location Component */}
               {assignment.component && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">📍 Assignment Location Component</h3>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div>
-                      <span className="text-sm text-blue-600">Component ID:</span>
-                      <p className="font-medium text-blue-900">{assignment.component.id}</p>
-                    </div>
-                  </div>
-                </div>
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOn color="primary" />
+                    Assignment Location Component
+                  </Typography>
+                  <Card variant="outlined" sx={{ bgcolor: 'primary.50', p: 2 }}>
+                    <Typography variant="caption" color="primary.main">Component ID:</Typography>
+                    <Typography variant="body2" fontWeight="medium" color="primary.dark">
+                      {assignment.component.id}
+                    </Typography>
+                  </Card>
+                </Box>
               )}
 
               {/* Mission Information */}
               {assignment.mission && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">🌍 Mission Information</h3>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <span className="text-sm text-green-600">Mission Name:</span>
-                        <p className="font-medium text-green-900">{assignment.mission.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-green-600">Mission ID:</span>
-                        <p className="font-medium text-green-900">{assignment.mission.id}</p>
-                      </div>
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOn color="success" />
+                    Mission Information
+                  </Typography>
+                  <Card variant="outlined" sx={{ bgcolor: 'success.50', p: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2, mb: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="success.main">Mission Name:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="success.dark">
+                          {assignment.mission.name}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="success.main">Mission ID:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="success.dark">
+                          {assignment.mission.id}
+                        </Typography>
+                      </Box>
                       {assignment.mission.address && (
-                        <div>
-                          <span className="text-sm text-green-600">Address:</span>
-                          <p className="font-medium text-green-900">{assignment.mission.address}</p>
-                        </div>
+                        <Box>
+                          <Typography variant="caption" color="success.main">Address:</Typography>
+                          <Typography variant="body2" fontWeight="medium" color="success.dark">
+                            {assignment.mission.address}
+                          </Typography>
+                        </Box>
                       )}
                       {assignment.mission.phone && (
-                        <div>
-                          <span className="text-sm text-green-600">Phone:</span>
-                          <p className="font-medium text-green-900">{assignment.mission.phone}</p>
-                        </div>
+                        <Box>
+                          <Typography variant="caption" color="success.main">Phone:</Typography>
+                          <Typography variant="body2" fontWeight="medium" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Phone fontSize="small" />
+                            {assignment.mission.phone}
+                          </Typography>
+                        </Box>
                       )}
                       {assignment.mission.email && (
-                        <div>
-                          <span className="text-sm text-green-600">Email:</span>
-                          <p className="font-medium text-green-900">{assignment.mission.email}</p>
-                        </div>
+                        <Box>
+                          <Typography variant="caption" color="success.main">Email:</Typography>
+                          <Typography variant="body2" fontWeight="medium" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Email fontSize="small" />
+                            {assignment.mission.email}
+                          </Typography>
+                        </Box>
                       )}
                       {assignment.mission.leaderName && (
-                        <div>
-                          <span className="text-sm text-green-600">Mission Leader:</span>
-                          <p className="font-medium text-green-900">{assignment.mission.leaderName}</p>
-                        </div>
+                        <Box>
+                          <Typography variant="caption" color="success.main">Mission Leader:</Typography>
+                          <Typography variant="body2" fontWeight="medium" color="success.dark">
+                            {assignment.mission.leaderName}
+                          </Typography>
+                        </Box>
                       )}
-                    </div>
+                    </Box>
                     
                     {assignment.mission.zones && assignment.mission.zones.length > 0 && (
-                      <div>
-                        <span className="text-sm text-green-600">Zones ({assignment.mission.zones.length}):</span>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                      <Box>
+                        <Typography variant="caption" color="success.main">
+                          Zones ({assignment.mission.zones.length}):
+                        </Typography>
+                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                           {assignment.mission.zones.map((zone) => (
-                            <span
+                            <Chip
                               key={zone.id}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                            >
-                              {zone.name}
-                            </span>
+                              label={zone.name}
+                              color="success"
+                              variant="outlined"
+                              size="small"
+                            />
                           ))}
-                        </div>
-                      </div>
+                        </Box>
+                      </Box>
                     )}
-                  </div>
-                </div>
+                  </Card>
+                </Box>
               )}
 
               {/* Training Information */}
               {(assignment.curriculumName || assignment.trainingTrackName || assignment.courseName || assignment.trainingFacilityName) && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">🎓 Training Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Groups color="secondary" />
+                    Training Information
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
                     {assignment.curriculumName && (
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <span className="text-sm text-purple-600">Curriculum:</span>
-                        <p className="font-medium text-purple-900">{assignment.curriculumName}</p>
-                      </div>
+                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
+                        <Typography variant="caption" color="secondary.main">Curriculum:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
+                          {assignment.curriculumName}
+                        </Typography>
+                      </Card>
                     )}
                     {assignment.trainingTrackName && (
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <span className="text-sm text-purple-600">Training Track:</span>
-                        <p className="font-medium text-purple-900">{assignment.trainingTrackName}</p>
-                      </div>
+                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
+                        <Typography variant="caption" color="secondary.main">Training Track:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
+                          {assignment.trainingTrackName}
+                        </Typography>
+                      </Card>
                     )}
                     {assignment.courseName && (
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <span className="text-sm text-purple-600">Course:</span>
-                        <p className="font-medium text-purple-900">{assignment.courseName}</p>
-                      </div>
+                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
+                        <Typography variant="caption" color="secondary.main">Course:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
+                          {assignment.courseName}
+                        </Typography>
+                      </Card>
                     )}
                     {assignment.trainingFacilityName && (
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <span className="text-sm text-purple-600">Training Facility:</span>
-                        <p className="font-medium text-purple-900">{assignment.trainingFacilityName}</p>
-                      </div>
+                      <Card sx={{ bgcolor: 'secondary.50', p: 2 }}>
+                        <Typography variant="caption" color="secondary.main">Training Facility:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="secondary.dark">
+                          {assignment.trainingFacilityName}
+                        </Typography>
+                      </Card>
                     )}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               )}
 
               {/* Additional IDs */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">🔗 System Identifiers</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Info color="action" />
+                  System Identifiers
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
                   {assignment.assignmentChurchUnitNumber && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <span className="text-sm text-gray-600">Church Unit Number:</span>
-                      <p className="font-medium text-gray-900">{assignment.assignmentChurchUnitNumber}</p>
-                    </div>
+                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
+                      <Typography variant="caption" color="text.secondary">Church Unit Number:</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {assignment.assignmentChurchUnitNumber}
+                      </Typography>
+                    </Card>
                   )}
                   {assignment.callId && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <span className="text-sm text-gray-600">Call ID:</span>
-                      <p className="font-medium text-gray-900">{assignment.callId}</p>
-                    </div>
+                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
+                      <Typography variant="caption" color="text.secondary">Call ID:</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {assignment.callId}
+                      </Typography>
+                    </Card>
                   )}
                   {assignment.positionId && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <span className="text-sm text-gray-600">Position ID:</span>
-                      <p className="font-medium text-gray-900">{assignment.positionId}</p>
-                    </div>
+                    <Card sx={{ bgcolor: 'grey.50', p: 2 }}>
+                      <Typography variant="caption" color="text.secondary">Position ID:</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {assignment.positionId}
+                      </Typography>
+                    </Card>
                   )}
-                </div>
-              </div>
-            </div>
-          </div>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         )}
 
         {/* Help Section */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-3">💡 How to Use Active Assignment Search</h3>
-          <div className="text-sm text-blue-800 space-y-2">
-            <p>• Enter a missionary number (also known as Legacy Miss ID) to find their current active assignment</p>
-            <p>• The search will return comprehensive assignment details including mission, location, training, and status information</p>
-            <p>• Recent searches are automatically saved and can be accessed from the search history section</p>
-            <p>• Click on any item in the search history to quickly repeat that search</p>
-            <p>• Assignment data includes current mission details, assignment location, training information, and system identifiers</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Card sx={{ bgcolor: 'info.50', border: 1, borderColor: 'info.200' }}>
+          <CardContent>
+            <Typography variant="h6" color="info.main" gutterBottom>
+              💡 How to Use Active Assignment Search
+            </Typography>
+            <Box sx={{ '& > *': { mb: 1 } }}>
+              <Typography variant="body2" color="info.dark">
+                • Enter a missionary number (also known as Legacy Miss ID) to find their current active assignment
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • The search will return comprehensive assignment details including mission, location, training, and status information
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Recent searches are automatically saved and can be accessed from the search history section
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Click on any item in the search history to quickly repeat that search
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Assignment data includes current mission details, assignment location, training information, and system identifiers
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    </Box>
   );
 }

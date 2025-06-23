@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Box, Card, CardContent, Typography, Button, TextField, Alert, CircularProgress, Chip, Accordion, AccordionSummary, AccordionDetails, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Search, Clear, History, ExpandMore, Assignment, LocationOn, Person, Groups, CalendarToday, Info } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
-import { ENVIRONMENTS } from '@/lib/environments';
+import { ENVIRONMENTS, getEnvironmentKeysByService } from '@/lib/environments';
 
 interface LabelValue {
   value: number;
@@ -42,9 +44,11 @@ interface AssignmentLocation {
 
 interface SearchHistory {
   id: string;
-  timestamp: string;
-  resultFound: boolean;
+  searchedAt: string;
 }
+
+const SEARCH_HISTORY_KEY = 'assignment-location-search-history';
+const MAX_HISTORY_ITEMS = 10;
 
 export default function AssignmentLocationPage() {
   const [assignmentLocationId, setAssignmentLocationId] = useState('');
@@ -52,57 +56,96 @@ export default function AssignmentLocationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  // Initialize API client
+  // Get only MGQL/MIS environments (no MOGS)
+  const mgqlEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+    key.startsWith('mis-gql-')
+  );
+
+  // Initialize API client with default MIS development environment
   useEffect(() => {
-    const selectedEnvironment = localStorage.getItem('selectedEnvironment') || 'development';
-    const config = ENVIRONMENTS[selectedEnvironment as keyof typeof ENVIRONMENTS];
+    const savedEnvironment = localStorage.getItem('selectedEnvironment');
+    const environmentToUse = (savedEnvironment && ENVIRONMENTS[savedEnvironment] && savedEnvironment.startsWith('mis-gql-')) 
+      ? savedEnvironment 
+      : 'mis-gql-dev';
+    
+    setSelectedEnvironment(environmentToUse);
+    const config = ENVIRONMENTS[environmentToUse];
     
     if (config) {
-      setApiClient(new ApiClient(config, selectedEnvironment));
+      setApiClient(new ApiClient(config, environmentToUse));
     }
   }, []);
 
-  // Load search history from localStorage on component mount
+  // Update API client when environment changes
   useEffect(() => {
-    const savedHistory = localStorage.getItem('assignmentLocationSearchHistory');
+    const config = ENVIRONMENTS[selectedEnvironment];
+    if (config) {
+      setApiClient(new ApiClient(config, selectedEnvironment));
+      localStorage.setItem('selectedEnvironment', selectedEnvironment);
+    }
+  }, [selectedEnvironment]);
+
+  // Load search history from localStorage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
     if (savedHistory) {
       try {
-        setSearchHistory(JSON.parse(savedHistory));
+        const parsed = JSON.parse(savedHistory);
+        setSearchHistory(parsed);
       } catch (e) {
-        console.error('Failed to parse search history:', e);
+        console.error('Error parsing search history:', e);
       }
     }
+    setIsHistoryLoaded(true);
   }, []);
 
   // Save search history to localStorage
-  const saveSearchHistory = (history: SearchHistory[]) => {
-    localStorage.setItem('assignmentLocationSearchHistory', JSON.stringify(history));
-    setSearchHistory(history);
-  };
+  useEffect(() => {
+    if (isHistoryLoaded) {
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(searchHistory));
+    }
+  }, [searchHistory, isHistoryLoaded]);
 
-  const addToSearchHistory = (id: string, resultFound: boolean) => {
-    const newEntry: SearchHistory = {
-      id,
-      timestamp: new Date().toISOString(),
-      resultFound
+  const addToHistory = (id: string) => {
+    if (!id.trim()) return;
+    
+    const newHistoryItem: SearchHistory = {
+      id: id.trim(),
+      searchedAt: new Date().toISOString()
     };
-    const updatedHistory = [newEntry, ...searchHistory.slice(0, 9)]; // Keep last 10 searches
-    saveSearchHistory(updatedHistory);
+
+    setSearchHistory(prev => {
+      // Remove existing entry if it exists
+      const filtered = prev.filter(item => item.id !== id.trim());
+      // Add new entry at the beginning
+      const updated = [newHistoryItem, ...filtered];
+      // Keep only the last MAX_HISTORY_ITEMS
+      return updated.slice(0, MAX_HISTORY_ITEMS);
+    });
   };
 
-  const clearSearchHistory = () => {
-    localStorage.removeItem('assignmentLocationSearchHistory');
+  const removeFromHistory = (id: string) => {
+    setSearchHistory(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearHistory = () => {
     setSearchHistory([]);
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assignmentLocationId.trim()) return;
+  const searchAssignmentLocation = async (searchId?: string) => {
+    const idToSearch = searchId || assignmentLocationId;
+    if (!idToSearch.trim()) {
+      setError('Please enter an Assignment Location ID');
+      return;
+    }
 
     if (!apiClient) {
-      setError('API client not initialized. Please refresh the page.');
+      setError('API client not initialized');
       return;
     }
 
@@ -145,7 +188,7 @@ export default function AssignmentLocationPage() {
         }
       `;
 
-      const variables = { id: assignmentLocationId };
+      const variables = { id: idToSearch };
       const response = await apiClient.executeGraphQLQuery(query, variables);
       
       if (response.errors && response.errors.length > 0) {
@@ -155,18 +198,30 @@ export default function AssignmentLocationPage() {
       const data = response.data as { assignmentLocation: AssignmentLocation | null };
       if (data.assignmentLocation) {
         setAssignmentLocation(data.assignmentLocation);
-        addToSearchHistory(assignmentLocationId, true);
+        addToHistory(idToSearch);
+        if (searchId) {
+          setAssignmentLocationId(searchId);
+        }
       } else {
         setError('No assignment location found for this ID');
-        addToSearchHistory(assignmentLocationId, false);
       }
     } catch (err: any) {
       console.error('Error searching for assignment location:', err);
-      setError(err.message || 'Failed to search for assignment location');
-      addToSearchHistory(assignmentLocationId, false);
+      setError(err instanceof Error ? err.message : 'Failed to search for assignment location');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    searchAssignmentLocation();
+  };
+
+  const handleClear = () => {
+    setAssignmentLocationId('');
+    setAssignmentLocation(null);
+    setError(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -209,308 +264,361 @@ export default function AssignmentLocationPage() {
     return grouped;
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    searchAssignmentLocation();
+  };
+
+  const clearSearchHistory = () => {
+    clearHistory();
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Assignment Location Search</h1>
-          <p className="mt-2 text-lg text-gray-600">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', p: 3 }}>
+      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Assignment color="primary" />
+            Assignment Location Search
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
             Find detailed information about an assignment location by ID
-          </p>
-        </div>
+          </Typography>
+        </Box>
+
+        {/* Environment Selection */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <FormControl fullWidth>
+              <InputLabel>Environment</InputLabel>
+              <Select
+                value={selectedEnvironment}
+                label="Environment"
+                onChange={(e) => setSelectedEnvironment(e.target.value)}
+              >
+                {mgqlEnvironments.map(([key, env]) => (
+                  <MenuItem key={key} value={key}>
+                    {env.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
 
         {/* Search Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div>
-              <label htmlFor="assignmentLocationId" className="block text-sm font-medium text-gray-700 mb-2">
-                Assignment Location ID
-              </label>
-              <input
-                type="text"
-                id="assignmentLocationId"
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box component="form" onSubmit={handleSearch} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+              <TextField
+                fullWidth
+                label="Assignment Location ID"
                 value={assignmentLocationId}
                 onChange={(e) => setAssignmentLocationId(e.target.value)}
                 placeholder="Enter assignment location ID (e.g., 12345)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
+                variant="outlined"
               />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !assignmentLocationId.trim()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  Search Location
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={loading || !assignmentLocationId.trim()}
+                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
+                sx={{ minWidth: 120 }}
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleClear}
+                startIcon={<Clear />}
+                disabled={loading}
+              >
+                Clear
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* Search History */}
         {searchHistory.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Recent Searches</h3>
-              <button
-                onClick={clearSearchHistory}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Clear History
-              </button>
-            </div>
-            <div className="space-y-2">
-              {searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                  onClick={() => useHistorySearch(item)}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <History color="action" />
+                  Recent Searches
+                </Typography>
+                <Button
+                  onClick={clearSearchHistory}
+                  color="error"
+                  size="small"
+                  startIcon={<Clear />}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-900">
-                      Location ID: {item.id}
-                    </span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      item.resultFound 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {item.resultFound ? 'Found' : 'Not Found'}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                  Clear History
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {searchHistory.map((item, index) => (
+                  <Chip
+                    key={index}
+                    label={`Location ID: ${item.id}`}
+                    onClick={() => useHistorySearch(item)}
+                    onDelete={() => removeFromHistory(item.id)}
+                    variant="outlined"
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <div className="flex">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Search Error</h3>
-                <p className="mt-1 text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <strong>Search Error:</strong> {error}
+          </Alert>
         )}
 
         {/* Assignment Location Results */}
         {assignmentLocation && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-blue-50 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-blue-900">Assignment Location Details</h2>
-              <p className="text-blue-700">Location ID: {assignmentLocation.id}</p>
-            </div>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ bgcolor: 'primary.50', borderBottom: 1, borderColor: 'divider' }}>
+              <Typography variant="h5" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Assignment />
+                Assignment Location Details
+              </Typography>
+              <Typography color="primary.dark">Location ID: {assignmentLocation.id}</Typography>
+            </CardContent>
 
-            <div className="p-6">
+            <CardContent sx={{ p: 3 }}>
               {/* Basic Location Information */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">📍 Location Information</h3>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-sm text-blue-600">Location Name:</span>
-                      <p className="font-medium text-blue-900">{assignmentLocation.name || 'Not specified'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-blue-600">Location ID:</span>
-                      <p className="font-medium text-blue-900">{assignmentLocation.id}</p>
-                    </div>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOn color="primary" />
+                  Location Information
+                </Typography>
+                <Card variant="outlined" sx={{ bgcolor: 'primary.50', p: 2 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" color="primary.main">Location Name:</Typography>
+                      <Typography variant="body2" fontWeight="medium" color="primary.dark">
+                        {assignmentLocation.name || 'Not specified'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="primary.main">Location ID:</Typography>
+                      <Typography variant="body2" fontWeight="medium" color="primary.dark">
+                        {assignmentLocation.id}
+                      </Typography>
+                    </Box>
                     {assignmentLocation.type && (
-                      <div>
-                        <span className="text-sm text-blue-600">Location Type:</span>
-                        <p className="font-medium text-blue-900">
+                      <Box>
+                        <Typography variant="caption" color="primary.main">Location Type:</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="primary.dark">
                           {assignmentLocation.type.label} (ID: {assignmentLocation.type.value})
-                        </p>
-                      </div>
+                        </Typography>
+                      </Box>
                     )}
-                  </div>
-                </div>
-              </div>
+                  </Box>
+                </Card>
+              </Box>
 
               {/* Missionary Histories */}
               {assignmentLocation.missionaryHistories && assignmentLocation.missionaryHistories.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    👥 Missionary Assignment History ({assignmentLocation.missionaryHistories.length} records)
-                  </h3>
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Groups color="primary" />
+                    Missionary Assignment History ({assignmentLocation.missionaryHistories.length} records)
+                  </Typography>
                   
                   {(() => {
                     const groupedHistories = groupHistoriesByMissionary(assignmentLocation.missionaryHistories);
                     return (
-                      <div className="space-y-6">
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {Object.entries(groupedHistories).map(([missionaryId, histories]) => (
-                          <div key={missionaryId} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <h4 className="text-md font-semibold text-gray-900 mb-4">
-                              🏷️ Missionary #{missionaryId} ({histories.length} assignment{histories.length > 1 ? 's' : ''})
-                            </h4>
-                            
-                            <div className="space-y-4">
-                              {histories.map((history, index) => (
-                                <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {/* Assignment Period */}
-                                    <div className="col-span-full mb-3">
-                                      <div className="flex items-center space-x-4">
-                                        <div className="bg-green-100 px-3 py-1 rounded-full">
-                                          <span className="text-sm font-medium text-green-800">
-                                            Assignment: {formatDate(history.effectiveDate)} - {formatDate(history.effectiveEndDate)}
-                                          </span>
-                                        </div>
-                                        {history.roleType && (
-                                          <div className="bg-blue-100 px-3 py-1 rounded-full">
-                                            <span className="text-sm font-medium text-blue-800">
-                                              Role: {history.roleType}
-                                            </span>
-                                          </div>
+                          <Card key={missionaryId} variant="outlined" sx={{ bgcolor: 'grey.50' }}>
+                            <CardContent>
+                              <Typography variant="subtitle1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Person color="action" />
+                                Missionary #{missionaryId} ({histories.length} assignment{histories.length > 1 ? 's' : ''})
+                              </Typography>
+                              
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {histories.map((history, index) => (
+                                  <Card key={index} variant="outlined" sx={{ bgcolor: 'background.paper' }}>
+                                    <CardContent>
+                                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                                        {/* Assignment Period */}
+                                        <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' }, mb: 2 }}>
+                                          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                            <Chip
+                                              label={`Assignment: ${formatDate(history.effectiveDate)} - ${formatDate(history.effectiveEndDate)}`}
+                                              color="success"
+                                              variant="outlined"
+                                              size="small"
+                                            />
+                                            {history.roleType && (
+                                              <Chip
+                                                label={`Role: ${history.roleType}`}
+                                                color="primary"
+                                                variant="outlined"
+                                                size="small"
+                                              />
+                                            )}
+                                          </Box>
+                                        </Box>
+
+                                        {/* Assignment Details */}
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">Assignment Location:</Typography>
+                                          <Typography variant="body2" fontWeight="medium">
+                                            {history.assignmentLocationName} (ID: {history.assignmentLocationId})
+                                          </Typography>
+                                        </Box>
+                                        
+                                        {history.areaName && (
+                                          <Box>
+                                            <Typography variant="caption" color="text.secondary">Proselyting Area:</Typography>
+                                            <Typography variant="body2" fontWeight="medium">
+                                              {history.areaName} (ID: {history.proselytingAreaId})
+                                            </Typography>
+                                          </Box>
                                         )}
-                                      </div>
-                                    </div>
 
-                                    {/* Assignment Details */}
-                                    <div>
-                                      <span className="text-sm text-gray-500">Assignment Location:</span>
-                                      <p className="font-medium text-gray-900">
-                                        {history.assignmentLocationName} (ID: {history.assignmentLocationId})
-                                      </p>
-                                    </div>
-                                    
-                                    {history.areaName && (
-                                      <div>
-                                        <span className="text-sm text-gray-500">Proselyting Area:</span>
-                                        <p className="font-medium text-gray-900">
-                                          {history.areaName} (ID: {history.proselytingAreaId})
-                                        </p>
-                                      </div>
-                                    )}
+                                        {history.areaDate && (
+                                          <Box>
+                                            <Typography variant="caption" color="text.secondary">Area Period:</Typography>
+                                            <Typography variant="body2" fontWeight="medium">
+                                              {formatDate(history.areaDate)} - {formatDate(history.areaEndDate)}
+                                            </Typography>
+                                          </Box>
+                                        )}
 
-                                    {history.areaDate && (
-                                      <div>
-                                        <span className="text-sm text-gray-500">Area Period:</span>
-                                        <p className="font-medium text-gray-900">
-                                          {formatDate(history.areaDate)} - {formatDate(history.areaEndDate)}
-                                        </p>
-                                      </div>
-                                    )}
+                                        {history.roleDate && (
+                                          <Box>
+                                            <Typography variant="caption" color="text.secondary">Role Period:</Typography>
+                                            <Typography variant="body2" fontWeight="medium">
+                                              {formatDate(history.roleDate)} - {formatDate(history.roleEndDate)}
+                                            </Typography>
+                                          </Box>
+                                        )}
 
-                                    {history.roleDate && (
-                                      <div>
-                                        <span className="text-sm text-gray-500">Role Period:</span>
-                                        <p className="font-medium text-gray-900">
-                                          {formatDate(history.roleDate)} - {formatDate(history.roleEndDate)}
-                                        </p>
-                                      </div>
-                                    )}
+                                        {history.roleId && (
+                                          <Box>
+                                            <Typography variant="caption" color="text.secondary">Role ID:</Typography>
+                                            <Typography variant="body2" fontWeight="medium">{history.roleId}</Typography>
+                                          </Box>
+                                        )}
 
-                                    {history.roleId && (
-                                      <div>
-                                        <span className="text-sm text-gray-500">Role ID:</span>
-                                        <p className="font-medium text-gray-900">{history.roleId}</p>
-                                      </div>
-                                    )}
+                                        {history.companionshipDate && (
+                                          <Box>
+                                            <Typography variant="caption" color="text.secondary">Companionship Period:</Typography>
+                                            <Typography variant="body2" fontWeight="medium">
+                                              {formatDate(history.companionshipDate)} - {formatDate(history.companionshipEndDate)}
+                                            </Typography>
+                                          </Box>
+                                        )}
 
-                                    {history.companionshipDate && (
-                                      <div>
-                                        <span className="text-sm text-gray-500">Companionship Period:</span>
-                                        <p className="font-medium text-gray-900">
-                                          {formatDate(history.companionshipDate)} - {formatDate(history.companionshipEndDate)}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Companions */}
-                                    {history.companions && history.companions.length > 0 && (
-                                      <div className="col-span-full mt-4">
-                                        <span className="text-sm text-gray-500">Companions ({history.companions.length}):</span>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                          {history.companions.map((companion, compIndex) => (
-                                            <span
-                                              key={compIndex}
-                                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800"
-                                            >
-                                              {companion.name} (#{companion.legacyMissId})
-                                            </span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                                        {/* Companions */}
+                                        {history.companions && history.companions.length > 0 && (
+                                          <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' }, mt: 2 }}>
+                                            <Typography variant="caption" color="text.secondary">
+                                              Companions ({history.companions.length}):
+                                            </Typography>
+                                            <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                              {history.companions.map((companion, compIndex) => (
+                                                <Chip
+                                                  key={compIndex}
+                                                  label={`${companion.name} (#${companion.legacyMissId})`}
+                                                  color="secondary"
+                                                  variant="outlined"
+                                                  size="small"
+                                                />
+                                              ))}
+                                            </Box>
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </Box>
+                            </CardContent>
+                          </Card>
                         ))}
-                      </div>
+                      </Box>
                     );
                   })()}
-                </div>
+                </Box>
               )}
 
               {/* Summary Statistics */}
               {assignmentLocation.missionaryHistories && assignmentLocation.missionaryHistories.length > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">📊 Location Statistics</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-100 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-blue-900">
-                        {new Set(assignmentLocation.missionaryHistories.map(h => h.legacyMissId)).size}
-                      </div>
-                      <div className="text-sm text-blue-700">Total Missionaries</div>
-                    </div>
-                    <div className="bg-green-100 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-green-900">
-                        {assignmentLocation.missionaryHistories.length}
-                      </div>
-                      <div className="text-sm text-green-700">Assignment Records</div>
-                    </div>
-                    <div className="bg-purple-100 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-purple-900">
-                        {assignmentLocation.missionaryHistories.reduce((total, h) => total + (h.companions?.length || 0), 0)}
-                      </div>
-                      <div className="text-sm text-purple-700">Total Companions</div>
-                    </div>
-                  </div>
-                </div>
+                <Card variant="outlined" sx={{ bgcolor: 'grey.50' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Info color="primary" />
+                      Location Statistics
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                      <Card sx={{ bgcolor: 'primary.50', textAlign: 'center', p: 2 }}>
+                        <Typography variant="h4" fontWeight="bold" color="primary.dark">
+                          {new Set(assignmentLocation.missionaryHistories.map(h => h.legacyMissId)).size}
+                        </Typography>
+                        <Typography variant="caption" color="primary.main">Total Missionaries</Typography>
+                      </Card>
+                      <Card sx={{ bgcolor: 'success.50', textAlign: 'center', p: 2 }}>
+                        <Typography variant="h4" fontWeight="bold" color="success.dark">
+                          {assignmentLocation.missionaryHistories.length}
+                        </Typography>
+                        <Typography variant="caption" color="success.main">Assignment Records</Typography>
+                      </Card>
+                      <Card sx={{ bgcolor: 'secondary.50', textAlign: 'center', p: 2 }}>
+                        <Typography variant="h4" fontWeight="bold" color="secondary.dark">
+                          {assignmentLocation.missionaryHistories.reduce((total, h) => total + (h.companions?.length || 0), 0)}
+                        </Typography>
+                        <Typography variant="caption" color="secondary.main">Total Companions</Typography>
+                      </Card>
+                    </Box>
+                  </CardContent>
+                </Card>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Help Section */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-3">💡 How to Use Assignment Location Search</h3>
-          <div className="text-sm text-blue-800 space-y-2">
-            <p>• Enter an assignment location ID to find detailed information about that location</p>
-            <p>• View location details including name, type, and associated missionary histories</p>
-            <p>• Explore comprehensive missionary assignment records including dates, roles, and companions</p>
-            <p>• Recent searches are automatically saved and can be accessed from the search history section</p>
-            <p>• Assignment histories are grouped by missionary and sorted by most recent assignment first</p>
-            <p>• View statistics including total missionaries, assignment records, and companion relationships</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Card sx={{ bgcolor: 'info.50', border: 1, borderColor: 'info.200' }}>
+          <CardContent>
+            <Typography variant="h6" color="info.main" gutterBottom>
+              💡 How to Use Assignment Location Search
+            </Typography>
+            <Box sx={{ '& > *': { mb: 1 } }}>
+              <Typography variant="body2" color="info.dark">
+                • Enter an assignment location ID to find detailed information about that location
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • View location details including name, type, and associated missionary histories
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Explore comprehensive missionary assignment records including dates, roles, and companions
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Recent searches are automatically saved and can be accessed from the search history section
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • Assignment histories are grouped by missionary and sorted by most recent assignment first
+              </Typography>
+              <Typography variant="body2" color="info.dark">
+                • View statistics including total missionaries, assignment records, and companion relationships
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    </Box>
   );
 }
