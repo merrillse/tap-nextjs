@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getEnvironmentConfig } from '@/lib/environments';
 import { ApiClient } from '@/lib/api-client';
 
@@ -95,6 +95,9 @@ export default function MissionaryPage() {
   const [showQuery, setShowQuery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+  const [recentNumbers, setRecentNumbers] = useState<string[]>([]);
+  const [showRecentNumbers, setShowRecentNumbers] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize API client with default environment
   useEffect(() => {
@@ -106,6 +109,53 @@ export default function MissionaryPage() {
       setApiClient(new ApiClient(config));
     }
   }, []);
+
+  // Load recent missionary numbers from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('recent-missionary-numbers');
+      if (saved) {
+        setRecentNumbers(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.warn('Error loading recent missionary numbers:', error);
+    }
+  }, []);
+
+  // Handle clicking outside the dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowRecentNumbers(false);
+      }
+    };
+
+    if (showRecentNumbers) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showRecentNumbers]);
+
+  // Function to save a missionary number to recent list
+  const saveRecentNumber = (number: string) => {
+    if (!number.trim()) return;
+    
+    setRecentNumbers(prev => {
+      // Remove if already exists
+      const filtered = prev.filter(n => n !== number);
+      // Add to beginning and keep only 10 most recent
+      const updated = [number, ...filtered].slice(0, 10);
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('recent-missionary-numbers', JSON.stringify(updated));
+      } catch (error) {
+        console.warn('Error saving recent missionary numbers:', error);
+      }
+      
+      return updated;
+    });
+  };
 
   const graphqlQuery = `query Missionary($missionaryNumber: ID = "${missionaryNumber}") {
   missionary(missionaryId: $missionaryNumber) {
@@ -158,6 +208,9 @@ export default function MissionaryPage() {
     setError(null);
     setMissionaryData(null);
     
+    // Save the missionary number to recent list
+    saveRecentNumber(missionaryNumber);
+    
     try {
       const result = await apiClient.executeGraphQLQuery(graphqlQuery, {
         missionaryNumber: missionaryNumber
@@ -194,16 +247,70 @@ export default function MissionaryPage() {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <label htmlFor="missionaryNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Missionary Number
+                Missionary Number (legacy_miss_id)
               </label>
-              <input
-                type="text"
-                id="missionaryNumber"
-                value={missionaryNumber}
-                onChange={(e) => setMissionaryNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter missionary number..."
-              />
+              <div className="relative" ref={dropdownRef}>
+                <input
+                  type="text"
+                  id="missionaryNumber"
+                  value={missionaryNumber}
+                  onChange={(e) => setMissionaryNumber(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    } else if (e.key === 'Escape') {
+                      setShowRecentNumbers(false);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter missionary number..."
+                />
+                {recentNumbers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRecentNumbers(!showRecentNumbers)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    title="Recent numbers"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                )}
+              
+                {/* Recent Numbers Dropdown */}
+                {showRecentNumbers && recentNumbers.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b">
+                      Recent Searches (Click to select)
+                    </div>
+                    {recentNumbers.map((number, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setMissionaryNumber(number);
+                          setShowRecentNumbers(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-sm"
+                      >
+                        {number}
+                      </button>
+                    ))}
+                    <div className="px-3 py-2 border-t">
+                      <button
+                        onClick={() => {
+                          setRecentNumbers([]);
+                          setShowRecentNumbers(false);
+                          localStorage.removeItem('recent-missionary-numbers');
+                        }}
+                        className="text-xs text-red-600 hover:text-red-800"
+                      >
+                        Clear all recent numbers
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col justify-end space-y-2">
               <button

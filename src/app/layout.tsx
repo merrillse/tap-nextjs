@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import MuiThemeProvider from "@/components/MuiThemeProvider";
+import { ClientSelectionProvider } from "@/contexts/ClientSelectionContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MuiThemeProvider>
-          <Navigation>
-            {children}
-          </Navigation>
+          <ClientSelectionProvider>
+            <Navigation>
+              {children}
+            </Navigation>
+          </ClientSelectionProvider>
         </MuiThemeProvider>
       </body>
     </html>

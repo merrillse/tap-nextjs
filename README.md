@@ -23,20 +23,21 @@ MIS_GQL_STAGE_CLIENT_SECRET=your_stage_client_secret_here
 
 # MIS GraphQL Production Environment
 MIS_GQL_PROD_CLIENT_SECRET=your_prod_client_secret_here
-
-# MOGS GraphQL Development Environment
-MOGS_DEV_CLIENT_SECRET=your_mogs_dev_client_secret_here
-
-# MOGS GraphQL Local Environment
-MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_client_secret_here
-
-# MOGS GraphQL Production Environment
-MOGS_PROD_CLIENT_SECRET=your_mogs_prod_client_secret_here
 ```
 
 ⚠️ **Important**: Never commit `.env.local` to the repository. It's already in `.gitignore`.
 
-### 2. Run the Development Server
+### 2. Client Selection Feature
+
+The application includes a client selector dropdown in the top-right corner of the navigation bar. This allows users to choose which OAuth client to use for authentication:
+
+**Available Clients:**
+- **Missionary Graph Service Team** (`0oak0jqakvevwjWrp357`) - Default production client
+- **Test Client** (`0oak0jqakvevwjWrp444`) - For lab attendees and testing
+
+The selected client is persisted in localStorage and will be used for all GraphQL requests across all environments. Lab attendees using the Test Client will authenticate using the same client secrets as the existing environments.
+
+### 3. Run the Development Server
 
 ```bash
 npm run dev

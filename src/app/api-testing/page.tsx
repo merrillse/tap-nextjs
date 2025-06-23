@@ -9,6 +9,7 @@ import { RandomQueryGenerator, INTROSPECTION_QUERY, type IntrospectionResult } f
 import { type SavedQuery } from '@/lib/query-library';
 import { SaveQueryDialog, QueryLibraryDrawer } from '@/components/QueryLibraryDrawer';
 import { SchemaBrowserDrawer } from '@/components/SchemaBrowserDrawer';
+import { useApiClient } from '@/hooks/useApiClient';
 import { 
   FormControl, 
   InputLabel, 
@@ -144,7 +145,8 @@ export default function APITestingPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiClient, setApiClient] = useState<ApiClient | null>(null);
+  // Use hook to get API client with selected clientId
+  const apiClient = useApiClient(selectedEnvironment);
   const [generatingQuery, setGeneratingQuery] = useState(false);
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [schema, setSchema] = useState<IntrospectionResult | null>(null);
@@ -420,12 +422,8 @@ query ThirdQuery {
   }, [httpHeaders]);
 
 
-  // Initialize API client when environment changes
+  // Handle environment changes
   useEffect(() => {
-    const config = getEnvironmentConfig(selectedEnvironment);
-    if (config) {
-      setApiClient(new ApiClient(config, selectedEnvironment));
-    }
     // Save selected environment
     localStorage.setItem('selectedEnvironment', selectedEnvironment);
     // Dispatch custom event to update indicator
@@ -438,7 +436,7 @@ query ThirdQuery {
   // Auto-load schema for autocomplete when API client is ready
   useEffect(() => {
     const loadSchemaForAutocomplete = async () => {
-      if (!apiClient || schema) return; // Don't reload if already have schema
+      if (schema) return; // Don't reload if already have schema
       
       setSchemaLoading(true);
       try {
@@ -461,8 +459,6 @@ query ThirdQuery {
 
   // Manual refresh schema function
   const refreshSchema = async () => {
-    if (!apiClient) return;
-    
     setSchemaLoading(true);
     try {
       console.log('Refreshing schema...');
@@ -480,11 +476,6 @@ query ThirdQuery {
   const handleTest = async () => {
     console.log('[Apex Debug] handleTest called');
 
-    if (!apiClient) {
-      console.error('[Apex Debug] apiClient is null in handleTest');
-      setError('API client not initialized. Please select an environment.');
-      return;
-    }
     console.log('[Apex Debug] apiClient is available, proceeding.');
 
     setLoading(true);
@@ -616,11 +607,6 @@ query ThirdQuery {
   };
 
   const handleGenerateRandomQuery = async () => {
-    if (!apiClient) {
-      setError('API client not initialized. Please select an environment.');
-      return;
-    }
-
     setGeneratingQuery(true);
     setError(null);
     
@@ -1122,7 +1108,7 @@ ${fields}
               <div className="flex flex-col space-y-3 max-h-[35vh] min-h-0">
                 
                 {/* Status Panel - Modern Design */}
-                {(apiClient && (schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken())) && (
+                {(schemaLoading || loading || generatingQuery || !apiClient.getCurrentToken()) && (
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
