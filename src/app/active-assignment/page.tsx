@@ -25,19 +25,12 @@ interface Mission {
 
 interface Missionary {
   missionaryNumber: number;
-  legalFirstName: string;
-  legalLastName: string;
-  preferredFirstName: string;
-  gender: string;
-  birthCountry: string;
+  latinFirstName: string;
+  latinLastName: string;
 }
 
 interface AssignmentLocationComponent {
   id: number;
-  name: string;
-  assignmentLocationName: string;
-  language: string;
-  statusDescription: string;
 }
 
 interface Assignment {
@@ -159,10 +152,6 @@ export default function ActiveAssignmentPage() {
             positionId
             component {
               id
-              name
-              assignmentLocationName
-              language
-              statusDescription
             }
             mission {
               id
@@ -179,11 +168,8 @@ export default function ActiveAssignmentPage() {
             }
             missionary {
               missionaryNumber
-              legalFirstName
-              legalLastName
-              preferredFirstName
-              gender
-              birthCountry
+              latinFirstName
+              latinLastName
             }
           }
         }
@@ -352,30 +338,16 @@ export default function ActiveAssignmentPage() {
                 <div className="mb-8">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">👤 Missionary Information</h3>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <span className="text-sm text-gray-500">Missionary Number:</span>
                         <p className="font-medium">{assignment.missionary.missionaryNumber}</p>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-500">Legal Name:</span>
+                        <span className="text-sm text-gray-500">Name:</span>
                         <p className="font-medium">
-                          {assignment.missionary.legalFirstName} {assignment.missionary.legalLastName}
+                          {assignment.missionary.latinFirstName} {assignment.missionary.latinLastName}
                         </p>
-                      </div>
-                      {assignment.missionary.preferredFirstName && (
-                        <div>
-                          <span className="text-sm text-gray-500">Preferred Name:</span>
-                          <p className="font-medium">{assignment.missionary.preferredFirstName}</p>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-sm text-gray-500">Gender:</span>
-                        <p className="font-medium">{assignment.missionary.gender}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Birth Country:</span>
-                        <p className="font-medium">{assignment.missionary.birthCountry}</p>
                       </div>
                     </div>
                   </div>
@@ -428,25 +400,11 @@ export default function ActiveAssignmentPage() {
               {/* Assignment Location Component */}
               {assignment.component && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">📍 Assignment Location</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">📍 Assignment Location Component</h3>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-blue-600">Location Name:</span>
-                        <p className="font-medium text-blue-900">{assignment.component.assignmentLocationName}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-blue-600">Component Name:</span>
-                        <p className="font-medium text-blue-900">{assignment.component.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-blue-600">Language:</span>
-                        <p className="font-medium text-blue-900">{assignment.component.language}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-blue-600">Status:</span>
-                        <p className="font-medium text-blue-900">{assignment.component.statusDescription}</p>
-                      </div>
+                    <div>
+                      <span className="text-sm text-blue-600">Component ID:</span>
+                      <p className="font-medium text-blue-900">{assignment.component.id}</p>
                     </div>
                   </div>
                 </div>
