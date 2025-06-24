@@ -21,56 +21,66 @@ interface MMSOrganization {
   shortName?: string;
 }
 
+interface LeaderAttachment {
+  id?: string;
+  type?: string;
+  filename?: string;
+  url?: string;
+}
+
+interface LeaderCitizenship {
+  id?: string;
+  country?: MMSLocation;
+  type?: string;
+}
+
+interface LeaderNote {
+  id?: string;
+  note?: string;
+  author?: string;
+  createDate?: string;
+}
+
+interface LeaderPhoto {
+  id?: string;
+  url?: string;
+  filename?: string;
+}
+
 interface Leader {
   id?: string;
-  leaderId?: number;
-  firstName?: string;
-  lastName?: string;
-  middleName?: string;
-  preferredName?: string;
-  title?: string;
-  fullName?: string;
-  gender?: string;
-  dateOfBirth?: string;
-  placeOfBirth?: string;
-  nationality?: MMSLocation;
-  citizenship?: MMSLocation;
-  homeCountry?: MMSLocation;
+  spouseCmisId?: number;
+  mrn?: string;
+  genderCode?: string;
+  homeUnit?: MMSOrganization;
+  surname?: string;
+  givenName?: string;
+  preferredSurname?: string;
+  preferredGivenName?: string;
+  unit?: MMSOrganization;
+  startDate?: string;
+  endDate?: string;
+  ldsEmail?: string;
+  personalEmail?: string;
+  phone?: string;
+  homeAddress?: string;
   homeLocation?: MMSLocation;
-  emailPersonal?: string;
-  phonePersonal?: string;
-  phoneBusiness?: string;
-  spouseName?: string;
-  spouseEmail?: string;
-  spousePhone?: string;
-  emergencyContactName?: string;
-  emergencyContactRelationship?: string;
-  emergencyContactPhone?: string;
-  emergencyContactEmail?: string;
-  maritalStatus?: string;
-  children?: number;
-  education?: string;
-  yearsInMinistry?: number;
-  yearsWithOrganization?: number;
-  bio?: string;
-  primaryOrganization?: MMSOrganization;
-  primaryLocation?: MMSLocation;
-  currentAssignment?: string;
-  currentAssignmentStartDate?: string;
-  currentAssignmentEndDate?: string;
-  currentAssignmentStatus?: string;
-  supervisor?: Leader;
-  skills?: string[];
-  languages?: string[];
-  ministryExperience?: string[];
-  specialInterests?: string[];
-  notes?: string;
-  status?: string;
-  active?: boolean;
-  createDate?: string;
-  createdBy?: string;
+  birthDate?: string;
+  birthPlace?: string;
+  birthLocation?: MMSLocation;
+  passportNumber?: string;
+  passportExpirationDate?: string;
+  contactName?: string;
+  contactRelationship?: string;
+  contactAddress?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  loadDate?: string;
   updateDate?: string;
-  updatedBy?: string;
+  attachments?: LeaderAttachment[];
+  citizenships?: LeaderCitizenship[];
+  notes?: LeaderNote[];
+  photo?: LeaderPhoto;
 }
 
 interface SearchHistory {
@@ -100,13 +110,23 @@ export default function MOGSLeaderPage() {
     }
   };
 
+  const getDisplayName = (leader: Leader) => {
+    if (leader.preferredGivenName && leader.preferredSurname) {
+      return `${leader.preferredGivenName} ${leader.preferredSurname}`;
+    }
+    if (leader.givenName && leader.surname) {
+      return `${leader.givenName} ${leader.surname}`;
+    }
+    return 'Unknown';
+  };
+
   const exportToJson = () => {
     if (!leader) return;
     
     const dataStr = JSON.stringify(leader, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `leader-${leader.leaderId}-${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `leader-${leader.id}-${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -191,40 +211,36 @@ export default function MOGSLeaderPage() {
     setLeader(null);
 
     const query = `
-      query GetLeader($id: Int!) {
+      query GetLeader($id: ID!) {
         leader(id: $id) {
           id
-          leaderId
-          firstName
-          lastName
-          middleName
-          preferredName
-          title
-          fullName
-          gender
-          dateOfBirth
-          placeOfBirth
-          nationality {
+          spouseCmisId
+          mrn
+          genderCode
+          homeUnit {
             id
-            iso3Code
+            organizationId
             name
+            officialName
             shortName
-            abbreviation
           }
-          citizenship {
+          surname
+          givenName
+          preferredSurname
+          preferredGivenName
+          unit {
             id
-            iso3Code
+            organizationId
             name
+            officialName
             shortName
-            abbreviation
           }
-          homeCountry {
-            id
-            iso3Code
-            name
-            shortName
-            abbreviation
-          }
+          startDate
+          endDate
+          ldsEmail
+          personalEmail
+          phone
+          homeAddress
           homeLocation {
             id
             iso3Code
@@ -232,63 +248,57 @@ export default function MOGSLeaderPage() {
             shortName
             abbreviation
           }
-          emailPersonal
-          phonePersonal
-          phoneBusiness
-          spouseName
-          spouseEmail
-          spousePhone
-          emergencyContactName
-          emergencyContactRelationship
-          emergencyContactPhone
-          emergencyContactEmail
-          maritalStatus
-          children
-          education
-          yearsInMinistry
-          yearsWithOrganization
-          bio
-          primaryOrganization {
-            id
-            organizationId
-            name
-            officialName
-            shortName
-          }
-          primaryLocation {
+          birthDate
+          birthPlace
+          birthLocation {
             id
             iso3Code
             name
             shortName
             abbreviation
           }
-          currentAssignment
-          currentAssignmentStartDate
-          currentAssignmentEndDate
-          currentAssignmentStatus
-          supervisor {
-            id
-            leaderId
-            firstName
-            lastName
-            fullName
-          }
-          skills
-          languages
-          ministryExperience
-          specialInterests
-          notes
-          status
-          active
-          createDate
-          createdBy
+          passportNumber
+          passportExpirationDate
+          contactName
+          contactRelationship
+          contactAddress
+          contactEmail
+          contactPhone
+          loadDate
           updateDate
-          updatedBy
+          attachments {
+            id
+            type
+            filename
+            url
+          }
+          citizenships {
+            id
+            type
+            country {
+              id
+              iso3Code
+              name
+              shortName
+              abbreviation
+            }
+          }
+          notes {
+            id
+            note
+            author
+            createDate
+          }
+          photo {
+            id
+            url
+            filename
+          }
         }
       }
     `;
 
-    const variables = { id: parseInt(leaderId.trim()) };
+    const variables = { id: leaderId.trim() };
 
     try {
       const response = await apiClient.executeGraphQLQuery(query, variables);
@@ -300,7 +310,8 @@ export default function MOGSLeaderPage() {
       if (response.data && (response.data as any).leader) {
         const leaderData = (response.data as any).leader;
         setLeader(leaderData);
-        saveSearchHistory(leaderId.trim(), true, leaderData.fullName);
+        const displayName = getDisplayName(leaderData);
+        saveSearchHistory(leaderId.trim(), true, displayName);
       } else {
         setError('No leader found with the provided ID');
         saveSearchHistory(leaderId.trim(), false);
@@ -324,7 +335,7 @@ export default function MOGSLeaderPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
           <select
             id="environment"
@@ -338,6 +349,72 @@ export default function MOGSLeaderPage() {
               </option>
             ))}
           </select>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="leader-quick-select" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="leader-quick-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setLeaderId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Leader ID</option>
+              <option value="24357414916">24357414916</option>
+              <option value="2897413143">2897413143</option>
+              <option value="1693320715">1693320715</option>
+              <option value="11939508170">11939508170</option>
+              <option value="11029532291">11029532291</option>
+              <option value="10429770569">10429770569</option>
+              <option value="24339111456">24339111456</option>
+              <option value="23087964784">23087964784</option>
+              <option value="24339110473">24339110473</option>
+              <option value="22353114287">22353114287</option>
+              <option value="7363502601">7363502601</option>
+              <option value="2935183935">2935183935</option>
+              <option value="2935182952">2935182952</option>
+              <option value="2943579738">2943579738</option>
+              <option value="3645136025">3645136025</option>
+              <option value="3645135042">3645135042</option>
+              <option value="17570469339">17570469339</option>
+              <option value="18333942830">18333942830</option>
+              <option value="3389593379">3389593379</option>
+              <option value="3333999814">3333999814</option>
+              <option value="20627102924">20627102924</option>
+              <option value="484753671">484753671</option>
+              <option value="3533289302">3533289302</option>
+              <option value="1934172426">1934172426</option>
+              <option value="1337986858">1337986858</option>
+              <option value="18280619012">18280619012</option>
+              <option value="2895739094">2895739094</option>
+              <option value="1337987841">1337987841</option>
+              <option value="2895741060">2895741060</option>
+              <option value="1749978869">1749978869</option>
+              <option value="1749979852">1749979852</option>
+              <option value="12464193267">12464193267</option>
+              <option value="2902811779">2902811779</option>
+              <option value="3060591143">3060591143</option>
+              <option value="3060592126">3060592126</option>
+              <option value="23022500916">23022500916</option>
+              <option value="6205793028">6205793028</option>
+              <option value="1198986726">1198986726</option>
+              <option value="318879302">318879302</option>
+              <option value="318878319">318878319</option>
+              <option value="2061476824">2061476824</option>
+              <option value="3614195117">3614195117</option>
+              <option value="19122145652">19122145652</option>
+              <option value="20714659717">20714659717</option>
+              <option value="1591689328">1591689328</option>
+              <option value="5878106046">5878106046</option>
+              <option value="1228590754">1228590754</option>
+              <option value="13746403722">13746403722</option>
+              <option value="13355884363">13355884363</option>
+              <option value="346134943">346134943</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -394,156 +471,264 @@ export default function MOGSLeaderPage() {
           </div>
 
           <div className="space-y-6">
-            {/* Basic Information */}
+            {/* Leader Header */}
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">👤</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">{getDisplayName(leader)}</h3>
+                {leader.id && (
+                  <p className="text-gray-600">Leader ID: {leader.id}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Basic Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Personal Information */}
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
-                  <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
+                <div className="space-y-3">
+                  {leader.mrn && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Leader ID:</span>
-                      <span className="font-mono">{leader.leaderId}</span>
+                      <span className="text-gray-600">MRN:</span>
+                      <span className="font-mono">{leader.mrn}</span>
                     </div>
+                  )}
+                  {leader.genderCode && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Full Name:</span>
-                      <span>{leader.fullName || 'N/A'}</span>
+                      <span className="text-gray-600">Gender:</span>
+                      <span>{leader.genderCode}</span>
                     </div>
+                  )}
+                  {leader.birthDate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">First Name:</span>
-                      <span>{leader.firstName || 'N/A'}</span>
+                      <span className="text-gray-600">Birth Date:</span>
+                      <span>{formatDate(leader.birthDate)}</span>
                     </div>
+                  )}
+                  {leader.birthPlace && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Last Name:</span>
-                      <span>{leader.lastName || 'N/A'}</span>
+                      <span className="text-gray-600">Birth Place:</span>
+                      <span>{leader.birthPlace}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Title:</span>
-                      <span>{leader.title || 'N/A'}</span>
+                  )}
+                  {leader.homeAddress && (
+                    <div>
+                      <span className="text-gray-600 block mb-1">Home Address:</span>
+                      <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-line">
+                        {leader.homeAddress}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
+              {/* Leadership Assignment */}
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
-                  <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Leadership Assignment</h3>
+                <div className="space-y-3">
+                  {leader.unit && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Personal Email:</span>
-                      <span>{leader.emailPersonal || 'N/A'}</span>
+                      <span className="text-gray-600">Unit:</span>
+                      <span>{leader.unit.name || leader.unit.shortName || 'N/A'}</span>
                     </div>
+                  )}
+                  {leader.homeUnit && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Personal Phone:</span>
-                      <span>{leader.phonePersonal || 'N/A'}</span>
+                      <span className="text-gray-600">Home Unit:</span>
+                      <span>{leader.homeUnit.name || leader.homeUnit.shortName || 'N/A'}</span>
                     </div>
+                  )}
+                  {leader.startDate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Business Phone:</span>
-                      <span>{leader.phoneBusiness || 'N/A'}</span>
+                      <span className="text-gray-600">Start Date:</span>
+                      <span>{formatDate(leader.startDate)}</span>
                     </div>
+                  )}
+                  {leader.endDate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        leader.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {leader.active ? 'Active' : 'Inactive'}
-                      </span>
+                      <span className="text-gray-600">End Date:</span>
+                      <span>{formatDate(leader.endDate)}</span>
                     </div>
-                  </div>
+                  )}
+                  {leader.spouseCmisId && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Spouse CMIS ID:</span>
+                      <span className="font-mono">{leader.spouseCmisId}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Personal Details */}
-            {(leader.gender || leader.dateOfBirth || leader.maritalStatus || leader.children) && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+            {/* Contact Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  {leader.ldsEmail && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Gender:</span>
-                      <span>{leader.gender || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Date of Birth:</span>
-                      <span>{formatDate(leader.dateOfBirth)}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Marital Status:</span>
-                      <span>{leader.maritalStatus || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Children:</span>
-                      <span>{leader.children || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Organization Information */}
-            {leader.primaryOrganization && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Organization Information</h3>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Primary Organization</h4>
-                  <div className="space-y-1">
-                    <div className="text-sm text-gray-600">Name: {leader.primaryOrganization.name || 'N/A'}</div>
-                    <div className="text-sm text-gray-600">Official Name: {leader.primaryOrganization.officialName || 'N/A'}</div>
-                    <div className="text-sm text-gray-600">Short Name: {leader.primaryOrganization.shortName || 'N/A'}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Skills and Experience */}
-            {(leader.skills?.length || leader.languages?.length || leader.ministryExperience?.length || leader.specialInterests?.length) && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Skills & Experience</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {leader.skills?.length && (
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Skills:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {leader.skills.map((skill, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+                      <span className="text-gray-600">LDS Email:</span>
+                      <span className="text-blue-600">{leader.ldsEmail}</span>
                     </div>
                   )}
-                  
-                  {leader.languages?.length && (
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Languages:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {leader.languages.map((language, index) => (
-                          <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-                            {language}
-                          </span>
-                        ))}
-                      </div>
+                  {leader.personalEmail && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Personal Email:</span>
+                      <span className="text-blue-600">{leader.personalEmail}</span>
+                    </div>
+                  )}
+                  {leader.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Phone:</span>
+                      <span>{leader.phone}</span>
                     </div>
                   )}
                 </div>
+
+                {/* Emergency Contact */}
+                {leader.contactName && (
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3">Emergency Contact</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Name:</span>
+                        <span>{leader.contactName}</span>
+                      </div>
+                      {leader.contactRelationship && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Relationship:</span>
+                          <span>{leader.contactRelationship}</span>
+                        </div>
+                      )}
+                      {leader.contactPhone && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Phone:</span>
+                          <span>{leader.contactPhone}</span>
+                        </div>
+                      )}
+                      {leader.contactEmail && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="text-blue-600">{leader.contactEmail}</span>
+                        </div>
+                      )}
+                      {leader.contactAddress && (
+                        <div>
+                          <span className="text-gray-600 block mb-1">Address:</span>
+                          <div className="text-sm bg-white p-2 rounded">
+                            {leader.contactAddress}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Location Information */}
+            {(leader.homeLocation || leader.birthLocation) && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Location Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {leader.homeLocation && (
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Home Location</h4>
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">Name: {leader.homeLocation.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Code: {leader.homeLocation.iso3Code || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Short Name: {leader.homeLocation.shortName || 'N/A'}</div>
+                      </div>
+                    </div>
+                  )}
+                  {leader.birthLocation && (
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Birth Location</h4>
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">Name: {leader.birthLocation.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Code: {leader.birthLocation.iso3Code || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Short Name: {leader.birthLocation.shortName || 'N/A'}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Biography */}
-            {leader.bio && (
+            {/* Passport Information */}
+            {(leader.passportNumber || leader.passportExpirationDate) && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Biography</h3>
-                <p className="text-gray-700 leading-relaxed">{leader.bio}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Passport Information</h3>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="space-y-2">
+                    {leader.passportNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Passport Number:</span>
+                        <span className="font-mono">{leader.passportNumber}</span>
+                      </div>
+                    )}
+                    {leader.passportExpirationDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Expiration Date:</span>
+                        <span>{formatDate(leader.passportExpirationDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Citizenships */}
+            {leader.citizenships && leader.citizenships.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Citizenships</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {leader.citizenships.map((citizenship, index) => (
+                    <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Type:</span>
+                          <span>{citizenship.type || 'N/A'}</span>
+                        </div>
+                        {citizenship.country && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Country:</span>
+                              <span>{citizenship.country.name || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Code:</span>
+                              <span>{citizenship.country.iso3Code || 'N/A'}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Notes */}
-            {leader.notes && (
+            {leader.notes && leader.notes.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-                <p className="text-gray-700 leading-relaxed">{leader.notes}</p>
+                <div className="space-y-3">
+                  {leader.notes.map((note, index) => (
+                    <div key={index} className="p-4 bg-yellow-50 rounded-lg">
+                      <div className="mb-2">
+                        <div className="flex justify-between items-start">
+                          <span className="text-sm text-gray-600">Author: {note.author || 'N/A'}</span>
+                          <span className="text-sm text-gray-500">{formatDate(note.createDate)}</span>
+                        </div>
+                      </div>
+                      <p className="text-gray-700">{note.note}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -552,19 +737,27 @@ export default function MOGSLeaderPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">System Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Creation Info</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Load Information</h4>
                   <div className="space-y-1">
-                    <div className="text-sm text-gray-600">Created By: {leader.createdBy || 'N/A'}</div>
-                    <div className="text-sm text-gray-600">Date Created: {formatDate(leader.createDate)}</div>
+                    <div className="text-sm text-gray-600">Load Date: {formatDate(leader.loadDate)}</div>
+                    <div className="text-sm text-gray-600">Update Date: {formatDate(leader.updateDate)}</div>
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Modification Info</h4>
-                  <div className="space-y-1">
-                    <div className="text-sm text-gray-600">Updated By: {leader.updatedBy || 'N/A'}</div>
-                    <div className="text-sm text-gray-600">Date Updated: {formatDate(leader.updateDate)}</div>
+                {leader.attachments && leader.attachments.length > 0 && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Attachments ({leader.attachments.length})</h4>
+                    <div className="space-y-1">
+                      {leader.attachments.slice(0, 3).map((attachment, index) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          {attachment.filename || attachment.type || 'Attachment'}
+                        </div>
+                      ))}
+                      {leader.attachments.length > 3 && (
+                        <div className="text-sm text-gray-500">... and {leader.attachments.length - 3} more</div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
