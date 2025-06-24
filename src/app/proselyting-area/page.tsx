@@ -24,13 +24,14 @@ interface District {
 interface GeopoliticalLocation {
   locationCodeNumber: number;
   geopoliticalLocationId: number;
-  name: string;
+  commonName: string;
+  officialName: string;
 }
 
 interface EcclesiasticalUnit {
   id: string;
   name: string;
-  unitType: string;
+  type: string;
 }
 
 interface Assignment {
@@ -40,9 +41,12 @@ interface Assignment {
     latinFirstName: string;
     latinLastName: string;
   };
-  assignment: string;
-  startDate: string;
-  endDate?: string;
+  assignmentType?: {
+    value: string;
+    label: string;
+  };
+  assignmentStartDate: string;
+  assignmentEndDate?: string;
 }
 
 interface ProselytingArea {
@@ -179,7 +183,8 @@ export default function ProselytingAreaPage() {
             country {
               locationCodeNumber
               geopoliticalLocationId
-              name
+              commonName
+              officialName
             }
             vehicleId
             vehicleUnitOfMeasureCode
@@ -191,7 +196,7 @@ export default function ProselytingAreaPage() {
             ecclesiasticalUnits {
               id
               name
-              unitType
+              type
             }
             activeAssignments {
               id
@@ -200,9 +205,12 @@ export default function ProselytingAreaPage() {
                 latinFirstName
                 latinLastName
               }
-              assignment
-              startDate
-              endDate
+              assignmentType {
+                value
+                label
+              }
+              assignmentStartDate
+              assignmentEndDate
             }
             proselytingAreaPhones {
               id
@@ -408,7 +416,7 @@ export default function ProselytingAreaPage() {
                         <strong>Postal Code:</strong> {proselytingArea.postalCode || 'N/A'}
                       </Typography>
                       <Typography variant="body2" gutterBottom>
-                        <strong>Country:</strong> {proselytingArea.country?.name || 'N/A'}
+                        <strong>Country:</strong> {proselytingArea.country?.commonName || proselytingArea.country?.officialName || 'N/A'}
                       </Typography>
                     </Box>
                     <Box>
@@ -516,7 +524,7 @@ export default function ProselytingAreaPage() {
                           {proselytingArea.ecclesiasticalUnits.map((unit) => (
                             <TableRow key={unit.id}>
                               <TableCell>{unit.name}</TableCell>
-                              <TableCell>{unit.unitType}</TableCell>
+                              <TableCell>{unit.type}</TableCell>
                               <TableCell>{unit.id}</TableCell>
                             </TableRow>
                           ))}
@@ -553,9 +561,9 @@ export default function ProselytingAreaPage() {
                               <TableCell>
                                 {assignment.missionary.latinFirstName} {assignment.missionary.latinLastName}
                               </TableCell>
-                              <TableCell>{assignment.assignment}</TableCell>
-                              <TableCell>{formatDate(assignment.startDate)}</TableCell>
-                              <TableCell>{assignment.endDate ? formatDate(assignment.endDate) : 'Current'}</TableCell>
+                              <TableCell>{assignment.assignmentType?.label || assignment.assignmentType?.value || 'N/A'}</TableCell>
+                              <TableCell>{formatDate(assignment.assignmentStartDate)}</TableCell>
+                              <TableCell>{assignment.assignmentEndDate ? formatDate(assignment.assignmentEndDate) : 'Current'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
