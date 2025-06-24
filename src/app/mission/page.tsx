@@ -265,7 +265,7 @@ export default function MissionPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
           <select
             id="environment"
@@ -279,6 +279,52 @@ export default function MissionPage() {
               </option>
             ))}
           </select>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="mission-quick-select" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="mission-quick-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setMissionId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Mission ID</option>
+              <option value="2019701">2019701</option>
+              <option value="2017032">2017032</option>
+              <option value="2012200">2012200</option>
+              <option value="2010585">2010585</option>
+              <option value="2012081">2012081</option>
+              <option value="2012448">2012448</option>
+              <option value="2011980">2011980</option>
+              <option value="2013177">2013177</option>
+              <option value="2012944">2012944</option>
+              <option value="2011212">2011212</option>
+              <option value="2011352">2011352</option>
+              <option value="2012669">2012669</option>
+              <option value="2019000">2019000</option>
+              <option value="2014513">2014513</option>
+              <option value="374229">374229</option>
+              <option value="2011891">2011891</option>
+              <option value="2012499">2012499</option>
+              <option value="2019418">2019418</option>
+              <option value="2012049">2012049</option>
+              <option value="412953">412953</option>
+              <option value="2016745">2016745</option>
+              <option value="2015900">2015900</option>
+              <option value="2014459">2014459</option>
+              <option value="2011034">2011034</option>
+              <option value="2012529">2012529</option>
+              <option value="2010364">2010364</option>
+              <option value="2016818">2016818</option>
+              <option value="2010763">2010763</option>
+              <option value="2015501">2015501</option>
+              <option value="2011050">2011050</option>
+            </select>
+          </div>
         </div>
       </div>
 
