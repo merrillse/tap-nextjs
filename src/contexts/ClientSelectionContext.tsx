@@ -15,7 +15,7 @@ export const AVAILABLE_CLIENTS: ClientInfo[] = [
     description: 'Production client for Missionary Graph Service team'
   },
   {
-    id: '0oak0jqakvevwjWrp444',
+    id: '0oa82h6j45rN8G1he5d7',
     name: 'Test Client',
     description: 'Test client for lab/workshop attendees'
   }

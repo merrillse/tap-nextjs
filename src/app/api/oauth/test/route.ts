@@ -37,6 +37,15 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    } else if (client_id === '0oa82h6j45rN8G1he5d7') {
+      // Test Client for lab attendees and testing - uses dev environment
+      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+      if (!actualClientSecret) {
+        return NextResponse.json(
+          { error: 'Missing required parameters', details: 'Test client secret not configured in environment variables' },
+          { status: 400 }
+        );
+      }
     } else if (!actualClientSecret) {
       return NextResponse.json(
         { error: 'Missing required parameters', details: 'Client secret required for unknown client configurations' },

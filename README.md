@@ -27,17 +27,21 @@ MIS_GQL_PROD_CLIENT_SECRET=your_prod_client_secret_here
 
 ⚠️ **Important**: Never commit `.env.local` to the repository. It's already in `.gitignore`.
 
-### 2. Client Selection Feature
+### 2.1 Install Dependencies
 
-The application includes a client selector dropdown in the top-right corner of the navigation bar. This allows users to choose which OAuth client to use for authentication:
+Install the required npm packages:
 
-**Available Clients:**
-- **Missionary Graph Service Team** (`0oak0jqakvevwjWrp357`) - Default production client
-- **Test Client** (`0oak0jqakvevwjWrp444`) - For lab attendees and testing
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+# or
+bun install
+```
 
-The selected client is persisted in localStorage and will be used for all GraphQL requests across all environments. Lab attendees using the Test Client will authenticate using the same client secrets as the existing environments.
-
-### 3. Run the Development Server
+### 2.2 Run the Development Server
 
 ```bash
 npm run dev
@@ -50,6 +54,16 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### 3. Client Selection Feature
+
+The application includes a client selector dropdown in the top-right corner of the navigation bar. This allows users to choose which OAuth client to use for authentication:
+
+**Available Clients:**
+- **Missionary Graph Service Team** (`0oak0jqakvevwjWrp357`) - Default production client
+- **Test Client** (`0oa82h6j45rN8G1he5d7`) - For lab attendees and testing
+
+The selected client is persisted in localStorage and will be used for all GraphQL requests across all environments. Lab attendees using the Test Client will authenticate using the same client secrets as the existing environments.
 
 ## Supported GraphQL Systems
 
