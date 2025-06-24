@@ -21,30 +21,61 @@ interface MMSOrganization {
   shortName?: string;
 }
 
+interface DocumentType {
+  id?: string;
+  description?: string;
+  noteType?: boolean;
+  attachmentType?: boolean;
+  addPermissionId?: number;
+  deletePermissionId?: number;
+  editPermissionId?: number;
+  viewPermissionId?: number;
+  confidential?: boolean;
+}
+
 interface LeaderAttachment {
   id?: string;
-  type?: string;
-  filename?: string;
-  url?: string;
+  cmisId?: number;
+  documentType?: DocumentType;
+  title?: string;
+  sourceFileLocation?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileContent?: string;
+  createDate?: string;
+  createdBy?: string;
+  updateDate?: string;
+  updatedBy?: string;
 }
 
 interface LeaderCitizenship {
   id?: string;
-  country?: MMSLocation;
-  type?: string;
+  cmisId?: number;
+  location?: MMSLocation;
+  current?: boolean;
+  loadDate?: string;
+  updateDate?: string;
 }
 
 interface LeaderNote {
   id?: string;
-  note?: string;
-  author?: string;
-  createDate?: string;
+  cmisId?: number;
+  subNotes?: LeaderNote[];
+  documentType?: DocumentType;
+  title?: string;
+  content?: string;
+  createdDate?: string;
+  createdBy?: string;
+  updatedDate?: string;
+  updatedBy?: string;
 }
 
 interface LeaderPhoto {
   id?: string;
-  url?: string;
-  filename?: string;
+  cmisId?: number;
+  photo?: string;
+  createdDate?: string;
+  updatedDate?: string;
 }
 
 interface Leader {
@@ -268,31 +299,66 @@ export default function MOGSLeaderPage() {
           updateDate
           attachments {
             id
-            type
-            filename
-            url
+            cmisId
+            documentType {
+              id
+              description
+              noteType
+              attachmentType
+              confidential
+            }
+            title
+            sourceFileLocation
+            fileType
+            fileSize
+            fileContent
+            createDate
+            createdBy
+            updateDate
+            updatedBy
           }
           citizenships {
             id
-            type
-            country {
+            cmisId
+            location {
               id
               iso3Code
               name
               shortName
               abbreviation
             }
+            current
+            loadDate
+            updateDate
           }
           notes {
             id
-            note
-            author
-            createDate
+            cmisId
+            subNotes {
+              id
+              title
+              content
+            }
+            documentType {
+              id
+              description
+              noteType
+              attachmentType
+              confidential
+            }
+            title
+            content
+            createdDate
+            createdBy
+            updatedDate
+            updatedBy
           }
           photo {
             id
-            url
-            filename
+            cmisId
+            photo
+            createdDate
+            updatedDate
           }
         }
       }
@@ -483,6 +549,47 @@ export default function MOGSLeaderPage() {
                 )}
               </div>
             </div>
+
+            {/* Photo */}
+            {leader.photo && leader.photo.photo && (
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📸 Photo</h3>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="w-48 h-48 border border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <img
+                      src={`data:image/jpeg;base64,${leader.photo.photo}`}
+                      alt={`Photo of ${getDisplayName(leader)}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="text-gray-400 text-center"><span class="text-4xl">📷</span><br/><span class="text-sm">Photo unavailable</span></div>';
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="text-center space-y-1">
+                    {leader.photo.createdDate && (
+                      <div className="text-sm text-gray-600">
+                        Created: {formatDate(leader.photo.createdDate)}
+                      </div>
+                    )}
+                    {leader.photo.updatedDate && (
+                      <div className="text-sm text-gray-600">
+                        Updated: {formatDate(leader.photo.updatedDate)}
+                      </div>
+                    )}
+                    {leader.photo.cmisId && (
+                      <div className="text-xs text-gray-500">
+                        CMIS ID: {leader.photo.cmisId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Basic Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -690,21 +797,29 @@ export default function MOGSLeaderPage() {
                     <div key={index} className="p-4 bg-blue-50 rounded-lg">
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Type:</span>
-                          <span>{citizenship.type || 'N/A'}</span>
+                          <span className="text-gray-600">Current:</span>
+                          <span className={`px-2 py-1 text-xs rounded ${
+                            citizenship.current ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {citizenship.current ? 'Yes' : 'No'}
+                          </span>
                         </div>
-                        {citizenship.country && (
+                        {citizenship.location && (
                           <>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Country:</span>
-                              <span>{citizenship.country.name || 'N/A'}</span>
+                              <span className="text-gray-600">Location:</span>
+                              <span>{citizenship.location.name || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Code:</span>
-                              <span>{citizenship.country.iso3Code || 'N/A'}</span>
+                              <span>{citizenship.location.iso3Code || 'N/A'}</span>
                             </div>
                           </>
                         )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Load Date:</span>
+                          <span className="text-sm">{formatDate(citizenship.loadDate)}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -721,11 +836,36 @@ export default function MOGSLeaderPage() {
                     <div key={index} className="p-4 bg-yellow-50 rounded-lg">
                       <div className="mb-2">
                         <div className="flex justify-between items-start">
-                          <span className="text-sm text-gray-600">Author: {note.author || 'N/A'}</span>
-                          <span className="text-sm text-gray-500">{formatDate(note.createDate)}</span>
+                          <div>
+                            {note.title && (
+                              <div className="font-medium text-gray-900 mb-1">{note.title}</div>
+                            )}
+                            <span className="text-sm text-gray-600">Created By: {note.createdBy || 'N/A'}</span>
+                          </div>
+                          <span className="text-sm text-gray-500">{formatDate(note.createdDate)}</span>
                         </div>
+                        {note.documentType && (
+                          <div className="text-sm text-gray-500 mt-1">Type: {note.documentType.description || note.documentType.id || 'N/A'}</div>
+                        )}
                       </div>
-                      <p className="text-gray-700">{note.note}</p>
+                      {note.content && (
+                        <p className="text-gray-700">{note.content}</p>
+                      )}
+                      {note.subNotes && note.subNotes.length > 0 && (
+                        <div className="mt-3 pl-4 border-l-2 border-gray-200">
+                          <div className="text-sm font-medium text-gray-700 mb-2">Sub-notes:</div>
+                          {note.subNotes.map((subNote, subIndex) => (
+                            <div key={subIndex} className="mb-2 p-2 bg-white rounded text-sm">
+                              {subNote.title && (
+                                <div className="font-medium">{subNote.title}</div>
+                              )}
+                              {subNote.content && (
+                                <div className="text-gray-600">{subNote.content}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -749,7 +889,16 @@ export default function MOGSLeaderPage() {
                     <div className="space-y-1">
                       {leader.attachments.slice(0, 3).map((attachment, index) => (
                         <div key={index} className="text-sm text-gray-600">
-                          {attachment.filename || attachment.type || 'Attachment'}
+                          <div className="font-medium">{attachment.title || attachment.documentType?.description || 'Attachment'}</div>
+                          {attachment.fileType && (
+                            <div className="text-xs text-gray-500">Type: {attachment.fileType}</div>
+                          )}
+                          {attachment.documentType && (
+                            <div className="text-xs text-gray-500">Document Type: {attachment.documentType.description || attachment.documentType.id || 'N/A'}</div>
+                          )}
+                          {attachment.fileSize && (
+                            <div className="text-xs text-gray-500">Size: {(attachment.fileSize / 1024).toFixed(1)} KB</div>
+                          )}
                         </div>
                       ))}
                       {leader.attachments.length > 3 && (
