@@ -242,6 +242,9 @@ export default function MOGSMissionaryPage() {
   // Search state
   const [missionaryId, setMissionaryId] = useState('');
   const [selectedEnvironment, setSelectedEnvironment] = useState('mogs-gql-dev');
+  
+  // UI state
+  const [isSearchHistoryCollapsed, setIsSearchHistoryCollapsed] = useState(false);
 
   // Utility functions
   const formatDate = (dateString?: string) => {
@@ -679,35 +682,57 @@ export default function MOGSMissionaryPage() {
       {searchHistory.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">📈 Recent Searches</h2>
-            <button
-              onClick={clearHistory}
-              className="text-sm text-red-600 hover:text-red-800"
-            >
-              Clear History
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {searchHistory.slice(0, 6).map((entry) => (
-              <div
-                key={entry.id}
-                onClick={() => handleLoadFromHistory(entry)}
-                className="p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 flex items-center justify-between"
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsSearchHistoryCollapsed(!isSearchHistoryCollapsed)}
+                className="flex items-center gap-2 text-lg font-semibold text-gray-900 hover:text-gray-700 transition-colors"
               >
-                <div>
-                  <div className="font-mono text-sm">{entry.missionaryId}</div>
-                  {entry.missionaryName && (
-                    <div className="text-xs text-gray-600 truncate">{entry.missionaryName}</div>
-                  )}
-                  <div className="text-xs text-gray-500">
-                    {entry.timestamp.toLocaleDateString()}
+                <span className={`transform transition-transform duration-200 ${
+                  isSearchHistoryCollapsed ? '-rotate-90' : 'rotate-0'
+                }`}>
+                  ▼
+                </span>
+                📈 Recent Searches
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                ({searchHistory.length} searches)
+              </span>
+              <button
+                onClick={clearHistory}
+                className="text-sm text-red-600 hover:text-red-800 transition-colors"
+              >
+                Clear History
+              </button>
+            </div>
+          </div>
+          
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            isSearchHistoryCollapsed ? 'max-h-0 opacity-0' : 'max-h-96 opacity-100'
+          }`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {searchHistory.slice(0, 6).map((entry) => (
+                <div
+                  key={entry.id}
+                  onClick={() => handleLoadFromHistory(entry)}
+                  className="p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between"
+                >
+                  <div>
+                    <div className="font-mono text-sm">{entry.missionaryId}</div>
+                    {entry.missionaryName && (
+                      <div className="text-xs text-gray-600 truncate">{entry.missionaryName}</div>
+                    )}
+                    <div className="text-xs text-gray-500">
+                      {entry.timestamp.toLocaleDateString()}
+                    </div>
                   </div>
+                  <div className={`w-2 h-2 rounded-full ${
+                    entry.resultFound ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
                 </div>
-                <div className={`w-2 h-2 rounded-full ${
-                  entry.resultFound ? 'bg-green-500' : 'bg-red-500'
-                }`} />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
