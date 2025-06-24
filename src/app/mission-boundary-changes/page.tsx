@@ -15,9 +15,8 @@ interface MissionBoundaryChangeReceivingMission {
 }
 
 interface Option {
-  id: string;
-  name: string;
-  description?: string;
+  value: string;
+  label: string;
 }
 
 interface MissionBoundaryChange {
@@ -152,29 +151,33 @@ export default function MissionBoundaryChangesPage() {
     setChanges([]);
 
     try {
-      // Build the input object dynamically
-      const inputParts: string[] = [];
+      // Build the input object properly
+      let input: any = null;
       
-      if (unitNumbers.length > 0 || adjustmentIds.length > 0) {
-        const idsParts: string[] = [];
-        if (unitNumbers.length > 0) {
-          idsParts.push(`sendingMissionUnitNumbers: [${unitNumbers.map(id => `"${id}"`).join(', ')}]`);
+      // Only create input object if we have search criteria
+      if (unitNumbers.length > 0 || adjustmentIds.length > 0 || selectedStatuses.length > 0) {
+        input = {};
+        
+        if (unitNumbers.length > 0 || adjustmentIds.length > 0) {
+          input.ids = {};
+          if (unitNumbers.length > 0) {
+            input.ids.sendingMissionUnitNumbers = unitNumbers;
+          }
+          if (adjustmentIds.length > 0) {
+            input.ids.missionBoundaryAdjustmentIds = adjustmentIds;
+          }
         }
-        if (adjustmentIds.length > 0) {
-          idsParts.push(`missionBoundaryAdjustmentIds: [${adjustmentIds.map(id => `"${id}"`).join(', ')}]`);
+
+        if (selectedStatuses.length > 0) {
+          input.filters = {
+            statuses: selectedStatuses
+          };
         }
-        inputParts.push(`ids: { ${idsParts.join(', ')} }`);
       }
-
-      if (selectedStatuses.length > 0) {
-        inputParts.push(`filters: { statuses: [${selectedStatuses.join(', ')}] }`);
-      }
-
-      const inputString = inputParts.length > 0 ? `input: { ${inputParts.join(', ')} }` : '';
 
       const query = `
-        query MissionBoundaryChanges {
-          missionBoundaryChanges(${inputString}) {
+        query MissionBoundaryChanges${input ? '($input: MissionBoundaryChangeInput)' : ''} {
+          missionBoundaryChanges${input ? '(input: $input)' : ''} {
             availableDate
             effectiveDate
             finalizedDate
@@ -184,14 +187,12 @@ export default function MissionBoundaryChangesPage() {
             modifiedByValue
             modifiedOn
             missionBoundaryChangeStateCode {
-              id
-              name
-              description
+              value
+              label
             }
             missionBoundaryChangeStatusCode {
-              id
-              name
-              description
+              value
+              label
             }
             sendingMission {
               unitNumber
@@ -205,7 +206,7 @@ export default function MissionBoundaryChangesPage() {
         }
       `;
 
-      const response = await apiClient.executeGraphQLQuery(query);
+      const response = await apiClient.executeGraphQLQuery(query, input ? { input } : undefined);
       
       if (response.errors && response.errors.length > 0) {
         throw new Error(response.errors[0].message);
@@ -241,7 +242,7 @@ export default function MissionBoundaryChangesPage() {
 
   const sortedAndFilteredChanges = Array.isArray(changes) ? changes
     .filter(change => {
-      if (filterStatus && change.missionBoundaryChangeStatusCode?.name !== filterStatus) {
+      if (filterStatus && change.missionBoundaryChangeStatusCode?.label !== filterStatus) {
         return false;
       }
       if (filterMission && !change.name?.toLowerCase().includes(filterMission.toLowerCase())) {
@@ -266,7 +267,7 @@ export default function MissionBoundaryChangesPage() {
       return 0;
     }) : [];
 
-  const uniqueStatuses = Array.from(new Set(Array.isArray(changes) ? changes.map(change => change.missionBoundaryChangeStatusCode?.name).filter(Boolean) : []));
+  const uniqueStatuses = Array.from(new Set(Array.isArray(changes) ? changes.map(change => change.missionBoundaryChangeStatusCode?.label).filter(Boolean) : []));
 
   const handleStatusChange = (status: MissionBoundaryChangeStatus, checked: boolean) => {
     if (checked) {
@@ -312,8 +313,8 @@ export default function MissionBoundaryChangesPage() {
         formatDate(change.effectiveDate),
         formatDate(change.finalizedDate),
         `"${change.imosStatus || ''}"`,
-        `"${change.missionBoundaryChangeStateCode?.name || ''}"`,
-        `"${change.missionBoundaryChangeStatusCode?.name || ''}"`,
+        `"${change.missionBoundaryChangeStateCode?.label || ''}"`,
+        `"${change.missionBoundaryChangeStatusCode?.label || ''}"`,
         change.sendingMission?.unitNumber || '',
         `"${change.receivingMissions?.map(m => `${m.unitName} (${m.unitId})`).join('; ') || ''}"`,
         `"${change.modifiedByValue || ''}"`,
@@ -548,7 +549,7 @@ export default function MissionBoundaryChangesPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Status:</span>
                         <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                          {change.missionBoundaryChangeStatusCode?.name || 'N/A'}
+                          {change.missionBoundaryChangeStatusCode?.label || 'N/A'}
                         </span>
                       </div>
                     </div>
