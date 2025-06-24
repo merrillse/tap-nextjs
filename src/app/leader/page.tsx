@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, TextField, Button, Chip, FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress, Paper, Divider, Avatar } from '@mui/material';
-import { Search, Person, LocationOn, CalendarToday, Phone, Email, History, Clear, ContactPhone, Home, Badge } from '@mui/icons-material';
 import { ApiClient } from '@/lib/api-client';
 import { ENVIRONMENTS } from '@/lib/environments';
 
@@ -143,9 +141,6 @@ export default function LeaderPage() {
           contactAddress
           contactEmail
           contactPhone
-          citizenships {
-            # Add citizenship fields if needed
-          }
         }
       }
     `;
@@ -191,18 +186,6 @@ export default function LeaderPage() {
     }
   };
 
-  const clearSearch = () => {
-    setCmisId('');
-    setLeader(null);
-    setError(null);
-    setHasSearched(false);
-  };
-
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('leader-search-history');
-  };
-
   const useHistoryValue = (fieldName: string, value: string) => {
     if (fieldName === 'cmisId') {
       setCmisId(value);
@@ -226,379 +209,333 @@ export default function LeaderPage() {
     return 'Unknown';
   };
 
+  // Get only MIS environments for leader search
+  const misEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+    key.startsWith('mis-gql-')
+  );
+
+  // Utility functions
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  const exportToJson = () => {
+    if (!leader) return;
+    
+    const dataStr = JSON.stringify(leader, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `leader-${leader.cmisId}-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const clearSearch = () => {
+    setCmisId('');
+    setLeader(null);
+    setError(null);
+    setHasSearched(false);
+  };
+
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('leader-search-history');
+  };
+
+  const handleLoadFromHistory = (entry: SearchHistory) => {
+    setCmisId(entry.value);
+    if (apiClient) {
+      handleSearch();
+    }
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 3 }}>
-        {/* Header */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Leader Search
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Search for leader profile and associated data by CMIS ID
-          </Typography>
-        </Box>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">👤</span>
+        <h1 className="text-2xl font-bold">Leader Search</h1>
+        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Missionary Information System</span>
+      </div>
 
-        {/* Environment Selection */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <FormControl fullWidth>
-              <InputLabel>Environment</InputLabel>
-              <Select
-                value={selectedEnvironment}
-                label="Environment"
-                onChange={(e) => setSelectedEnvironment(e.target.value)}
+      {/* Environment Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+          <select
+            id="environment"
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {misEnvironments.map(([key, env]) => (
+              <option key={key} value={key}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Search Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search Leader by CMIS ID</h2>
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label htmlFor="cmis-id" className="block text-sm font-medium text-gray-700 mb-1">CMIS ID (Required)</label>
+            <input
+              id="cmis-id"
+              type="text"
+              placeholder="Enter CMIS ID"
+              value={cmisId}
+              onChange={(e) => setCmisId(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            onClick={handleSearch}
+            disabled={loading || !cmisId.trim() || !apiClient}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+          <button
+            onClick={clearSearch}
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📜 Search History</h2>
+            <button
+              onClick={clearSearchHistory}
+              className="px-3 py-1 text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+            >
+              🗑️ Clear History
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {searchHistory.map((entry, index) => (
+              <button
+                key={`${entry.fieldName}-${entry.value}-${index}`}
+                onClick={() => useHistoryValue(entry.fieldName, entry.value)}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-blue-50 hover:border-blue-300"
               >
-                {Object.entries(ENVIRONMENTS).map(([key, env]) => (
-                  <MenuItem key={key} value={key}>
-                    {env.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </CardContent>
-        </Card>
+                {getFieldLabel(entry.fieldName)}: {entry.value}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Click any value to use it in your search</p>
+        </div>
+      )}
 
-        {/* Search Input */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Search by CMIS ID
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
-              <TextField
-                fullWidth
-                label="CMIS ID"
-                value={cmisId}
-                onChange={(e) => setCmisId(e.target.value)}
-                placeholder="Enter CMIS ID"
-                helperText="Enter the unique CMIS identifier for the leader"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-              />
-              
-              <Button
-                variant="contained"
-                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
-                onClick={handleSearch}
-                disabled={loading || !cmisId.trim()}
-                size="large"
-                sx={{ minWidth: '140px' }}
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </Button>
-              
-              <Button
-                variant="outlined"
-                onClick={clearSearch}
-                disabled={loading}
-                size="large"
-              >
-                Clear
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">{error}</div>
+        </div>
+      )}
 
-        {/* Search History */}
-        {searchHistory.length > 0 && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <History sx={{ mr: 1 }} />
-                  <Typography variant="h6">
-                    Recent Searches
-                  </Typography>
-                </Box>
-                <Button
-                  size="small"
-                  startIcon={<Clear />}
-                  onClick={clearSearchHistory}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear History
-                </Button>
-              </Box>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {searchHistory.map((entry, index) => (
-                  <Chip
-                    key={`${entry.fieldName}-${entry.value}-${index}`}
-                    label={`${getFieldLabel(entry.fieldName)}: ${entry.value}`}
-                    variant="outlined"
-                    size="small"
-                    onClick={() => useHistoryValue(entry.fieldName, entry.value)}
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: '#1976d2',
-                        color: '#ffffff',
-                        borderColor: '#1976d2'
-                      }
-                    }}
-                  />
-                ))}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Click any value to use it in your search
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
+      {/* Leader Details */}
+      {leader && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Leader Details</h2>
+            <button
+              onClick={exportToJson}
+              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+            >
+              📥 Export JSON
+            </button>
+          </div>
 
-        {/* Error Display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+          <div className="space-y-6">
+            {/* Leader Header */}
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">👤</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">{getDisplayName(leader)}</h3>
+                {leader.cmisId && (
+                  <p className="text-gray-600">CMIS ID: {leader.cmisId}</p>
+                )}
+              </div>
+            </div>
 
-        {/* Results */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Leader Profile
-            </Typography>
-            
-            {!hasSearched ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Badge sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Ready to Search
-                </Typography>
-                <Typography color="text.secondary">
-                  Enter a CMIS ID above and click "Search" to find leader information
-                </Typography>
-              </Box>
-            ) : !leader && !loading ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Badge sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No leader found
-                </Typography>
-                <Typography color="text.secondary">
-                  No leader record found for this CMIS ID
-                </Typography>
-              </Box>
-            ) : leader ? (
-              <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-                <Paper sx={{ p: 4 }}>
-                  {/* Leader Header */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main', mr: 3 }}>
-                      <Badge sx={{ fontSize: 30 }} />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h4" component="h2" gutterBottom>
-                        {getDisplayName(leader)}
-                      </Typography>
-                      {leader.cmisId && (
-                        <Typography variant="subtitle1" color="text.secondary">
-                          CMIS ID: {leader.cmisId}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
+            {/* Basic Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Personal Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
+                <div className="space-y-3">
+                  {leader.mrn && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">MRN:</span>
+                      <span className="font-mono">{leader.mrn}</span>
+                    </div>
+                  )}
+                  {leader.genderCode && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Gender:</span>
+                      <span>{leader.genderCode}</span>
+                    </div>
+                  )}
+                  {leader.birthDate && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Birth Date:</span>
+                      <span>{formatDate(leader.birthDate)}</span>
+                    </div>
+                  )}
+                  {leader.birthPlace && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Birth Place:</span>
+                      <span>{leader.birthPlace}</span>
+                    </div>
+                  )}
+                  {leader.homeAddress && (
+                    <div>
+                      <span className="text-gray-600 block mb-1">Home Address:</span>
+                      <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-line">
+                        {leader.homeAddress}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                  <Divider sx={{ my: 3 }} />
+              {/* Leadership Assignment */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Leadership Assignment</h3>
+                <div className="space-y-3">
+                  {leader.leaderUnitNumber && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Leader Unit:</span>
+                      <span>{leader.leaderUnitNumber}</span>
+                    </div>
+                  )}
+                  {leader.homeUnitNumber && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Home Unit:</span>
+                      <span>{leader.homeUnitNumber}</span>
+                    </div>
+                  )}
+                  {leader.startDate && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start Date:</span>
+                      <span>{formatDate(leader.startDate)}</span>
+                    </div>
+                  )}
+                  {leader.endDate && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">End Date:</span>
+                      <span>{formatDate(leader.endDate)}</span>
+                    </div>
+                  )}
+                  {leader.spouseCmisId && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Spouse CMIS ID:</span>
+                      <span className="font-mono">{leader.spouseCmisId}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-                  {/* Leader Details */}
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                    {/* Personal Information */}
-                    <Box>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        Personal Information
-                      </Typography>
-                      
-                      {leader.mrn && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Badge sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>MRN:</strong> {leader.mrn}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {leader.genderCode && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Person sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Gender:</strong> {leader.genderCode}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {leader.birthDate && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <CalendarToday sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Birth Date:</strong> {new Date(leader.birthDate).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {leader.birthPlace && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <LocationOn sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Birth Place:</strong> {leader.birthPlace}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {leader.homeAddress && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Home sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Home Address:</strong> {leader.homeAddress}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
+            {/* Contact Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  {leader.ldsEmail && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">LDS Email:</span>
+                      <span className="text-blue-600">{leader.ldsEmail}</span>
+                    </div>
+                  )}
+                  {leader.personalEmail && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Personal Email:</span>
+                      <span className="text-blue-600">{leader.personalEmail}</span>
+                    </div>
+                  )}
+                  {leader.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Phone:</span>
+                      <span>{leader.phone}</span>
+                    </div>
+                  )}
+                </div>
 
-                    {/* Leadership Assignment */}
-                    <Box>
-                      <Typography variant="h6" gutterBottom color="primary">
-                        Leadership Assignment
-                      </Typography>
-                      
-                      {leader.leaderUnitNumber && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <LocationOn sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Leader Unit:</strong> {leader.leaderUnitNumber}
-                          </Typography>
-                        </Box>
+                {/* Emergency Contact */}
+                {leader.contactName && (
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3">Emergency Contact</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Name:</span>
+                        <span>{leader.contactName}</span>
+                      </div>
+                      {leader.contactRelationship && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Relationship:</span>
+                          <span>{leader.contactRelationship}</span>
+                        </div>
                       )}
-                      
-                      {leader.homeUnitNumber && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Home sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Home Unit:</strong> {leader.homeUnitNumber}
-                          </Typography>
-                        </Box>
+                      {leader.contactPhone && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Phone:</span>
+                          <span>{leader.contactPhone}</span>
+                        </div>
                       )}
-                      
-                      {leader.startDate && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <CalendarToday sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Start Date:</strong> {new Date(leader.startDate).toLocaleDateString()}
-                          </Typography>
-                        </Box>
+                      {leader.contactEmail && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="text-blue-600">{leader.contactEmail}</span>
+                        </div>
                       )}
-                      
-                      {leader.endDate && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <CalendarToday sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>End Date:</strong> {new Date(leader.endDate).toLocaleDateString()}
-                          </Typography>
-                        </Box>
+                      {leader.contactAddress && (
+                        <div>
+                          <span className="text-gray-600 block mb-1">Address:</span>
+                          <div className="text-sm bg-white p-2 rounded">
+                            {leader.contactAddress}
+                          </div>
+                        </div>
                       )}
-                      
-                      {leader.spouseCmisId && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Person sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                          <Typography variant="body1">
-                            <strong>Spouse CMIS ID:</strong> {leader.spouseCmisId}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                  <Divider sx={{ my: 3 }} />
+      {!hasSearched && !loading && (
+        <div className="text-center py-8 text-gray-500">
+          Enter a CMIS ID to search for leader details.
+        </div>
+      )}
 
-                  {/* Contact Information */}
-                  <Box>
-                    <Typography variant="h6" gutterBottom color="primary">
-                      Contact Information
-                    </Typography>
-                    
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                      <Box>
-                        {leader.ldsEmail && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Email sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                            <Typography variant="body1">
-                              <strong>LDS Email:</strong> {leader.ldsEmail}
-                            </Typography>
-                          </Box>
-                        )}
-                        
-                        {leader.personalEmail && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Email sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                            <Typography variant="body1">
-                              <strong>Personal Email:</strong> {leader.personalEmail}
-                            </Typography>
-                          </Box>
-                        )}
-                        
-                        {leader.phone && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Phone sx={{ fontSize: 20, mr: 2, color: 'text.secondary' }} />
-                            <Typography variant="body1">
-                              <strong>Phone:</strong> {leader.phone}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-
-                      <Box>
-                        {leader.contactName && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                              Emergency Contact
-                            </Typography>
-                            <Typography variant="body1" sx={{ mb: 1 }}>
-                              <strong>Name:</strong> {leader.contactName}
-                            </Typography>
-                            {leader.contactRelationship && (
-                              <Typography variant="body1" sx={{ mb: 1 }}>
-                                <strong>Relationship:</strong> {leader.contactRelationship}
-                              </Typography>
-                            )}
-                            {leader.contactPhone && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <ContactPhone sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  {leader.contactPhone}
-                                </Typography>
-                              </Box>
-                            )}
-                            {leader.contactEmail && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Email sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  {leader.contactEmail}
-                                </Typography>
-                              </Box>
-                            )}
-                            {leader.contactAddress && (
-                              <Typography variant="body2">
-                                <strong>Address:</strong> {leader.contactAddress}
-                              </Typography>
-                            )}
-                          </Box>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Box>
-            ) : null}
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
+      {hasSearched && !leader && !loading && !error && (
+        <div className="text-center py-8 text-gray-500">
+          No leader found with the provided CMIS ID.
+        </div>
+      )}
+    </div>
   );
 }
