@@ -598,7 +598,7 @@ export default function MOGSMissionaryPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
           <select
             id="environment"
@@ -612,6 +612,34 @@ export default function MOGSMissionaryPage() {
               </option>
             ))}
           </select>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="missionary-quick-select" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="missionary-quick-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setMissionaryId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Missionary Number</option>
+              <option value="989034">989034</option>
+              <option value="120555">120555</option>
+              <option value="967179">967179</option>
+              <option value="998412">998412</option>
+              <option value="113639">113639</option>
+              <option value="946181">946181</option>
+              <option value="979369">979369</option>
+              <option value="138129">138129</option>
+              <option value="138130">138130</option>
+              <option value="968694">968694</option>
+              <option value="982017">982017</option>
+              <option value="120555">120555</option>
+            </select>
+          </div>
         </div>
       </div>
 
