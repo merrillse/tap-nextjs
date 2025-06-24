@@ -267,7 +267,7 @@ export default function LeaderPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
           <select
             id="environment"
@@ -281,6 +281,72 @@ export default function LeaderPage() {
               </option>
             ))}
           </select>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="leader-quick-select" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="leader-quick-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setCmisId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Leader ID</option>
+              <option value="24357414916">24357414916</option>
+              <option value="2897413143">2897413143</option>
+              <option value="1693320715">1693320715</option>
+              <option value="11939508170">11939508170</option>
+              <option value="11029532291">11029532291</option>
+              <option value="10429770569">10429770569</option>
+              <option value="24339111456">24339111456</option>
+              <option value="23087964784">23087964784</option>
+              <option value="24339110473">24339110473</option>
+              <option value="22353114287">22353114287</option>
+              <option value="7363502601">7363502601</option>
+              <option value="2935183935">2935183935</option>
+              <option value="2935182952">2935182952</option>
+              <option value="2943579738">2943579738</option>
+              <option value="3645136025">3645136025</option>
+              <option value="3645135042">3645135042</option>
+              <option value="17570469339">17570469339</option>
+              <option value="18333942830">18333942830</option>
+              <option value="3389593379">3389593379</option>
+              <option value="3333999814">3333999814</option>
+              <option value="20627102924">20627102924</option>
+              <option value="484753671">484753671</option>
+              <option value="3533289302">3533289302</option>
+              <option value="1934172426">1934172426</option>
+              <option value="1337986858">1337986858</option>
+              <option value="18280619012">18280619012</option>
+              <option value="2895739094">2895739094</option>
+              <option value="1337987841">1337987841</option>
+              <option value="2895741060">2895741060</option>
+              <option value="1749978869">1749978869</option>
+              <option value="1749979852">1749979852</option>
+              <option value="12464193267">12464193267</option>
+              <option value="2902811779">2902811779</option>
+              <option value="3060591143">3060591143</option>
+              <option value="3060592126">3060592126</option>
+              <option value="23022500916">23022500916</option>
+              <option value="6205793028">6205793028</option>
+              <option value="1198986726">1198986726</option>
+              <option value="318879302">318879302</option>
+              <option value="318878319">318878319</option>
+              <option value="2061476824">2061476824</option>
+              <option value="3614195117">3614195117</option>
+              <option value="19122145652">19122145652</option>
+              <option value="20714659717">20714659717</option>
+              <option value="1591689328">1591689328</option>
+              <option value="5878106046">5878106046</option>
+              <option value="1228590754">1228590754</option>
+              <option value="13746403722">13746403722</option>
+              <option value="13355884363">13355884363</option>
+              <option value="346134943">346134943</option>
+            </select>
+          </div>
         </div>
       </div>
 
