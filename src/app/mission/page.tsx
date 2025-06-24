@@ -63,14 +63,35 @@ export default function MissionPage() {
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
-  const [selectedEnvironment, setSelectedEnvironment] = useState('development');
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  // Initialize API client when environment changes
+  // Get only MGQL/MIS environments (no MOGS)
+  const mgqlEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+    key.startsWith('mis-gql-')
+  );
+
+  // Initialize API client with default MIS development environment
+  useEffect(() => {
+    const savedEnvironment = localStorage.getItem('selectedEnvironment');
+    const environmentToUse = (savedEnvironment && ENVIRONMENTS[savedEnvironment] && savedEnvironment.startsWith('mis-gql-')) 
+      ? savedEnvironment 
+      : 'mis-gql-dev';
+    
+    setSelectedEnvironment(environmentToUse);
+    const config = ENVIRONMENTS[environmentToUse];
+    
+    if (config) {
+      setApiClient(new ApiClient(config, environmentToUse));
+    }
+  }, []);
+
+  // Update API client when environment changes
   useEffect(() => {
     const config = ENVIRONMENTS[selectedEnvironment];
     if (config) {
       setApiClient(new ApiClient(config, selectedEnvironment));
+      localStorage.setItem('selectedEnvironment', selectedEnvironment);
     }
   }, [selectedEnvironment]);
 
@@ -252,7 +273,7 @@ export default function MissionPage() {
             onChange={(e) => setSelectedEnvironment(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {Object.entries(ENVIRONMENTS).map(([key, env]) => (
+            {mgqlEnvironments.map(([key, env]) => (
               <option key={key} value={key}>
                 {env.name}
               </option>
