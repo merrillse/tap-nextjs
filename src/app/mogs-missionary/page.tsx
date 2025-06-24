@@ -589,7 +589,7 @@ export default function MOGSMissionaryPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6" style={{ scrollBehavior: 'smooth' }}>
       <div className="flex items-center gap-2 mb-6">
         <span className="text-2xl">🙏</span>
         <h1 className="text-2xl font-bold">MOGS Missionary</h1>
@@ -704,13 +704,56 @@ export default function MOGSMissionaryPage() {
             </button>
           </div>
 
+          {/* Table of Contents */}
+          <div id="table-of-contents" className="mb-8 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Table of Contents</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              <a href="#missionary-header" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">🙏 Missionary Header</a>
+              <a href="#personal-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">👤 Personal Information</a>
+              <a href="#contact-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">� Contact Information</a>
+              {(missionary.preferredFirstName || missionary.preferredLastName || missionary.preferredMiddleName || missionary.preferredSuffix) && (
+                <a href="#preferred-names" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">✏️ Preferred Names</a>
+              )}
+              {(missionary.appLivesWith || missionary.ifOtherWho) && (
+                <a href="#living-situation" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">🏠 Living Situation</a>
+              )}
+              {missionary.myPlanMissionary && (
+                <a href="#myplan-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">📋 MyPlan Information</a>
+              )}
+              {missionary.enabledMember && (
+                <a href="#enabled-member" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">✅ Enabled Member Details</a>
+              )}
+              <a href="#document-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">📄 Document Information</a>
+              <a href="#church-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">⛪ Church Information</a>
+              {(missionary.homeAirportCode || missionary.homeAirportText) && (
+                <a href="#travel-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">✈️ Travel Information</a>
+              )}
+              {(missionary.dentalEvaluationOralExamDate || missionary.healthEvaluationPhysicalExamDate) && (
+                <a href="#health-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">🏥 Health Information</a>
+              )}
+              <a href="#system-info" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">💻 System Information</a>
+              {(missionary.afabEnabledYN || missionary.onlineProselytingEnabledYN || missionary.pmdEnabledYN) && (
+                <a href="#mission-features" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">🚀 Mission Features</a>
+              )}
+              {missionary.missionaryIdentity && missionary.missionaryIdentity.length > 0 && (
+                <a href="#identity-records" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">🆔 Identity Records</a>
+              )}
+              {missionary.wsMissionaryHistories && missionary.wsMissionaryHistories.length > 0 && (
+                <a href="#ws-history" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">� WS Missionary History</a>
+              )}
+              {missionary.missionaryHistories && missionary.missionaryHistories.length > 0 && (
+                <a href="#missionary-history" className="text-blue-600 hover:text-blue-800 text-sm hover:underline">� Missionary History</a>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-6">
             {/* Missionary Header */}
-            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+            <div id="missionary-header" className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
               <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-xl">🙏</span>
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-xl font-semibold text-gray-900">
                   {`${missionary.firstName || ''} ${missionary.lastName || ''}`.trim() || 'Unknown Name'}
                 </h3>
@@ -719,14 +762,18 @@ export default function MOGSMissionaryPage() {
                   <p className="text-sm text-blue-600">{missionary.appMissionaryType}</p>
                 )}
               </div>
+              <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
             </div>
 
             {/* Basic Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Personal Information */}
-              <div className="space-y-4">
+              <div id="personal-info" className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">👤 Personal Information</h3>
+                    <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Missionary ID:</span>
@@ -773,9 +820,12 @@ export default function MOGSMissionaryPage() {
               </div>
 
               {/* Contact Information */}
-              <div className="space-y-4">
+              <div id="contact-info" className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">📞 Contact Information</h3>
+                    <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Personal Email:</span>
@@ -818,8 +868,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Preferred Names */}
             {(missionary.preferredFirstName || missionary.preferredLastName || missionary.preferredMiddleName || missionary.preferredSuffix) && (
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Preferred Names</h3>
+              <div id="preferred-names" className="p-4 bg-purple-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">✏️ Preferred Names</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <span className="text-sm text-gray-600">First:</span>
@@ -843,8 +896,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Living Situation */}
             {(missionary.appLivesWith || missionary.ifOtherWho) && (
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Living Situation</h3>
+              <div id="living-situation" className="p-4 bg-orange-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">🏠 Living Situation</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Lives With:</span>
@@ -862,8 +918,11 @@ export default function MOGSMissionaryPage() {
 
             {/* MyPlan Missionary Information */}
             {missionary.myPlanMissionary && (
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">MyPlan Information</h3>
+              <div id="myplan-info" className="p-4 bg-green-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">📋 MyPlan Information</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -907,8 +966,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Enabled Member Information */}
             {missionary.enabledMember && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Enabled Member Details</h3>
+              <div id="enabled-member">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">✅ Enabled Member Details</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 
                 {/* Key Dates */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -993,8 +1055,11 @@ export default function MOGSMissionaryPage() {
             )}
 
             {/* Document Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Document Information</h3>
+            <div id="document-info">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">📄 Document Information</h3>
+                <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-red-50 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">Passport Information</h4>
@@ -1035,8 +1100,11 @@ export default function MOGSMissionaryPage() {
             </div>
 
             {/* Church Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Church Information</h3>
+            <div id="church-info">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">⛪ Church Information</h3>
+                <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -1079,8 +1147,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Travel Information */}
             {(missionary.homeAirportCode || missionary.homeAirportText) && (
-              <div className="p-4 bg-cyan-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Travel Information</h3>
+              <div id="travel-info" className="p-4 bg-cyan-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">✈️ Travel Information</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Home Airport Code:</span>
@@ -1096,8 +1167,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Health Information */}
             {(missionary.dentalEvaluationOralExamDate || missionary.healthEvaluationPhysicalExamDate) && (
-              <div className="p-4 bg-pink-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Health Information</h3>
+              <div id="health-info" className="p-4 bg-pink-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">🏥 Health Information</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Dental Exam Date:</span>
@@ -1112,8 +1186,11 @@ export default function MOGSMissionaryPage() {
             )}
 
             {/* System Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">System Information</h3>
+            <div id="system-info">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">💻 System Information</h3>
+                <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">System Dates</h4>
@@ -1134,8 +1211,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Mission Component Features */}
             {(missionary.afabEnabledYN || missionary.onlineProselytingEnabledYN || missionary.pmdEnabledYN) && (
-              <div className="p-4 bg-indigo-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Mission Features</h3>
+              <div id="mission-features" className="p-4 bg-indigo-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">🚀 Mission Features</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
                     <div className="text-sm text-gray-600">AFAB Enabled</div>
@@ -1179,8 +1259,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Missionary Identity Records */}
             {missionary.missionaryIdentity && missionary.missionaryIdentity.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Missionary Identity Records</h3>
+              <div id="identity-records">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">🆔 Missionary Identity Records</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="space-y-3">
                   {missionary.missionaryIdentity.map((identity, index) => (
                     <div key={index} className="p-4 bg-yellow-50 rounded-lg">
@@ -1240,8 +1323,11 @@ export default function MOGSMissionaryPage() {
 
             {/* WS Missionary History */}
             {missionary.wsMissionaryHistories && missionary.wsMissionaryHistories.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">WS Missionary History</h3>
+              <div id="ws-history">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">📈 WS Missionary History</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="space-y-3">
                   {missionary.wsMissionaryHistories.map((history, index) => (
                     <div key={index} className="p-4 bg-blue-50 rounded-lg">
@@ -1291,8 +1377,11 @@ export default function MOGSMissionaryPage() {
 
             {/* Missionary History */}
             {missionary.missionaryHistories && missionary.missionaryHistories.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Missionary History</h3>
+              <div id="missionary-history">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">📊 Missionary History</h3>
+                  <a href="#table-of-contents" className="text-blue-600 hover:text-blue-800 text-sm">⬆️ Back to Top</a>
+                </div>
                 <div className="space-y-3">
                   {missionary.missionaryHistories.map((history, index) => (
                     <div key={index} className="p-4 bg-green-50 rounded-lg">
