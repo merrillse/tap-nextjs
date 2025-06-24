@@ -25,28 +25,56 @@ interface MMSOrganization {
 
 interface EnabledMember {
   id: string;
-  legacyMissId?: number;
-  cmisId?: string;
-  ldsAccountId?: string;
   enabledMemberDate?: string;
+  homeUnit?: MMSOrganization;
+  tempUnit?: MMSOrganization;
+  missionaryType?: any; // MissionaryType
+  language?: any; // LanguageAddendum
+  procstat?: any; // Procstat
+  inindrfn?: string;
+  spouseInindrfn?: string;
   procstatDate?: string;
+  legacyMissId?: number;
+  legacySpouseMissId?: number;
   currentAvailabilityDate?: string;
   releaseInfoAuthDate?: string;
+  enabledByRoleId?: number;
   pendingPapers?: boolean;
   alert?: string;
+  spouseReleaseInfoAuthDate?: string;
+  callLetterSentDate?: string;
   hold?: boolean;
   createdBy?: string;
   dateCreated?: string;
   modifiedBy?: string;
   dateModified?: string;
   legacy?: boolean;
+  initiatedVersion?: number;
+  pendingTranslationState?: number;
   missionStartDate?: string;
   releaseDate?: string;
   anniversaryDate?: string;
+  releaseDateChangeDate?: string;
   leaderVisibility?: boolean;
   termMonths?: number;
-  homeUnit?: MMSOrganization;
-  tempUnit?: MMSOrganization;
+  recommendFormTypeId?: number;
+  addressConfirmPending?: boolean;
+  initialAssignmentDate?: string;
+  otxSyncCol?: string;
+  imageProcessed?: boolean;
+  missionaryAuthPin?: number;
+  pinEnteredDate?: string;
+  callPacketImmunization?: boolean;
+  callPacketPortal?: boolean;
+  cmisUnitId?: number;
+  missionarySearchOTX?: boolean;
+  ldsAccountId?: string;
+  spouseLdsAccountId?: string;
+  cmisId?: string;
+  spouseCmisId?: string;
+  doNotPurge?: boolean;
+  hushEndDate?: string;
+  callNotificationId?: number;
 }
 
 interface MissionaryIdentity {
@@ -59,29 +87,83 @@ interface MissionaryIdentity {
   suspended?: boolean;
   documentExpireDate?: string;
   documentId?: string;
+  altIdType?: string;
+  nameTypeCode?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  suffix?: string;
 }
 
 interface WSMissionaryHistory {
   id: string;
-  action?: string;
-  actionDate?: string;
-  missionaryId?: number;
+  legacyMissId?: number;
+  cmisId?: number;
+  missionary?: Missionary;
+  // wsMissionary?: WSMissionary;
+  missionUnit?: MMSOrganization;
+  assignmentLocation?: {
+    id: string;
+    name?: string;
+  };
+  startDate?: string;
+  position?: string;
+  companionship?: string;
+  areaName?: string;
 }
 
 interface MissionaryHistory {
-  id: string;
-  missionaryId?: number;
-  action?: string;
-  actionDate?: string;
+  legacyMissId?: number;
+  assignmentLocationId?: number;
+  assignmentLocationName?: string;
+  assignmentLocation?: {
+    id: string;
+    name?: string;
+  };
+  effectiveDate?: string;
+  effectiveEndDate?: string;
+  proselytingAreaId?: number;
+  wsProselytingArea?: {
+    id: string;
+    name?: string;
+  };
+  areaName?: string;
+  areaDate?: string;
+  areaEndDate?: string;
+  roleId?: number;
+  roleType?: string;
+  roleDate?: string;
+  roleEndDate?: string;
+  // companions?: Companion[];
+  companionshipDate?: string;
+  companionshipEndDate?: string;
+  unitNumber?: number;
 }
 
 interface MyPlanMissionary {
   id: string;
-  legacyMissId?: number;
+  missionaryId?: number;
+  cmisId?: number;
+  ldsAccountId?: string;
+  lastName?: string;
+  firstName?: string;
+  middleName?: string;
+  suffix?: string;
+  missionaryType?: string;
+  // missionAssignmentLocation?: AssignmentLocation;
+  // missionOrgNumber?: MMSOrganization;
+  missionName?: string;
+  assignmentEndDate?: string;
+  // procstat?: Procstat;
+  cmisUnitId?: number;
+  cmisUnitName?: string;
+  parentUnitId?: number;
+  parentUnitName?: string;
+  netdUid?: string;
 }
 
 interface Missionary {
-  id: string;
+  id: string; // legacy_miss_id
   missionaryId?: number;
   enabledMember?: EnabledMember;
   appMissionaryType?: string;
@@ -104,6 +186,10 @@ interface Missionary {
   preferredLastName?: string;
   preferredMiddleName?: string;
   preferredFirstName?: string;
+  genderCode?: string;
+  emailAddress?: string;
+  preferredSuffix?: string;
+  ldsAccountId?: string;
   mobilePhone?: string;
   cmisId?: number;
   driverLicenseState?: string;
@@ -270,26 +356,7 @@ export default function MOGSMissionaryPage() {
           missionaryId
           enabledMember {
             id
-            legacyMissId
-            cmisId
-            ldsAccountId
             enabledMemberDate
-            procstatDate
-            currentAvailabilityDate
-            releaseInfoAuthDate
-            pendingPapers
-            alert
-            hold
-            createdBy
-            dateCreated
-            modifiedBy
-            dateModified
-            legacy
-            missionStartDate
-            releaseDate
-            anniversaryDate
-            leaderVisibility
-            termMonths
             homeUnit {
               id
               organizationId
@@ -304,6 +371,47 @@ export default function MOGSMissionaryPage() {
               officialName
               shortName
             }
+            procstatDate
+            legacyMissId
+            legacySpouseMissId
+            currentAvailabilityDate
+            releaseInfoAuthDate
+            enabledByRoleId
+            pendingPapers
+            alert
+            spouseReleaseInfoAuthDate
+            callLetterSentDate
+            hold
+            createdBy
+            dateCreated
+            modifiedBy
+            dateModified
+            legacy
+            initiatedVersion
+            pendingTranslationState
+            missionStartDate
+            releaseDate
+            anniversaryDate
+            releaseDateChangeDate
+            leaderVisibility
+            termMonths
+            recommendFormTypeId
+            addressConfirmPending
+            initialAssignmentDate
+            imageProcessed
+            missionaryAuthPin
+            pinEnteredDate
+            callPacketImmunization
+            callPacketPortal
+            cmisUnitId
+            missionarySearchOTX
+            ldsAccountId
+            spouseLdsAccountId
+            cmisId
+            spouseCmisId
+            doNotPurge
+            hushEndDate
+            callNotificationId
           }
           appMissionaryType
           lastName
@@ -325,6 +433,10 @@ export default function MOGSMissionaryPage() {
           preferredLastName
           preferredMiddleName
           preferredFirstName
+          genderCode
+          emailAddress
+          preferredSuffix
+          ldsAccountId
           mobilePhone
           cmisId
           driverLicenseState
@@ -339,6 +451,8 @@ export default function MOGSMissionaryPage() {
             id
             name
             shortName
+            iso3Code
+            abbreviation
           }
           canReceiveTextMessage
           dentalEvaluationOralExamDate
@@ -349,7 +463,21 @@ export default function MOGSMissionaryPage() {
           certificateRequestDate
           myPlanMissionary {
             id
-            legacyMissId
+            missionaryId
+            cmisId
+            ldsAccountId
+            lastName
+            firstName
+            middleName
+            suffix
+            missionaryType
+            missionName
+            assignmentEndDate
+            cmisUnitId
+            cmisUnitName
+            parentUnitId
+            parentUnitName
+            netdUid
           }
           missionaryIdentity {
             id
@@ -359,23 +487,65 @@ export default function MOGSMissionaryPage() {
               id
               name
               shortName
+              iso3Code
+              abbreviation
             }
             issueState
             suspended
             documentExpireDate
             documentId
+            altIdType
+            nameTypeCode
+            firstName
+            lastName
+            middleName
+            suffix
           }
           wsMissionaryHistories {
             id
-            action
-            actionDate
-            missionaryId
+            legacyMissId
+            cmisId
+            missionUnit {
+              id
+              organizationId
+              name
+              officialName
+              shortName
+            }
+            assignmentLocation {
+              id
+              name
+            }
+            startDate
+            position
+            companionship
+            areaName
           }
           missionaryHistories {
-            id
-            missionaryId
-            action
-            actionDate
+            legacyMissId
+            assignmentLocationId
+            assignmentLocationName
+            assignmentLocation {
+              id
+              name
+            }
+            effectiveDate
+            effectiveEndDate
+            proselytingAreaId
+            wsProselytingArea {
+              id
+              name
+            }
+            areaName
+            areaDate
+            areaEndDate
+            roleId
+            roleType
+            roleDate
+            roleEndDate
+            companionshipDate
+            companionshipEndDate
+            unitNumber
           }
           leaderPermissionData
           proselytingEmailStatus
@@ -590,12 +760,20 @@ export default function MOGSMissionaryPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">CMIS ID:</span>
-                      <span className="font-mono">{missionary.cmisId || 'N/A'}</span>
+                      <span className="text-gray-600">Gender:</span>
+                      <span>{missionary.genderCode || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Place of Birth:</span>
-                      <span>{missionary.placeOfBirth || 'N/A'}</span>
+                      <span className="text-gray-600">Email Address:</span>
+                      <span>{missionary.emailAddress || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">LDS Account ID:</span>
+                      <span className="font-mono">{missionary.ldsAccountId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Preferred Name:</span>
+                      <span>{`${missionary.preferredFirstName || ''} ${missionary.preferredLastName || ''}`.trim() || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -683,6 +861,14 @@ export default function MOGSMissionaryPage() {
 
               <div className="space-y-2">
                 <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">CMIS ID:</span>
+                  <span className="font-mono">{missionary.cmisId || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Place of Birth:</span>
+                  <span>{missionary.placeOfBirth || 'N/A'}</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Confirmation Date:</span>
                   <span>{formatDate(missionary.confirmationDate)}</span>
