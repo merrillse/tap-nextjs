@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Get debugging information from request headers
     const proxyClient = request.headers.get('proxy-client') || 'primary';
-    const selectedEnv = request.headers.get('x-selected-environment') || 'mis-gql-stage';
+    const selectedEnv = request.headers.get('x-selected-environment') || 'mis-gql-dev';
     const debugClientId = request.headers.get('x-debug-client-id') || 'unknown';
     const debugTargetUrl = request.headers.get('x-debug-target-url') || 'unknown';
 

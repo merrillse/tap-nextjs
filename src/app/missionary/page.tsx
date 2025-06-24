@@ -102,7 +102,7 @@ export default function MissionaryPage() {
   // Initialize API client with default environment
   useEffect(() => {
     const savedSettings = localStorage.getItem('tap-settings');
-    const settings = savedSettings ? JSON.parse(savedSettings) : { environment: 'mis-gql-stage' };
+    const settings = savedSettings ? JSON.parse(savedSettings) : { environment: 'mis-gql-dev' };
     
     const config = getEnvironmentConfig(settings.environment);
     if (config) {

@@ -72,11 +72,11 @@ export default function SettingsPage() {
     { name: 'WSR', clientId: '0oa1gs5l1prHsbDUc358' },
   ].sort((a, b) => a.name.localeCompare(b.name));
 
-  const [selectedEnvKey, setSelectedEnvKey] = useState('mis-gql-stage');
+  const [selectedEnvKey, setSelectedEnvKey] = useState('mis-gql-dev');
   const [selectedProxyClient, setSelectedProxyClient] = useState('primary');
   const [currentConfig, setCurrentConfig] = useState<EnvironmentConfig | null>(null);
   const [settings, setSettings] = useState({
-    environment: 'mis-gql-stage',
+    environment: 'mis-gql-dev',
     proxyClient: 'primary',
     requestTimeout: 30,
     maxRetries: 3,
@@ -105,7 +105,7 @@ export default function SettingsPage() {
 
   // Load saved environment on component mount
   useEffect(() => {
-    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-dev';
     const savedProxyClient = localStorage.getItem('selectedProxyClient') || 'primary';
     const savedSettings = localStorage.getItem('tap-settings');
     
@@ -139,14 +139,14 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     setSettings({
-      environment: 'mis-gql-stage',
+      environment: 'mis-gql-dev',
       proxyClient: 'primary',
       requestTimeout: 30,
       maxRetries: 3,
       enableLogging: true,
       logLevel: 'info'
     });
-    setSelectedEnvKey('mis-gql-stage');
+    setSelectedEnvKey('mis-gql-dev');
     setSelectedProxyClient('primary');
   };
 

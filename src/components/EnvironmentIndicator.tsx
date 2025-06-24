@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getEnvironmentKeys, getEnvironmentConfig, getEnvironmentNames } from '@/lib/environments';
 
 export default function EnvironmentIndicator() {
-  const [currentEnvironment, setCurrentEnvironment] = useState<string>('mis-gql-stage');
+  const [currentEnvironment, setCurrentEnvironment] = useState<string>('mis-gql-dev');
   const [config, setConfig] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

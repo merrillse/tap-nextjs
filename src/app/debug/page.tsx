@@ -14,11 +14,11 @@ interface TestResult {
 export default function DebugPage() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
-  const [currentEnvironment, setCurrentEnvironment] = useState('mis-gql-stage');
+  const [currentEnvironment, setCurrentEnvironment] = useState('mis-gql-dev');
   const [availableEnvironments, setAvailableEnvironments] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-dev';
     setCurrentEnvironment(savedEnv);
     
     // Load all available environments

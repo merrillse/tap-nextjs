@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useApiClient } from '@/hooks/useApiClient';
 
 export default function DebugTestPage() {
-  const apiClient = useApiClient('mis-gql-stage');
+  const apiClient = useApiClient('mis-gql-dev');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
 

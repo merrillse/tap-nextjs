@@ -29,63 +29,36 @@ export async function POST(request: NextRequest) {
     console.log('  • Method:', method);
     console.log('  • Timestamp:', new Date().toISOString());
 
-    // Use environment variable for known client configurations
+    // Use environment variable for client secret based on environment
     let actualClientSecret = client_secret;
-    if (client_id === '0oak0jqakvevwjWrp357') {
-      // MIS GraphQL staging and production environments
-      if (environment === 'mis-gql-stage') {
-        actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
-        console.log('  • Using MIS_GQL_STAGE_CLIENT_SECRET from environment');
-        if (!actualClientSecret) {
-          console.error('  ❌ MIS_GQL_STAGE_CLIENT_SECRET not found in environment variables');
-          return NextResponse.json(
-            { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables' },
-            { status: 400 }
-          );
-        }
-      } else if (environment === 'mis-gql-prod') {
-        actualClientSecret = process.env.MIS_GQL_PROD_CLIENT_SECRET;
-        console.log('  • Using MIS_GQL_PROD_CLIENT_SECRET from environment');
-        if (!actualClientSecret) {
-          console.error('  ❌ MIS_GQL_PROD_CLIENT_SECRET not found in environment variables');
-          return NextResponse.json(
-            { error: 'Missing required parameters', details: 'MIS GraphQL production client secret not configured in environment variables' },
-            { status: 400 }
-          );
-        }
+    
+    if (client_id === '0oa82h6j45rN8G1he5d7') {
+      // Single test client - use appropriate secret based on environment
+      if (environment === 'mis-gql-dev') {
+        actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+        console.log('  • Using MIS_GQL_DEV_CLIENT_SECRET for MIS dev environment');
+      } else if (environment === 'mogs-gql-dev') {
+        actualClientSecret = process.env.MOGS_DEV_CLIENT_SECRET;
+        console.log('  • Using MOGS_DEV_CLIENT_SECRET for MOGS dev environment');
       } else {
-        // Default to staging for backward compatibility
-        actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
-        console.log('  • Using MIS_GQL_STAGE_CLIENT_SECRET (default) from environment');
-        if (!actualClientSecret) {
-          console.error('  ❌ MIS_GQL_STAGE_CLIENT_SECRET (default) not found in environment variables');
-          return NextResponse.json(
-            { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables (default)' },
-            { status: 400 }
-          );
-        }
-      }
-    } else if (client_id === '0oa5uce4xpm2l7K8G5d7') {
-      // MIS GraphQL development environment
-      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
-      if (!actualClientSecret) {
+        console.error('  ❌ Unsupported environment:', environment);
         return NextResponse.json(
-          { error: 'Missing required parameters', details: 'MIS GraphQL development client secret not configured in environment variables' },
+          { error: 'Unsupported environment', details: `Only 'mis-gql-dev' and 'mogs-gql-dev' environments are supported. Received: ${environment}` },
           { status: 400 }
         );
       }
-    } else if (client_id === '0oa82h6j45rN8G1he5d7') {
-      // Test Client for lab attendees and testing - uses dev environment  
-      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+      
       if (!actualClientSecret) {
+        console.error('  ❌ Client secret not found in environment variables for environment:', environment);
         return NextResponse.json(
-          { error: 'Missing required parameters', details: 'Test client secret not configured in environment variables' },
+          { error: 'Missing required parameters', details: `Client secret not configured for environment: ${environment}` },
           { status: 400 }
         );
       }
-    } else if (!actualClientSecret) {
+    } else {
+      console.error('  ❌ Unsupported client ID:', client_id);
       return NextResponse.json(
-        { error: 'Missing required parameters', details: 'Client secret required for unknown client configurations' },
+        { error: 'Unsupported client ID', details: `Only client ID '0oa82h6j45rN8G1he5d7' is supported. Received: ${client_id}` },
         { status: 400 }
       );
     }

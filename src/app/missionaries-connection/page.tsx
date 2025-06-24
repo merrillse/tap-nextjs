@@ -274,7 +274,7 @@ const getMissionaryStatusLabel = (status: MissionaryStatusCode): string => {
 };
 
 export default function MissionariesConnectionPage() {
-  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -309,7 +309,7 @@ export default function MissionariesConnectionPage() {
 
   // Load saved environment on component mount
   useEffect(() => {
-    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-stage';
+    const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-dev';
     setSelectedEnvironment(savedEnv);
   }, []);
 

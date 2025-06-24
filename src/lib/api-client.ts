@@ -186,7 +186,7 @@ export class ApiClient {
     // Enhanced debugging information
     console.group('🚀 GraphQL Request Debug Info');
     console.log('📋 Request Details:');
-    console.log('  • Environment:', this.environmentKey || 'mis-gql-stage');
+    console.log('  • Environment:', this.environmentKey || 'mis-gql-dev');
     console.log('  • Target URL:', this.config.graph_url);
     console.log('  • Primary Client ID:', this.config.client_id);
     console.log('  • Proxy Client ID:', selectedProxyClient);
@@ -217,7 +217,7 @@ export class ApiClient {
       'Accept': 'application/json',
       'Cache-Control': 'no-cache',
       'proxy-client': selectedProxyClient,
-      'x-selected-environment': this.environmentKey || 'mis-gql-stage',
+      'x-selected-environment': this.environmentKey || 'mis-gql-dev',
       'x-debug-client-id': this.config.client_id,
       'x-debug-target-url': this.config.graph_url,
       ...customHeaders, // Spread custom headers here

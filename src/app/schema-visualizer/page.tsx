@@ -26,7 +26,7 @@ const SchemaVisualizerClient = dynamic(
 );
 
 export default function SchemaVisualizerPage() {
-  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-stage');
+  const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
 
   return (
     <SchemaVisualizerClient 
