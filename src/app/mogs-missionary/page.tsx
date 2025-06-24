@@ -705,11 +705,28 @@ export default function MOGSMissionaryPage() {
           </div>
 
           <div className="space-y-6">
-            {/* Basic Information */}
+            {/* Missionary Header */}
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">🙏</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {`${missionary.firstName || ''} ${missionary.lastName || ''}`.trim() || 'Unknown Name'}
+                </h3>
+                <p className="text-gray-600">Legacy Miss ID: {missionary.legacyMissId || 'N/A'}</p>
+                {missionary.appMissionaryType && (
+                  <p className="text-sm text-blue-600">{missionary.appMissionaryType}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Basic Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Personal Information */}
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Missionary ID:</span>
@@ -732,20 +749,41 @@ export default function MOGSMissionaryPage() {
                       <span>{missionary.middleName || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-gray-600">Suffix:</span>
+                      <span>{missionary.suffix || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-gray-600">Birth Date:</span>
                       <span>{formatDate(missionary.birthDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Gender:</span>
+                      <span>{missionary.genderCode || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">MRN:</span>
+                      <span className="font-mono">{missionary.mrn || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Place of Birth:</span>
+                      <span>{missionary.placeOfBirth || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Contact Information */}
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Personal Email:</span>
-                      <span>{missionary.personalEmailAddress || 'N/A'}</span>
+                      <span className="text-blue-600">{missionary.personalEmailAddress || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Email Address:</span>
+                      <span className="text-blue-600">{missionary.emailAddress || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Mobile Phone:</span>
@@ -760,133 +798,547 @@ export default function MOGSMissionaryPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Gender:</span>
-                      <span>{missionary.genderCode || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email Address:</span>
-                      <span>{missionary.emailAddress || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-gray-600">LDS Account ID:</span>
                       <span className="font-mono">{missionary.ldsAccountId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Preferred Name:</span>
-                      <span>{`${missionary.preferredFirstName || ''} ${missionary.preferredLastName || ''}`.trim() || 'N/A'}</span>
+                      <span className="text-gray-600">CMIS ID:</span>
+                      <span className="font-mono">{missionary.cmisId || 'N/A'}</span>
                     </div>
+                    {missionary.mobilePhoneLocation && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded">
+                        <div className="text-sm font-medium text-gray-700">Mobile Phone Location:</div>
+                        <div className="text-sm text-gray-600">{missionary.mobilePhoneLocation.name || missionary.mobilePhoneLocation.shortName || 'N/A'}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Preferred Names */}
+            {(missionary.preferredFirstName || missionary.preferredLastName || missionary.preferredMiddleName || missionary.preferredSuffix) && (
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Preferred Names</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <span className="text-sm text-gray-600">First:</span>
+                    <div className="font-medium">{missionary.preferredFirstName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Last:</span>
+                    <div className="font-medium">{missionary.preferredLastName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Middle:</span>
+                    <div className="font-medium">{missionary.preferredMiddleName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Suffix:</span>
+                    <div className="font-medium">{missionary.preferredSuffix || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Living Situation */}
+            {(missionary.appLivesWith || missionary.ifOtherWho) && (
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Living Situation</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lives With:</span>
+                    <span>{missionary.appLivesWith || 'N/A'}</span>
+                  </div>
+                  {missionary.ifOtherWho && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">If Other, Who:</span>
+                      <span>{missionary.ifOtherWho}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* MyPlan Missionary Information */}
+            {missionary.myPlanMissionary && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">MyPlan Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">MyPlan ID:</span>
+                      <span className="font-mono">{missionary.myPlanMissionary.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Missionary ID:</span>
+                      <span className="font-mono">{missionary.myPlanMissionary.missionaryId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Mission Name:</span>
+                      <span>{missionary.myPlanMissionary.missionName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assignment End:</span>
+                      <span>{formatDate(missionary.myPlanMissionary.assignmentEndDate)}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">CMIS Unit ID:</span>
+                      <span className="font-mono">{missionary.myPlanMissionary.cmisUnitId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">CMIS Unit Name:</span>
+                      <span>{missionary.myPlanMissionary.cmisUnitName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Parent Unit ID:</span>
+                      <span className="font-mono">{missionary.myPlanMissionary.parentUnitId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Parent Unit Name:</span>
+                      <span>{missionary.myPlanMissionary.parentUnitName || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Enabled Member Information */}
             {missionary.enabledMember && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Enabled Member Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Enabled Date:</span>
-                      <span>{formatDate(missionary.enabledMember.enabledMemberDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mission Start:</span>
-                      <span>{formatDate(missionary.enabledMember.missionStartDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Release Date:</span>
-                      <span>{formatDate(missionary.enabledMember.releaseDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Term Months:</span>
-                      <span>{missionary.enabledMember.termMonths || 'N/A'}</span>
+                
+                {/* Key Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Mission Timeline</h4>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Enabled: {formatDate(missionary.enabledMember.enabledMemberDate)}</div>
+                      <div className="text-sm text-gray-600">Mission Start: {formatDate(missionary.enabledMember.missionStartDate)}</div>
+                      <div className="text-sm text-gray-600">Release: {formatDate(missionary.enabledMember.releaseDate)}</div>
+                      <div className="text-sm text-gray-600">Anniversary: {formatDate(missionary.enabledMember.anniversaryDate)}</div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Pending Papers:</span>
-                      <span>{formatBoolean(missionary.enabledMember.pendingPapers)}</span>
+
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Status Flags</h4>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span>Pending Papers:</span>
+                        <span className={`px-1 py-0.5 rounded text-xs ${missionary.enabledMember.pendingPapers ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                          {formatBoolean(missionary.enabledMember.pendingPapers)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Hold:</span>
+                        <span className={`px-1 py-0.5 rounded text-xs ${missionary.enabledMember.hold ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                          {formatBoolean(missionary.enabledMember.hold)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Legacy:</span>
+                        <span className={`px-1 py-0.5 rounded text-xs ${missionary.enabledMember.legacy ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {formatBoolean(missionary.enabledMember.legacy)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Leader Visibility:</span>
+                        <span className={`px-1 py-0.5 rounded text-xs ${missionary.enabledMember.leaderVisibility ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {formatBoolean(missionary.enabledMember.leaderVisibility)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Hold:</span>
-                      <span>{formatBoolean(missionary.enabledMember.hold)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Legacy:</span>
-                      <span>{formatBoolean(missionary.enabledMember.legacy)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Leader Visibility:</span>
-                      <span>{formatBoolean(missionary.enabledMember.leaderVisibility)}</span>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Additional Info</h4>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">Term Months: {missionary.enabledMember.termMonths || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Legacy Miss ID: {missionary.enabledMember.legacyMissId || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Spouse Legacy ID: {missionary.enabledMember.legacySpouseMissId || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">Enabled By Role: {missionary.enabledMember.enabledByRoleId || 'N/A'}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Home Unit */}
-                {missionary.enabledMember.homeUnit && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Home Unit</h4>
-                    <div className="space-y-1">
-                      <div className="text-sm text-gray-600">Organization ID: {missionary.enabledMember.homeUnit.organizationId}</div>
-                      <div className="text-sm text-gray-600">Name: {missionary.enabledMember.homeUnit.name || 'N/A'}</div>
-                      <div className="text-sm text-gray-600">Official Name: {missionary.enabledMember.homeUnit.officialName || 'N/A'}</div>
+                {/* Home and Temp Units */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {missionary.enabledMember.homeUnit && (
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Home Unit</h4>
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">ID: {missionary.enabledMember.homeUnit.id}</div>
+                        <div className="text-sm text-gray-600">Org ID: {missionary.enabledMember.homeUnit.organizationId}</div>
+                        <div className="text-sm text-gray-600">Name: {missionary.enabledMember.homeUnit.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Official: {missionary.enabledMember.homeUnit.officialName || 'N/A'}</div>
+                      </div>
                     </div>
+                  )}
+
+                  {missionary.enabledMember.tempUnit && (
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Temporary Unit</h4>
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">ID: {missionary.enabledMember.tempUnit.id}</div>
+                        <div className="text-sm text-gray-600">Org ID: {missionary.enabledMember.tempUnit.organizationId}</div>
+                        <div className="text-sm text-gray-600">Name: {missionary.enabledMember.tempUnit.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">Official: {missionary.enabledMember.tempUnit.officialName || 'N/A'}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Document Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Document Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Passport Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Number:</span>
+                      <span className="font-mono">{missionary.passportNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Expires:</span>
+                      <span>{formatDate(missionary.passportExpireDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location ID:</span>
+                      <span>{missionary.passportLocationId || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Driver License</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">State:</span>
+                      <span>{missionary.driverLicenseState || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Expires:</span>
+                      <span>{formatDate(missionary.driverLicenseExpireDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location ID:</span>
+                      <span>{missionary.driverLicenseLocationId || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Church Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Church Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Confirmation Date:</span>
+                    <span>{formatDate(missionary.confirmationDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Church Callings:</span>
+                    <span>{missionary.churchCallings || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Call Letter Language ID:</span>
+                    <span>{missionary.callLetterLanguageId || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Birth Location ID:</span>
+                    <span>{missionary.birthLocationId || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">English Connect Eligible:</span>
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      missionary.englishConnectEligible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {formatBoolean(missionary.englishConnectEligible)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Workforce Enabled:</span>
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      missionary.workforceEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {formatBoolean(missionary.workforceEnabled)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Travel Information */}
+            {(missionary.homeAirportCode || missionary.homeAirportText) && (
+              <div className="p-4 bg-cyan-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Travel Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Home Airport Code:</span>
+                    <span className="font-mono">{missionary.homeAirportCode || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Home Airport:</span>
+                    <span>{missionary.homeAirportText || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Health Information */}
+            {(missionary.dentalEvaluationOralExamDate || missionary.healthEvaluationPhysicalExamDate) && (
+              <div className="p-4 bg-pink-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Health Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Dental Exam Date:</span>
+                    <span>{formatDate(missionary.dentalEvaluationOralExamDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Physical Exam Date:</span>
+                    <span>{formatDate(missionary.healthEvaluationPhysicalExamDate)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* System Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">System Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">System Dates</h4>
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600">Load Date: {formatDate(missionary.loadDate)}</div>
+                    <div className="text-sm text-gray-600">Certificate Request: {formatDate(missionary.certificateRequestDate)}</div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Configuration</h4>
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600">PMD Profile Override: {missionary.personalMobileDeviceProfileOverrideId || 'N/A'}</div>
+                    <div className="text-sm text-gray-600">Case Management Type: {missionary.caseManagementTypeId || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mission Component Features */}
+            {(missionary.afabEnabledYN || missionary.onlineProselytingEnabledYN || missionary.pmdEnabledYN) && (
+              <div className="p-4 bg-indigo-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Mission Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">AFAB Enabled</div>
+                    <div className={`mt-1 px-2 py-1 text-xs rounded ${
+                      missionary.afabEnabledYN === 'Y' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {missionary.afabEnabledYN || 'N/A'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">Online Proselyting</div>
+                    <div className={`mt-1 px-2 py-1 text-xs rounded ${
+                      missionary.onlineProselytingEnabledYN === 'Y' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {missionary.onlineProselytingEnabledYN || 'N/A'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">PMD Enabled</div>
+                    <div className={`mt-1 px-2 py-1 text-xs rounded ${
+                      missionary.pmdEnabledYN === 'Y' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {missionary.pmdEnabledYN || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+                {missionary.missionComponentLanguagesList && (
+                  <div className="mt-3">
+                    <div className="text-sm text-gray-600">Mission Component Languages:</div>
+                    <div className="text-sm font-mono bg-white p-2 rounded mt-1">{missionary.missionComponentLanguagesList}</div>
+                  </div>
+                )}
+                {missionary.socialMediaSpecialistOrganizations && (
+                  <div className="mt-3">
+                    <div className="text-sm text-gray-600">Social Media Specialist Organizations:</div>
+                    <div className="text-sm font-mono bg-white p-2 rounded mt-1">{missionary.socialMediaSpecialistOrganizations}</div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Document Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-900 mb-2">Document Information</h4>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Passport Number:</span>
-                  <span>{missionary.passportNumber || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Passport Expires:</span>
-                  <span>{formatDate(missionary.passportExpireDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Driver License Expires:</span>
-                  <span>{formatDate(missionary.driverLicenseExpireDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Driver License State:</span>
-                  <span>{missionary.driverLicenseState || 'N/A'}</span>
+            {/* Missionary Identity Records */}
+            {missionary.missionaryIdentity && missionary.missionaryIdentity.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Missionary Identity Records</h3>
+                <div className="space-y-3">
+                  {missionary.missionaryIdentity.map((identity, index) => (
+                    <div key={index} className="p-4 bg-yellow-50 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">ID:</span>
+                            <span className="font-mono">{identity.id}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Name ID:</span>
+                            <span>{identity.missionaryNameId || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Legacy Miss ID:</span>
+                            <span>{identity.legacyMissId || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Name:</span>
+                            <span>{`${identity.firstName || ''} ${identity.lastName || ''}`.trim() || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Issue State:</span>
+                            <span>{identity.issueState || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Document ID:</span>
+                            <span className="font-mono">{identity.documentId || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Suspended:</span>
+                            <span className={`px-2 py-1 text-xs rounded ${
+                              identity.suspended ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {formatBoolean(identity.suspended)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Document Expires:</span>
+                            <span>{formatDate(identity.documentExpireDate)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {identity.issueCountry && (
+                        <div className="mt-2 p-2 bg-white rounded">
+                          <div className="text-sm font-medium text-gray-700">Issue Country:</div>
+                          <div className="text-sm text-gray-600">{identity.issueCountry.name || identity.issueCountry.shortName || 'N/A'}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">CMIS ID:</span>
-                  <span className="font-mono">{missionary.cmisId || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Place of Birth:</span>
-                  <span>{missionary.placeOfBirth || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Confirmation Date:</span>
-                  <span>{formatDate(missionary.confirmationDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Church Callings:</span>
-                  <span>{missionary.churchCallings || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">English Connect Eligible:</span>
-                  <span>{formatBoolean(missionary.englishConnectEligible)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Workforce Enabled:</span>
-                  <span>{formatBoolean(missionary.workforceEnabled)}</span>
+            {/* WS Missionary History */}
+            {missionary.wsMissionaryHistories && missionary.wsMissionaryHistories.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">WS Missionary History</h3>
+                <div className="space-y-3">
+                  {missionary.wsMissionaryHistories.map((history, index) => (
+                    <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">History ID:</span>
+                            <span className="font-mono">{history.id}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Start Date:</span>
+                            <span>{formatDate(history.startDate)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Position:</span>
+                            <span>{history.position || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Area Name:</span>
+                            <span>{history.areaName || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Companionship:</span>
+                            <span>{history.companionship || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {history.missionUnit && (
+                        <div className="mt-2 p-2 bg-white rounded">
+                          <div className="text-sm font-medium text-gray-700">Mission Unit:</div>
+                          <div className="text-sm text-gray-600">{history.missionUnit.name || history.missionUnit.shortName || 'N/A'}</div>
+                        </div>
+                      )}
+                      {history.assignmentLocation && (
+                        <div className="mt-2 p-2 bg-white rounded">
+                          <div className="text-sm font-medium text-gray-700">Assignment Location:</div>
+                          <div className="text-sm text-gray-600">{history.assignmentLocation.name || 'N/A'}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Missionary History */}
+            {missionary.missionaryHistories && missionary.missionaryHistories.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Missionary History</h3>
+                <div className="space-y-3">
+                  {missionary.missionaryHistories.map((history, index) => (
+                    <div key={index} className="p-4 bg-green-50 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Legacy Miss ID:</span>
+                            <span className="font-mono">{history.legacyMissId || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Effective Date:</span>
+                            <span>{formatDate(history.effectiveDate)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Effective End:</span>
+                            <span>{formatDate(history.effectiveEndDate)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Role Type:</span>
+                            <span>{history.roleType || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Area Name:</span>
+                            <span>{history.areaName || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Area Date:</span>
+                            <span>{formatDate(history.areaDate)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Companionship Date:</span>
+                            <span>{formatDate(history.companionshipDate)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Unit Number:</span>
+                            <span>{history.unitNumber || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
