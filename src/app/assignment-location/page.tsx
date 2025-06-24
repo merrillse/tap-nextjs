@@ -288,7 +288,7 @@ export default function AssignmentLocationPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
           <select
             id="environment"
@@ -302,6 +302,44 @@ export default function AssignmentLocationPage() {
               </option>
             ))}
           </select>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="location-quick-select" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="location-quick-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setAssignmentLocationId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Assignment Location ID</option>
+              <option value="14380">14380</option>
+              <option value="14384">14384</option>
+              <option value="14393">14393</option>
+              <option value="14398">14398</option>
+              <option value="14403">14403</option>
+              <option value="14407">14407</option>
+              <option value="14417">14417</option>
+              <option value="14422">14422</option>
+              <option value="14426">14426</option>
+              <option value="14465">14465</option>
+              <option value="14550">14550</option>
+              <option value="14300">14300</option>
+              <option value="14486">14486</option>
+              <option value="14594">14594</option>
+              <option value="14450">14450</option>
+              <option value="14483">14483</option>
+              <option value="14289">14289</option>
+              <option value="14382">14382</option>
+              <option value="14529">14529</option>
+              <option value="14453">14453</option>
+              <option value="14454">14454</option>
+              <option value="14455">14455</option>
+            </select>
+          </div>
         </div>
       </div>
 
