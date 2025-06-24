@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
       access_token_url, 
       client_id, 
       client_secret, 
-      scope 
+      scope,
+      environment = ''
     } = body;
 
     if (!access_token_url || !client_id || !scope) {
@@ -17,38 +18,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use environment variable for known client configurations
+    // Use environment variable for client secret based on environment
     let actualClientSecret = client_secret;
-    if (client_id === '0oak0jqakvevwjWrp357') {
-      // MIS GraphQL staging and production environments
-      actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
-      if (!actualClientSecret) {
+    
+    if (client_id === '0oa82h6j45rN8G1he5d7') {
+      // Single test client - use appropriate secret based on environment
+      if (environment === 'mis-gql-dev') {
+        actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+      } else if (environment === 'mogs-gql-dev') {
+        actualClientSecret = process.env.MOGS_DEV_CLIENT_SECRET;
+      } else {
         return NextResponse.json(
-          { error: 'Missing required parameters', details: 'MIS GraphQL staging/production client secret not configured in environment variables' },
+          { error: 'Unsupported environment', details: `Only 'mis-gql-dev' and 'mogs-gql-dev' environments are supported. Received: ${environment}` },
           { status: 400 }
         );
       }
-    } else if (client_id === '0oa5uce4xpm2l7K8G5d7') {
-      // MIS GraphQL development environment
-      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
+      
       if (!actualClientSecret) {
         return NextResponse.json(
-          { error: 'Missing required parameters', details: 'MIS GraphQL development client secret not configured in environment variables' },
+          { error: 'Missing required parameters', details: `Client secret not configured for environment: ${environment}` },
           { status: 400 }
         );
       }
-    } else if (client_id === '0oa82h6j45rN8G1he5d7') {
-      // Test Client for lab attendees and testing - uses dev environment
-      actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
-      if (!actualClientSecret) {
-        return NextResponse.json(
-          { error: 'Missing required parameters', details: 'Test client secret not configured in environment variables' },
-          { status: 400 }
-        );
-      }
-    } else if (!actualClientSecret) {
+    } else {
       return NextResponse.json(
-        { error: 'Missing required parameters', details: 'Client secret required for unknown client configurations' },
+        { error: 'Unsupported client ID', details: `Only client ID '0oa82h6j45rN8G1he5d7' is supported. Received: ${client_id}` },
         { status: 400 }
       );
     }

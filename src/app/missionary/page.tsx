@@ -106,7 +106,7 @@ export default function MissionaryPage() {
     
     const config = getEnvironmentConfig(settings.environment);
     if (config) {
-      setApiClient(new ApiClient(config));
+      setApiClient(new ApiClient(config, settings.environment));
     }
   }, []);
 

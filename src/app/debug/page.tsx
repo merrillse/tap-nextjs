@@ -57,6 +57,7 @@ export default function DebugPage() {
           client_id: config.client_id,
           client_secret: config.client_secret,
           scope: config.scope,
+          environment: currentEnvironment
         }),
       });
 
@@ -115,7 +116,8 @@ export default function DebugPage() {
           client_id: config.client_id,
           client_secret: config.client_secret,
           scope: config.scope,
-          method: 'basic'
+          method: 'basic',
+          environment: currentEnvironment
         }),
       });
 
@@ -162,7 +164,7 @@ export default function DebugPage() {
     // Test GraphQL endpoint connectivity via proxy (no direct CORS request)
     try {
       // Use ApiClient which now uses the cleaner proxy approach
-      const apiClient = new ApiClient(config);
+      const apiClient = new ApiClient(config, currentEnvironment);
       const result = await apiClient.executeGraphQLQuery('query { __schema { queryType { name } } }');
       
       results.push({
