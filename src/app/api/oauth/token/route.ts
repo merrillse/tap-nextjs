@@ -19,13 +19,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enhanced OAuth debugging
+    console.group('🔐 OAuth Token Request Debug');
+    console.log('🎯 OAuth Request Details:');
+    console.log('  • Token URL:', access_token_url);
+    console.log('  • Client ID:', client_id);
+    console.log('  • Environment:', environment || 'default');
+    console.log('  • Scope:', scope);
+    console.log('  • Method:', method);
+    console.log('  • Timestamp:', new Date().toISOString());
+
     // Use environment variable for known client configurations
     let actualClientSecret = client_secret;
     if (client_id === '0oak0jqakvevwjWrp357') {
       // MIS GraphQL staging and production environments
       if (environment === 'mis-gql-stage') {
         actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
+        console.log('  • Using MIS_GQL_STAGE_CLIENT_SECRET from environment');
         if (!actualClientSecret) {
+          console.error('  ❌ MIS_GQL_STAGE_CLIENT_SECRET not found in environment variables');
           return NextResponse.json(
             { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables' },
             { status: 400 }
@@ -33,7 +45,9 @@ export async function POST(request: NextRequest) {
         }
       } else if (environment === 'mis-gql-prod') {
         actualClientSecret = process.env.MIS_GQL_PROD_CLIENT_SECRET;
+        console.log('  • Using MIS_GQL_PROD_CLIENT_SECRET from environment');
         if (!actualClientSecret) {
+          console.error('  ❌ MIS_GQL_PROD_CLIENT_SECRET not found in environment variables');
           return NextResponse.json(
             { error: 'Missing required parameters', details: 'MIS GraphQL production client secret not configured in environment variables' },
             { status: 400 }
@@ -42,7 +56,9 @@ export async function POST(request: NextRequest) {
       } else {
         // Default to staging for backward compatibility
         actualClientSecret = process.env.MIS_GQL_STAGE_CLIENT_SECRET;
+        console.log('  • Using MIS_GQL_STAGE_CLIENT_SECRET (default) from environment');
         if (!actualClientSecret) {
+          console.error('  ❌ MIS_GQL_STAGE_CLIENT_SECRET (default) not found in environment variables');
           return NextResponse.json(
             { error: 'Missing required parameters', details: 'MIS GraphQL staging client secret not configured in environment variables (default)' },
             { status: 400 }
@@ -136,24 +152,22 @@ export async function POST(request: NextRequest) {
 
     const responseText = await tokenResponse.text();
     
-    // Log detailed information for debugging
-    console.log('OAuth Request Details:', {
-      url: access_token_url,
-      method: method,
-      status: tokenResponse.status,
-      statusText: tokenResponse.statusText,
-      headers: Object.fromEntries(tokenResponse.headers.entries()),
-      bodyLength: responseText.length
-    });
+    // Enhanced OAuth response debugging
+    console.log('🔄 OAuth Response Analysis:');
+    console.log('  • Status:', tokenResponse.status, tokenResponse.statusText);
+    console.log('  • Response Size:', (responseText.length / 1024).toFixed(1), 'KB');
+    console.log('  • Content Type:', tokenResponse.headers.get('content-type'));
+    console.log('  • Response Preview:', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
     
     if (!tokenResponse.ok) {
-      console.error('OAuth token request failed:', {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        body: responseText,
-        method: method,
-        url: access_token_url
-      });
+      console.error('❌ OAuth Token Request Failed:');
+      console.error('  • Status:', tokenResponse.status, tokenResponse.statusText);
+      console.error('  • Method:', method);
+      console.error('  • URL:', access_token_url);
+      console.error('  • Client ID:', client_id);
+      console.error('  • Environment:', environment);
+      console.error('  • Response Body:', responseText);
+      console.groupEnd();
       
       return NextResponse.json(
         { 
@@ -171,6 +185,8 @@ export async function POST(request: NextRequest) {
     try {
       tokenData = JSON.parse(responseText);
     } catch {
+      console.error('❌ Failed to parse OAuth response as JSON');
+      console.groupEnd();
       return NextResponse.json(
         { error: 'Invalid JSON response', details: responseText },
         { status: 500 }
@@ -178,12 +194,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Log successful token acquisition (without sensitive data)
-    console.log('OAuth Token acquired successfully:', {
-      token_type: tokenData.token_type,
-      expires_in: tokenData.expires_in,
-      scope: tokenData.scope,
-      has_access_token: !!tokenData.access_token
-    });
+    console.log('✅ OAuth Token Success:');
+    console.log('  • Token Type:', tokenData.token_type || 'Bearer');
+    console.log('  • Expires In:', tokenData.expires_in, 'seconds');
+    console.log('  • Scope:', tokenData.scope);
+    console.log('  • Has Access Token:', !!tokenData.access_token);
+    console.log('  • Token Preview:', tokenData.access_token ? tokenData.access_token.substring(0, 20) + '...' : 'N/A');
+    console.groupEnd();
 
     return NextResponse.json({
       access_token: tokenData.access_token,

@@ -4,6 +4,7 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 import MuiThemeProvider from "@/components/MuiThemeProvider";
 import { ClientSelectionProvider } from "@/contexts/ClientSelectionContext";
+import DebugInfoPanel from "@/components/DebugInfoPanel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
             <Navigation>
               {children}
             </Navigation>
+            <DebugInfoPanel />
           </ClientSelectionProvider>
         </MuiThemeProvider>
       </body>

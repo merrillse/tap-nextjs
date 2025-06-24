@@ -181,19 +181,49 @@ export class ApiClient {
   ): Promise<GraphQLResponse> {
     const accessToken = await this.getAccessToken();
     const requestBody = JSON.stringify({ query, variables });
+    const selectedProxyClient = proxyClient || getSelectedProxyClient();
 
-    console.log('* Preparing GraphQL request via server-side proxy');
-    console.log('* Current time is', new Date().toISOString());
-    console.log('* Request body size:', requestBody.length, 'bytes');
+    // Enhanced debugging information
+    console.group('🚀 GraphQL Request Debug Info');
+    console.log('📋 Request Details:');
+    console.log('  • Environment:', this.environmentKey || 'mis-gql-stage');
+    console.log('  • Target URL:', this.config.graph_url);
+    console.log('  • Primary Client ID:', this.config.client_id);
+    console.log('  • Proxy Client ID:', selectedProxyClient);
+    console.log('  • OAuth Token URL:', this.config.access_token_url);
+    console.log('  • Request Timestamp:', new Date().toISOString());
+    console.log('  • Request Body Size:', requestBody.length, 'bytes');
+    console.log('  • Query Preview:', query.substring(0, 200) + (query.length > 200 ? '...' : ''));
+    
+    if (Object.keys(variables).length > 0) {
+      console.log('  • Variables:', JSON.stringify(variables, null, 2));
+    }
+    
+    if (Object.keys(customHeaders).length > 0) {
+      console.log('  • Custom Headers:', customHeaders);
+    }
+    
+    console.log('🔐 Authentication Info:');
+    console.log('  • Token Type:', this.token?.token_type || 'Unknown');
+    console.log('  • Token Scope:', this.token?.scope || 'Unknown');
+    if (this.token) {
+      const expiresIn = Math.round((this.token.expires_at - Date.now()) / 1000 / 60);
+      console.log('  • Token Expires In:', expiresIn, 'minutes');
+    }
+    console.groupEnd();
 
     const proxyHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Cache-Control': 'no-cache',
-      'proxy-client': proxyClient || getSelectedProxyClient(),
+      'proxy-client': selectedProxyClient,
       'x-selected-environment': this.environmentKey || 'mis-gql-stage',
+      'x-debug-client-id': this.config.client_id,
+      'x-debug-target-url': this.config.graph_url,
       ...customHeaders, // Spread custom headers here
     };
+
+    console.log('📤 Proxy Request Headers:', proxyHeaders);
 
     const response = await fetch('/api/graphql/proxy', {
       method: 'POST',
@@ -212,11 +242,20 @@ export class ApiClient {
       responseHeaders[key] = value;
     });
 
-    console.log('GraphQL Proxy Response:');
-    console.log('< HTTP/1.1', response.status);
-    console.log('< content-type:', response.headers.get('content-type'));
-    console.log('* Received', (responseText.length / 1024).toFixed(1), 'KB chunk via proxy');
-    console.log('GraphQL Proxy Raw Response:', responseText.substring(0, 500));
+    console.group('📥 GraphQL Response Debug Info');
+    console.log('📊 Response Details:');
+    console.log('  • Status:', response.status, response.statusText);
+    console.log('  • Content Type:', response.headers.get('content-type'));
+    console.log('  • Response Size:', (responseText.length / 1024).toFixed(1), 'KB');
+    console.log('  • Response Preview:', responseText.substring(0, 300) + (responseText.length > 300 ? '...' : ''));
+    
+    if (responseHeaders['x-environment']) {
+      console.log('  • Server Environment:', responseHeaders['x-environment']);
+    }
+    if (responseHeaders['x-client-used']) {
+      console.log('  • Server Used Client:', responseHeaders['x-client-used']);
+    }
+    console.groupEnd();
 
     let gqlResponse: GraphQLResponse = {
       status: response.status,

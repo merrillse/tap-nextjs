@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useClientSelection } from '@/contexts/ClientSelectionContext';
 
 export default function ClientSelector() {
-  const { selectedClient, availableClients, setSelectedClientId } = useClientSelection();
+  const { selectedClient, availableClients, setSelectedClientId, isUserSwitching } = useClientSelection();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClientSelect = (clientId: string) => {
@@ -17,27 +17,44 @@ export default function ClientSelector() {
       {/* Dropdown Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        disabled={isUserSwitching}
+        className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
+          isUserSwitching ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          <span className="hidden sm:inline">{selectedClient.name}</span>
-          <span className="sm:hidden">{selectedClient.name.split(' ')[0]}</span>
+          <div className={`w-2 h-2 rounded-full transition-all duration-200 ${
+            isUserSwitching 
+              ? 'bg-yellow-500 animate-pulse' 
+              : 'bg-blue-500'
+          }`}></div>
+          <span className="hidden sm:inline">
+            {isUserSwitching ? 'Switching...' : selectedClient.name}
+          </span>
+          <span className="sm:hidden">
+            {isUserSwitching ? 'Switching...' : selectedClient.name.split(' ')[0]}
+          </span>
         </div>
-        <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        {isUserSwitching ? (
+          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        ) : (
+          <svg
+            className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && (
+      {isOpen && !isUserSwitching && (
         <>
           {/* Backdrop */}
           <div 
@@ -82,7 +99,7 @@ export default function ClientSelector() {
             </div>
             
             <div className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
-              💡 Client identity affects authentication to MGQL and MOGS services
+              � Switching clients clears all cached data to prevent data leakage
             </div>
           </div>
         </>

@@ -1,6 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  checkUserSwitch, 
+  initializeSessionManagement, 
+  getCurrentSession,
+  switchUser
+} from '@/lib/user-session';
 
 export interface ClientInfo {
   id: string;
@@ -26,6 +32,7 @@ interface ClientSelectionContextType {
   selectedClient: ClientInfo;
   setSelectedClientId: (clientId: string) => void;
   availableClients: ClientInfo[];
+  isUserSwitching: boolean;
 }
 
 const ClientSelectionContext = createContext<ClientSelectionContextType | undefined>(undefined);
@@ -35,27 +42,69 @@ const DEFAULT_CLIENT_ID = '0oak0jqakvevwjWrp357'; // Default to MGS Team
 
 export function ClientSelectionProvider({ children }: { children: React.ReactNode }) {
   const [selectedClientId, setSelectedClientIdState] = useState<string>(DEFAULT_CLIENT_ID);
+  const [isUserSwitching, setIsUserSwitching] = useState<boolean>(false);
 
-  // Load saved client selection on mount
+  // Initialize session management on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CLIENT_STORAGE_KEY);
-      if (saved && AVAILABLE_CLIENTS.find(client => client.id === saved)) {
-        setSelectedClientIdState(saved);
+    initializeSessionManagement();
+    
+    // Try to restore from existing session first
+    const currentSession = getCurrentSession();
+    if (currentSession) {
+      setSelectedClientIdState(currentSession.clientId);
+    } else {
+      // Fall back to localStorage
+      try {
+        const saved = localStorage.getItem(CLIENT_STORAGE_KEY);
+        if (saved && AVAILABLE_CLIENTS.find(client => client.id === saved)) {
+          setSelectedClientIdState(saved);
+        }
+      } catch (error) {
+        console.warn('Error loading saved client selection:', error);
       }
-    } catch (error) {
-      console.warn('Error loading saved client selection:', error);
     }
   }, []);
 
-  // Save client selection when it changes
+  // Save client selection when it changes and handle user switching
   const setSelectedClientId = (clientId: string) => {
+    const currentClient = AVAILABLE_CLIENTS.find(client => client.id === clientId);
+    if (!currentClient) {
+      console.warn('Invalid client ID:', clientId);
+      return;
+    }
+
+    setIsUserSwitching(true);
+    
     try {
+      // Check if this is a user switch (which will clear caches if needed)
+      const switched = checkUserSwitch(clientId, currentClient.name);
+      
+      // Update the local state
+      setSelectedClientIdState(clientId);
+      
+      // Update localStorage (this might be cleared and reset by user switching)
       localStorage.setItem(CLIENT_STORAGE_KEY, clientId);
-      setSelectedClientIdState(clientId);
+      
+      if (switched) {
+        console.log(`🔄 User switched to ${currentClient.name}`);
+        
+        // Dispatch a more specific event for components that need to react
+        window.dispatchEvent(new CustomEvent('clientSwitch', {
+          detail: { 
+            clientId, 
+            clientName: currentClient.name,
+            switched: true
+          }
+        }));
+      }
     } catch (error) {
-      console.warn('Error saving client selection:', error);
+      console.warn('Error during client selection:', error);
       setSelectedClientIdState(clientId);
+    } finally {
+      // Add a small delay to show switching state, then reset
+      setTimeout(() => {
+        setIsUserSwitching(false);
+      }, 500);
     }
   };
 
@@ -66,7 +115,8 @@ export function ClientSelectionProvider({ children }: { children: React.ReactNod
       selectedClientId,
       selectedClient,
       setSelectedClientId,
-      availableClients: AVAILABLE_CLIENTS
+      availableClients: AVAILABLE_CLIENTS,
+      isUserSwitching
     }}>
       {children}
     </ClientSelectionContext.Provider>

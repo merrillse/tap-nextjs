@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import EnvironmentIndicator from './EnvironmentIndicator';
 import TokenCacheManager from './TokenCacheManager';
 import ClientSelector from './ClientSelector';
+import UserSwitchNotifications from './UserSwitchNotifications';
 
 interface NavItem {
   name: string;
@@ -317,6 +318,9 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
           {children}
         </main>
       </div>
+      
+      {/* User Switch Notifications */}
+      <UserSwitchNotifications />
     </div>
   );
 }

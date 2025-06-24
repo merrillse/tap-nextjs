@@ -20,11 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the proxy client from request headers, default to 'primary'
+    // Get debugging information from request headers
     const proxyClient = request.headers.get('proxy-client') || 'primary';
+    const selectedEnv = request.headers.get('x-selected-environment') || 'mis-gql-stage';
+    const debugClientId = request.headers.get('x-debug-client-id') || 'unknown';
+    const debugTargetUrl = request.headers.get('x-debug-target-url') || 'unknown';
 
     // Get current environment configuration
-    const selectedEnv = request.headers.get('x-selected-environment') || 'mis-gql-stage';
     const environment = getEnvironmentConfig(selectedEnv);
     
     if (!environment) {
@@ -37,11 +39,22 @@ export async function POST(request: NextRequest) {
       ...(Object.keys(variables).length > 0 && { variables })
     });
     
-    console.log(`* Preparing request to ${environment.graph_url}`);
-    console.log('* Current time is', new Date().toISOString());
-    console.log('* Using Bearer token:', access_token.substring(0, 50) + '...');
-    console.log('* Request body size:', requestBody.length, 'bytes');
-    console.log(`* Proxy client: ${proxyClient}`);
+    // Enhanced server-side debugging
+    console.group('🌐 Server-Side GraphQL Proxy Debug');
+    console.log('🔍 Request Analysis:');
+    console.log('  • Target URL:', environment.graph_url);
+    console.log('  • Environment:', selectedEnv);
+    console.log('  • Primary Client ID:', debugClientId);
+    console.log('  • Proxy Client ID:', proxyClient);
+    console.log('  • Request Timestamp:', new Date().toISOString());
+    console.log('  • Request Body Size:', requestBody.length, 'bytes');
+    console.log('  • Query Preview:', query.substring(0, 150) + (query.length > 150 ? '...' : ''));
+    console.log('  • Token Preview:', access_token.substring(0, 30) + '...');
+    
+    if (Object.keys(variables).length > 0) {
+      console.log('  • Variables:', JSON.stringify(variables, null, 2));
+    }
+    console.groupEnd();
     
     // Make the GraphQL request
     const graphqlResponse = await fetch(environment.graph_url, {
@@ -96,12 +109,41 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { error: 'Invalid JSON response from GraphQL', details: responseText },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: {
+            'x-environment': selectedEnv,
+            'x-proxy-client': proxyClient,
+            'x-primary-client': debugClientId,
+            'x-target-url': environment.graph_url,
+            'x-debug-timestamp': new Date().toISOString()
+          }
+        }
       );
     }
 
-    // Return the GraphQL response directly (including any errors)
-    return NextResponse.json(graphqlData);
+    console.group('✅ Server Proxy Success');
+    console.log('📈 Response Analysis:');
+    console.log('  • Response Status:', graphqlResponse.status);
+    console.log('  • Response Size:', (responseText.length / 1024).toFixed(1), 'KB');
+    console.log('  • Has Data:', !!graphqlData.data);
+    console.log('  • Has Errors:', !!graphqlData.errors);
+    if (graphqlData.errors) {
+      console.log('  • Error Count:', graphqlData.errors.length);
+    }
+    console.groupEnd();
+
+    // Return the GraphQL response with debug headers
+    return NextResponse.json(graphqlData, {
+      headers: {
+        'x-environment': selectedEnv,
+        'x-proxy-client': proxyClient,
+        'x-primary-client': debugClientId,
+        'x-target-url': environment.graph_url,
+        'x-debug-timestamp': new Date().toISOString(),
+        'x-response-size': (responseText.length / 1024).toFixed(1) + 'KB'
+      }
+    });
 
   } catch (error) {
     console.error('GraphQL proxy API route error:', error);
