@@ -105,27 +105,16 @@ export default function SchemaBrowserPage() {
     );
   }, [currentSchema.types, searchTerm]);
 
-  // Enhanced jump to type definition with smooth scrolling
+  // Enhanced jump to type definition with robust scrolling
   const jumpToType = useCallback((typeName: string) => {
     const type = currentSchema.types.find(t => t.name === typeName);
     if (type && schemaViewRef.current) {
-      const lines = currentSchema.content.split('\n');
       const targetLine = type.lineNumber;
-      
-      // More accurate calculation for line height
-      const lineElement = schemaViewRef.current.querySelector('[data-line="1"]') as HTMLElement;
-      const lineHeight = lineElement ? lineElement.offsetHeight : 24;
-      const scrollPosition = Math.max(0, (targetLine - 3) * lineHeight);
-      
-      // Smooth scroll to position
-      schemaViewRef.current.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
       
       setSelectedType(typeName);
       
-      // Highlight the target line and surrounding lines
+      // Highlight the target line and surrounding lines immediately
+      const lines = currentSchema.content.split('\n');
       const highlightLines = new Set([
         targetLine - 1,
         targetLine,
@@ -134,12 +123,91 @@ export default function SchemaBrowserPage() {
       
       setHighlightedLines(highlightLines);
       
+      // Function to attempt scrolling with retries
+      const attemptScroll = (retryCount = 0) => {
+        if (!schemaViewRef.current || retryCount > 5) {
+          return;
+        }
+        
+        // Try to find the exact line element
+        const targetLineElement = schemaViewRef.current.querySelector(`[data-line="${targetLine}"]`) as HTMLElement;
+        
+        if (targetLineElement) {
+          // If we can find the exact line element, scroll to it directly
+          const container = schemaViewRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = targetLineElement.getBoundingClientRect();
+          
+          // Calculate scroll position to center the target line
+          const scrollTop = container.scrollTop + elementRect.top - containerRect.top - (containerRect.height / 2) + (elementRect.height / 2);
+          
+          container.scrollTo({
+            top: Math.max(0, scrollTop),
+            behavior: 'smooth'
+          });
+        } else {
+          // If element not found, calculate position and retry after a short delay
+          const anyLineElement = schemaViewRef.current.querySelector('[data-line]') as HTMLElement;
+          
+          if (anyLineElement) {
+            // Use the actual line height from existing elements
+            const lineHeight = anyLineElement.offsetHeight;
+            const scrollPosition = Math.max(0, (targetLine - 3) * lineHeight);
+            
+            schemaViewRef.current.scrollTo({
+              top: scrollPosition,
+              behavior: 'smooth'
+            });
+          } else if (retryCount < 3) {
+            // If no line elements exist yet, retry after a longer delay
+            setTimeout(() => attemptScroll(retryCount + 1), 50 * (retryCount + 1));
+            return;
+          }
+        }
+      };
+      
+      // Start the scroll attempt with a small initial delay
+      setTimeout(() => attemptScroll(), 50);
+      
       // Clear highlights after animation
       setTimeout(() => {
         setHighlightedLines(new Set());
       }, 2000);
     }
   }, [currentSchema]);
+
+  // Auto-scroll type list to selected type
+  const scrollToTypeInList = useCallback((typeName: string) => {
+    if (typeListRef.current) {
+      const typeElement = typeListRef.current.querySelector(`[data-type-name="${typeName}"]`) as HTMLElement;
+      if (typeElement) {
+        const container = typeListRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = typeElement.getBoundingClientRect();
+        
+        // Calculate scroll position to center the element
+        const scrollTop = container.scrollTop + elementRect.top - containerRect.top - (containerRect.height / 2) + (elementRect.height / 2);
+        
+        container.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, []);
+
+  // Enhanced jump to type with auto-scroll in both panes
+  const jumpToTypeWithAutoScroll = useCallback((typeName: string) => {
+    jumpToType(typeName);
+    scrollToTypeInList(typeName);
+  }, [jumpToType, scrollToTypeInList]);
+
+  // Auto-scroll when selectedType changes (for keyboard navigation)
+  useEffect(() => {
+    if (selectedType) {
+      scrollToTypeInList(selectedType);
+    }
+  }, [selectedType, scrollToTypeInList]);
 
   // Copy type name to clipboard
   const copyTypeName = useCallback(async (typeName: string, event: React.MouseEvent) => {
@@ -177,14 +245,14 @@ export default function SchemaBrowserPage() {
           e.preventDefault();
           navigateTypes(-1);
         } else if (e.key === 'Enter' && selectedType) {
-          jumpToType(selectedType);
+          jumpToTypeWithAutoScroll(selectedType);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedType, filteredTypes, jumpToType]);
+  }, [selectedType, filteredTypes, jumpToTypeWithAutoScroll]);
 
   // Navigate through types with keyboard
   const navigateTypes = useCallback((direction: number) => {
@@ -201,7 +269,7 @@ export default function SchemaBrowserPage() {
     setSelectedType(filteredTypes[newIndex].name);
   }, [filteredTypes, selectedType]);
 
-  // Enhanced schema content highlighting with better type detection
+  // Enhanced schema content highlighting with better type detection and scroll handling
   const highlightSchemaContent = useCallback((content: string) => {
     const lines = content.split('\n');
     const typeNames = currentSchema.types.map(t => t.name);
@@ -243,14 +311,19 @@ export default function SchemaBrowserPage() {
             onClick={(e) => {
               const target = e.target as HTMLElement;
               if (target.dataset.type) {
-                jumpToType(target.dataset.type);
+                e.preventDefault();
+                e.stopPropagation();
+                // Small delay to ensure the click handler doesn't interfere with scroll
+                setTimeout(() => {
+                  jumpToTypeWithAutoScroll(target.dataset.type!);
+                }, 10);
               }
             }}
           />
         </div>
       );
     });
-  }, [currentSchema, selectedType, highlightedLines, jumpToType]);
+  }, [currentSchema, selectedType, highlightedLines, jumpToTypeWithAutoScroll]);
 
   // Get category icon and color
   const getCategoryData = useCallback((category: SchemaType['category']) => {
@@ -397,6 +470,7 @@ export default function SchemaBrowserPage() {
                     return (
                       <div
                         key={type.name}
+                        data-type-name={type.name}
                         className={`w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all duration-200 group relative ${
                           selectedType === type.name 
                             ? 'bg-blue-50 border border-blue-200 shadow-sm' 
@@ -406,7 +480,7 @@ export default function SchemaBrowserPage() {
                         {/* Main clickable area */}
                         <div 
                           className="cursor-pointer"
-                          onClick={() => jumpToType(type.name)}
+                          onClick={() => jumpToTypeWithAutoScroll(type.name)}
                         >
                           <div className="flex items-center gap-3">
                             <div className={`p-1.5 rounded-md ${categoryData.color} group-hover:scale-110 transition-transform`}>
