@@ -129,7 +129,7 @@ export default function EcclesiasticalUnitPage() {
             recommendLastName
           }
           proselytingAreas {
-            # Add proselyting area fields if needed
+            id
           }
         }
       }
@@ -298,20 +298,41 @@ export default function EcclesiasticalUnitPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
-          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
-          <select
-            id="environment"
-            value={selectedEnvironment}
-            onChange={(e) => setSelectedEnvironment(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {Object.entries(ENVIRONMENTS).map(([key, env]) => (
-              <option key={key} value={key}>
-                {env.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+            <select
+              id="environment"
+              value={selectedEnvironment}
+              onChange={(e) => setSelectedEnvironment(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Object.entries(ENVIRONMENTS).map(([key, env]) => (
+                <option key={key} value={key}>
+                  {env.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="quick-select-unit" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="quick-select-unit"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setUnitId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select Unit ID --</option>
+              <option value="2246384">2246384</option>
+              <option value="425303">425303</option>
+              <option value="2227150">2227150</option>
+            </select>
+          </div>
         </div>
       </div>
 

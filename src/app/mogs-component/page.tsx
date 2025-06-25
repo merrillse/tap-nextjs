@@ -597,6 +597,7 @@ export default function MOGSComponentPage() {
             >
               <option value="">-- Select Component ID --</option>
               <option value="61666">61666</option>
+              <option value="74633">74633</option>
             </select>
           </div>
           
