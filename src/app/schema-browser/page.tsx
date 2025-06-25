@@ -629,7 +629,7 @@ export default function SchemaBrowserPage() {
                     extensions={[
                       graphql(),
                       syntaxHighlighting(HighlightStyle.define([
-                        { tag: t.keyword, color: '#0969da', fontWeight: 'bold' }, // type, enum, input, etc.
+                        { tag: t.keyword, color: '#0969da', fontWeight: 'normal' }, // type, enum, input, etc. - less bold
                         { tag: t.typeName, color: '#953800', cursor: 'pointer' }, // User-defined types (clickable)
                         { tag: t.propertyName, color: '#1f883d' }, // Field names
                         { tag: t.string, color: '#0a3069' }, // String literals
