@@ -4,7 +4,67 @@ A Next.js application for integrating with GraphQL APIs, including MIS (Missiona
 
 ## Getting Started
 
-### 1. Environment Setup
+### 1. Environment Setup (SECURE METHOD - RECOMMENDED)
+
+🔒 **For security reasons, we recommend setting client secrets as system environment variables instead of storing them in `.env.local` files. This prevents secrets from being exposed to AI tools, backups, or accidental sharing.**
+
+#### macOS/Linux Setup:
+
+**Step 1a: Add to your shell profile**
+```bash
+# Open your shell profile file
+nano ~/.zshrc        # if using zsh (default on newer macOS)
+# OR
+nano ~/.bash_profile # if using bash
+```
+
+**Step 1b: Add your environment variables**
+```bash
+# Add these lines to your shell profile:
+export MIS_GQL_DEV_CLIENT_SECRET="your_actual_dev_secret_here"
+export MIS_GQL_STAGE_CLIENT_SECRET="your_actual_stage_secret_here"
+export MIS_GQL_PROD_CLIENT_SECRET="your_actual_prod_secret_here"
+export MOGS_DEV_CLIENT_SECRET="your_actual_mogs_dev_secret_here"
+export MOGS_LOCAL_CLIENT_SECRET="your_actual_mogs_local_secret_here"
+export MOGS_PROD_CLIENT_SECRET="your_actual_mogs_prod_secret_here"
+```
+
+**Step 1c: Reload your shell**
+```bash
+source ~/.zshrc        # or source ~/.bash_profile
+```
+
+**Step 1d: Verify the variables are set**
+```bash
+echo $MIS_GQL_DEV_CLIENT_SECRET
+```
+
+#### Windows Setup:
+
+**Option A: Using System Properties (GUI)**
+1. Press `Win + R`, type `sysdm.cpl`, press Enter
+2. Click "Environment Variables"
+3. Under "User variables", click "New"
+4. Add each variable:
+   - Variable name: `MIS_GQL_DEV_CLIENT_SECRET`
+   - Variable value: `your_actual_dev_secret_here`
+5. Repeat for all 6 environment variables
+6. Click OK and restart any open terminals/IDEs
+
+**Option B: Using PowerShell**
+```powershell
+# Set user environment variables
+[Environment]::SetEnvironmentVariable("MIS_GQL_DEV_CLIENT_SECRET", "your_actual_dev_secret_here", "User")
+[Environment]::SetEnvironmentVariable("MIS_GQL_STAGE_CLIENT_SECRET", "your_actual_stage_secret_here", "User")
+[Environment]::SetEnvironmentVariable("MIS_GQL_PROD_CLIENT_SECRET", "your_actual_prod_secret_here", "User")
+[Environment]::SetEnvironmentVariable("MOGS_DEV_CLIENT_SECRET", "your_actual_mogs_dev_secret_here", "User")
+[Environment]::SetEnvironmentVariable("MOGS_LOCAL_CLIENT_SECRET", "your_actual_mogs_local_secret_here", "User")
+[Environment]::SetEnvironmentVariable("MOGS_PROD_CLIENT_SECRET", "your_actual_mogs_prod_secret_here", "User")
+```
+
+### 1. Alternative: .env.local Setup (LESS SECURE)
+
+⚠️ **Only use this method if you cannot set system environment variables**
 
 First, copy the environment template and configure your secrets:
 
@@ -23,9 +83,16 @@ MIS_GQL_STAGE_CLIENT_SECRET=your_stage_client_secret_here
 
 # MIS GraphQL Production Environment
 MIS_GQL_PROD_CLIENT_SECRET=your_prod_client_secret_here
+
+# MOGS Development Environment
+MOGS_DEV_CLIENT_SECRET=your_mogs_dev_client_secret_here
+MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_client_secret_here
+MOGS_PROD_CLIENT_SECRET=your_mogs_prod_client_secret_here
 ```
 
-⚠️ **Important**: Never commit `.env.local` to the repository. It's already in `.gitignore`.
+⚠️ **Important**: 
+- Never commit `.env.local` to the repository (it's already in `.gitignore`)
+- Consider switching to system environment variables for better security
 
 ### 2.1 Install Dependencies
 
@@ -183,11 +250,28 @@ To set up a new authorized client:
 
 ### Security Features
 
+- **System Environment Variables**: Client secrets stored as system environment variables (recommended)
 - **Server-Side Authentication**: All OAuth tokens are managed server-side
-- **Environment Variables**: Client secrets stored securely in environment variables
+- **Secure Secret Management**: Secrets never exposed to AI tools, backups, or project files
 - **CORS Protection**: GraphQL requests proxied through Next.js API routes
 - **Token Caching**: OAuth tokens cached server-side to reduce Okta requests
 - **Environment Isolation**: Separate credentials for each environment
+- **Minimal File Exposure**: .env.local files avoided in favor of system-level configuration
+
+#### Security Best Practices
+
+✅ **RECOMMENDED Security Approach:**
+- Store secrets as system environment variables
+- Use different secrets per environment
+- Rotate secrets regularly
+- Monitor access and usage
+- Use platform-specific secret management in production
+
+❌ **AVOID for Security:**
+- Storing secrets in .env.local files
+- Committing secrets to version control
+- Sharing secrets through file sharing or messaging
+- Using the same secrets across environments
 
 ### OAuth Client Identity Architecture
 
@@ -288,18 +372,37 @@ All external API communication goes through Next.js API routes to maintain secur
 
 ### Environment Variables
 
-```env
+🔒 **RECOMMENDED: System Environment Variables**
+Set these as system environment variables for maximum security:
+
+```bash
 # Required for all environments
 MIS_GQL_DEV_CLIENT_SECRET=     # Development environment secret
 MIS_GQL_STAGE_CLIENT_SECRET=   # Staging environment secret
 MIS_GQL_PROD_CLIENT_SECRET=    # Production environment secret
-MOGS_DEV_CLIENT_SECRET=      # MOGS Development environment secret
-MOGS_LOCAL_CLIENT_SECRET=    # MOGS Local environment secret
-MOGS_PROD_CLIENT_SECRET=     # MOGS Production environment secret
+MOGS_DEV_CLIENT_SECRET=        # MOGS Development environment secret
+MOGS_LOCAL_CLIENT_SECRET=      # MOGS Local environment secret
+MOGS_PROD_CLIENT_SECRET=       # MOGS Production environment secret
 
 # Optional configuration
 NODE_ENV=development           # Application environment
 NEXT_PUBLIC_APP_ENV=dev       # Default GraphQL environment
+```
+
+❌ **AVOID: .env.local files (especially in production)**
+- Files can be accidentally shared or exposed to AI tools
+- Risk of being included in backups
+- Visible in project directory
+
+**If using .env.local as fallback:**
+```env
+# Only use if system environment variables cannot be set
+MIS_GQL_DEV_CLIENT_SECRET=your_dev_secret
+MIS_GQL_STAGE_CLIENT_SECRET=your_stage_secret
+MIS_GQL_PROD_CLIENT_SECRET=your_prod_secret
+MOGS_DEV_CLIENT_SECRET=your_mogs_dev_secret
+MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_secret
+MOGS_PROD_CLIENT_SECRET=your_mogs_prod_secret
 ```
 
 ## Deployment
@@ -309,12 +412,14 @@ NEXT_PUBLIC_APP_ENV=dev       # Default GraphQL environment
 The easiest way to deploy this Next.js app is to use the [Vercel Platform](https://vercel.com/new):
 
 1. Connect your GitHub repository
-2. Configure environment variables in Vercel dashboard
+2. Configure environment variables in Vercel dashboard (recommended)
 3. Deploy automatically on git push
 
-### Environment Variables Setup
+### Environment Variables Setup (Production)
 
-In your deployment platform, configure:
+🔒 **RECOMMENDED: Platform Environment Variables**
+
+In your deployment platform (Vercel, AWS, etc.), configure environment variables through the platform's secure interface:
 
 ```env
 MIS_GQL_DEV_CLIENT_SECRET=your_dev_secret
@@ -324,6 +429,13 @@ MOGS_DEV_CLIENT_SECRET=your_mogs_dev_secret
 MOGS_LOCAL_CLIENT_SECRET=your_mogs_local_secret # Typically not needed for deployed environments
 MOGS_PROD_CLIENT_SECRET=your_mogs_prod_secret
 ```
+
+**Platform-Specific Secret Management:**
+- **Vercel**: Use Environment Variables in Project Settings
+- **AWS**: Use AWS Secrets Manager or Parameter Store
+- **Azure**: Use Azure Key Vault
+- **Google Cloud**: Use Secret Manager
+- **Docker**: Use Docker Secrets or environment variables
 
 ### Docker Deployment
 
@@ -335,7 +447,18 @@ RUN npm ci --only=production
 COPY . .
 RUN npm run build
 EXPOSE 3000
+
+# Secrets should be provided via Docker secrets or environment variables
+# Never bake secrets into the Docker image
 CMD ["npm", "start"]
+```
+
+**Docker Environment Variables:**
+```bash
+# Use environment variables or Docker secrets
+docker run -e MIS_GQL_DEV_CLIENT_SECRET=$MIS_GQL_DEV_CLIENT_SECRET \
+           -e MIS_GQL_PROD_CLIENT_SECRET=$MIS_GQL_PROD_CLIENT_SECRET \
+           -p 3000:3000 your-app-name
 ```
 
 ## Troubleshooting
@@ -343,7 +466,11 @@ CMD ["npm", "start"]
 ### Common Issues
 
 1.  **OAuth Authentication Failures**
-    *   Verify client secrets in `.env.local` (for MIS and MOGS environments)
+    *   **System Environment Variables (Recommended)**:
+        - Verify variables are set: `echo $MIS_GQL_DEV_CLIENT_SECRET` (macOS/Linux) or `$env:MIS_GQL_DEV_CLIENT_SECRET` (Windows PowerShell)
+        - Restart terminal and development server after setting variables
+        - Check shell profile syntax (macOS/Linux)
+    *   **If using .env.local**: Verify client secrets in `.env.local` file
     *   Check Okta client configuration for the respective service
     *   Use `/debug` page to inspect tokens
 
@@ -357,11 +484,27 @@ CMD ["npm", "start"]
     *   Verify environment URLs in `src/lib/environments.ts`
     *   Use health check functionality
 
+4.  **Environment Variables Not Working**
+    *   **System Variables**: Ensure variables are set in the correct shell profile
+    *   **File-based**: Check `.env.local` is in root directory with correct naming
+    *   **Both**: Restart development server after changes
+    *   Visit `/debug` page to verify environment variable status
+
 ### Debug Tools
 
 - **OAuth Debug Page**: `/debug` - Inspect tokens and authentication
 - **API Testing Page**: `/api-testing` - Test GraphQL queries
 - **Health Check**: Built into navigation - Monitor environment status
+- **Environment Variables Check**: Visit `/debug` to see which variables are loaded
+
+### Security Troubleshooting
+
+If you suspect security issues:
+1. **Rotate all client secrets** immediately
+2. **Check access logs** for unauthorized usage
+3. **Verify environment variable security** - ensure not stored in project files
+4. **Review recent changes** to authentication configuration
+5. **Contact security team** if breach is suspected
 
 ## Contributing
 
