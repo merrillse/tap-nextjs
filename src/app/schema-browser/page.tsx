@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Search, Code, Hash, FileText, GitBranch, Zap, Edit, Radio, ChevronRight, Copy, Check } from 'lucide-react';
+import { CodeEditor } from '@/components/CodeEditor';
+import CodeMirror from '@uiw/react-codemirror';
+import { graphql } from 'cm6-graphql';
+import { EditorView, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
+import { StateField, StateEffect } from '@codemirror/state';
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 
 interface SchemaType {
   name: string;
@@ -24,6 +31,7 @@ export default function SchemaBrowserPage() {
   const [loading, setLoading] = useState(true);
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [highlightedLines, setHighlightedLines] = useState<Set<number>>(new Set());
+  const [codeMirrorView, setCodeMirrorView] = useState<any>(null);
   
   const schemaViewRef = useRef<HTMLDivElement>(null);
   const typeListRef = useRef<HTMLDivElement>(null);
@@ -105,76 +113,135 @@ export default function SchemaBrowserPage() {
     );
   }, [currentSchema.types, searchTerm]);
 
-  // Enhanced jump to type definition with robust scrolling
+  // Enhanced jump to type definition with CodeMirror editor scrolling
   const jumpToType = useCallback((typeName: string) => {
     const type = currentSchema.types.find(t => t.name === typeName);
-    if (type && schemaViewRef.current) {
-      const targetLine = type.lineNumber;
-      
-      setSelectedType(typeName);
-      
-      // Highlight the target line and surrounding lines immediately
-      const lines = currentSchema.content.split('\n');
-      const highlightLines = new Set([
-        targetLine - 1,
-        targetLine,
-        targetLine + 1
-      ].filter(line => line > 0 && line <= lines.length));
-      
-      setHighlightedLines(highlightLines);
-      
-      // Function to attempt scrolling with retries
-      const attemptScroll = (retryCount = 0) => {
-        if (!schemaViewRef.current || retryCount > 5) {
-          return;
-        }
-        
-        // Try to find the exact line element
-        const targetLineElement = schemaViewRef.current.querySelector(`[data-line="${targetLine}"]`) as HTMLElement;
-        
-        if (targetLineElement) {
-          // If we can find the exact line element, scroll to it directly
-          const container = schemaViewRef.current;
-          const containerRect = container.getBoundingClientRect();
-          const elementRect = targetLineElement.getBoundingClientRect();
+    if (!type) {
+      console.log('Type not found:', typeName);
+      return;
+    }
+    
+    const targetLine = type.lineNumber;
+    console.log('Jumping to type:', typeName, 'at line:', targetLine);
+    
+    setSelectedType(typeName);
+    
+    // Highlight the target line and surrounding lines immediately
+    const lines = currentSchema.content.split('\n');
+    const highlightLines = new Set([
+      targetLine - 1,
+      targetLine,
+      targetLine + 1
+    ].filter(line => line > 0 && line <= lines.length));
+    
+    setHighlightedLines(highlightLines);
+    
+    // Scroll CodeMirror editor (right window) and center the target line
+    if (codeMirrorView) {
+      const scrollToLine = (retryCount = 0) => {
+        try {
+          if (!codeMirrorView || retryCount > 3) {
+            console.log('CodeMirror scroll: Max retries reached or no view');
+            return;
+          }
           
-          // Calculate scroll position to center the target line
+          const doc = codeMirrorView.state.doc;
+          
+          if (targetLine > doc.lines) {
+            console.log('Target line exceeds document lines:', targetLine, 'max:', doc.lines);
+            return;
+          }
+          
+          const line = doc.line(targetLine);
+          const linePos = line.from;
+          
+          console.log('CodeMirror scrolling to line:', targetLine, 'position:', linePos);
+          
+          // First, select the line
+          codeMirrorView.dispatch({
+            selection: { anchor: linePos, head: line.to },
+            scrollIntoView: false // Don't auto-scroll yet
+          });
+          
+          // Then manually center the line in the viewport
+          const editorRect = codeMirrorView.dom.getBoundingClientRect();
+          const lineBlock = codeMirrorView.lineBlockAt(linePos);
+          const lineTop = codeMirrorView.coordsAtPos(linePos)?.top || 0;
+          const viewportHeight = editorRect.height;
+          const scrollerElement = codeMirrorView.scrollDOM;
+          
+          // Calculate the scroll position to center the line
+          const targetScrollTop = lineBlock.top - (viewportHeight / 2) + (lineBlock.height / 2);
+          
+          // Scroll to center the target line
+          scrollerElement.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: 'smooth'
+          });
+          
+          console.log('CodeMirror centered scroll to line:', targetLine, 'scrollTop:', targetScrollTop);
+          
+          // Double-check and re-center after animation
+          setTimeout(() => {
+            if (codeMirrorView) {
+              try {
+                const updatedLineBlock = codeMirrorView.lineBlockAt(linePos);
+                const updatedTargetScrollTop = updatedLineBlock.top - (viewportHeight / 2) + (updatedLineBlock.height / 2);
+                
+                scrollerElement.scrollTo({
+                  top: Math.max(0, updatedTargetScrollTop),
+                  behavior: 'smooth'
+                });
+                
+                console.log('CodeMirror centered auto-scroll completed');
+              } catch (secondError) {
+                console.warn('CodeMirror second scroll attempt failed:', secondError);
+              }
+            }
+          }, 100);
+          
+        } catch (error) {
+          console.error('CodeMirror scroll error (attempt', retryCount + 1, '):', error);
+          if (retryCount < 3) {
+            setTimeout(() => scrollToLine(retryCount + 1), 100);
+          }
+        }
+      };
+      
+      setTimeout(scrollToLine, 50);
+    }
+    
+    // Scroll type list (left window)
+    if (typeListRef.current) {
+      const scrollToTypeInList = () => {
+        const typeElement = typeListRef.current?.querySelector(`[data-type-name="${typeName}"]`) as HTMLElement;
+        if (typeElement && typeListRef.current) {
+          const container = typeListRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = typeElement.getBoundingClientRect();
+          
+          // Calculate scroll position to center the element
           const scrollTop = container.scrollTop + elementRect.top - containerRect.top - (containerRect.height / 2) + (elementRect.height / 2);
           
           container.scrollTo({
             top: Math.max(0, scrollTop),
             behavior: 'smooth'
           });
-        } else {
-          // If element not found, calculate position and retry after a short delay
-          const anyLineElement = schemaViewRef.current.querySelector('[data-line]') as HTMLElement;
           
-          if (anyLineElement) {
-            // Use the actual line height from existing elements
-            const lineHeight = anyLineElement.offsetHeight;
-            const scrollPosition = Math.max(0, (targetLine - 3) * lineHeight);
-            
-            schemaViewRef.current.scrollTo({
-              top: scrollPosition,
-              behavior: 'smooth'
-            });
-          } else if (retryCount < 3) {
-            // If no line elements exist yet, retry after a longer delay
-            setTimeout(() => attemptScroll(retryCount + 1), 50 * (retryCount + 1));
-            return;
-          }
+          console.log('Type list auto-scroll completed for:', typeName);
+        } else {
+          console.log('Type element not found in list:', typeName);
         }
       };
       
-      // Start the scroll attempt with a small initial delay
-      setTimeout(() => attemptScroll(), 50);
-      
-      // Clear highlights after animation
-      setTimeout(() => {
-        setHighlightedLines(new Set());
-      }, 2000);
+      setTimeout(scrollToTypeInList, 50);
     }
-  }, [currentSchema]);
+    
+    // Clear highlights after animation
+    setTimeout(() => {
+      setHighlightedLines(new Set());
+    }, 2000);
+  }, [currentSchema, codeMirrorView]);
 
   // Auto-scroll type list to selected type
   const scrollToTypeInList = useCallback((typeName: string) => {
@@ -201,6 +268,63 @@ export default function SchemaBrowserPage() {
     jumpToType(typeName);
     scrollToTypeInList(typeName);
   }, [jumpToType, scrollToTypeInList]);
+
+  // Create click handler for the editor
+  const handleEditorClick = useCallback((event: MouseEvent, view: any) => {
+    const target = event.target as HTMLElement;
+    if (!target || !target.textContent) return;
+    
+    // Get the position of the click in the editor
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+    if (pos === null) return;
+    
+    // Get the word at the clicked position
+    const doc = view.state.doc;
+    const line = doc.lineAt(pos);
+    const lineText = line.text;
+    
+    // Find word boundaries around the clicked position
+    const posInLine = pos - line.from;
+    let start = posInLine;
+    let end = posInLine;
+    
+    // Expand to find the full word (alphanumeric + underscore)
+    while (start > 0 && /\w/.test(lineText[start - 1])) {
+      start--;
+    }
+    while (end < lineText.length && /\w/.test(lineText[end])) {
+      end++;
+    }
+    
+    const clickedWord = lineText.slice(start, end);
+    
+    if (!clickedWord) return;
+    
+    console.log('Clicked word in editor:', clickedWord); // Debug log
+    
+    // Check if the clicked word is a type name
+    const typeNames = currentSchema.types.map(t => t.name);
+    const exactMatch = typeNames.find(typeName => typeName === clickedWord);
+    
+    if (exactMatch) {
+      event.preventDefault();
+      event.stopPropagation();
+      console.log('Found exact type match:', exactMatch); // Debug log
+      jumpToTypeWithAutoScroll(exactMatch);
+    } else {
+      // Fallback: check for partial matches (for cases like [SomeType])
+      const partialMatch = typeNames.find(typeName => 
+        clickedWord.includes(typeName) || typeName.includes(clickedWord)
+      );
+      
+      if (partialMatch) {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log('Found partial type match:', partialMatch); // Debug log
+        jumpToTypeWithAutoScroll(partialMatch);
+      }
+    }
+  }, [currentSchema.types, jumpToTypeWithAutoScroll]);
 
   // Auto-scroll when selectedType changes (for keyboard navigation)
   useEffect(() => {
@@ -268,62 +392,6 @@ export default function SchemaBrowserPage() {
     
     setSelectedType(filteredTypes[newIndex].name);
   }, [filteredTypes, selectedType]);
-
-  // Enhanced schema content highlighting with better type detection and scroll handling
-  const highlightSchemaContent = useCallback((content: string) => {
-    const lines = content.split('\n');
-    const typeNames = currentSchema.types.map(t => t.name);
-    
-    return lines.map((line, index) => {
-      const lineNumber = index + 1;
-      const isSelectedLine = selectedType && 
-        currentSchema.types.find(t => t.name === selectedType)?.lineNumber === lineNumber;
-      const isHighlighted = highlightedLines.has(lineNumber);
-      
-      // Highlight type references in the line
-      let highlightedLine = line;
-      typeNames.forEach(typeName => {
-        // More precise regex to avoid matching partial words
-        const regex = new RegExp(`\\b${typeName}\\b(?!\\s*\\{)`, 'g');
-        highlightedLine = highlightedLine.replace(regex, (match) => 
-          `<span class="text-blue-600 hover:text-blue-800 cursor-pointer underline decoration-1 hover:decoration-2 transition-colors font-medium" data-type="${match}">${match}</span>`
-        );
-      });
-      
-      return (
-        <div
-          key={index}
-          data-line={lineNumber}
-          className={`flex hover:bg-slate-50 transition-colors ${
-            isSelectedLine 
-              ? 'bg-blue-50 border-l-4 border-blue-500 pl-2 shadow-sm' 
-              : isHighlighted 
-                ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-2 animate-pulse' 
-                : ''
-          }`}
-        >
-          <span className="text-slate-400 text-xs w-12 flex-shrink-0 text-right pr-3 select-none font-mono leading-6">
-            {lineNumber}
-          </span>
-          <span 
-            className="flex-1 font-mono text-sm leading-6 text-slate-700"
-            dangerouslySetInnerHTML={{ __html: highlightedLine }}
-            onClick={(e) => {
-              const target = e.target as HTMLElement;
-              if (target.dataset.type) {
-                e.preventDefault();
-                e.stopPropagation();
-                // Small delay to ensure the click handler doesn't interfere with scroll
-                setTimeout(() => {
-                  jumpToTypeWithAutoScroll(target.dataset.type!);
-                }, 10);
-              }
-            }}
-          />
-        </div>
-      );
-    });
-  }, [currentSchema, selectedType, highlightedLines, jumpToTypeWithAutoScroll]);
 
   // Get category icon and color
   const getCategoryData = useCallback((category: SchemaType['category']) => {
@@ -446,10 +514,10 @@ export default function SchemaBrowserPage() {
       {/* Main Content with Enhanced Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-280px)]">
-          {/* Enhanced Type List Sidebar */}
+          {/* Enhanced Type List Sidebar - Smaller width */}
           <div className="col-span-12 lg:col-span-4">
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm h-full flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+              <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex-shrink-0">
                 <h2 className="font-semibold text-slate-900 flex items-center">
                   <Hash className="w-4 h-4 mr-2 text-slate-500" />
                   Types
@@ -460,7 +528,12 @@ export default function SchemaBrowserPage() {
               </div>
               <div 
                 ref={typeListRef}
-                className="flex-1 overflow-y-auto p-2"
+                className="flex-1 overflow-y-auto p-2 custom-scrollbar"
+                style={{ 
+                  maxHeight: 'calc(100vh - 360px)',
+                  scrollbarWidth: 'auto',
+                  scrollbarColor: '#cbd5e1 #f1f5f9'
+                }}
               >
                 <div className="space-y-1">
                   {filteredTypes.map((type) => {
@@ -526,10 +599,10 @@ export default function SchemaBrowserPage() {
             </div>
           </div>
 
-          {/* Enhanced Schema Content */}
+          {/* Enhanced Schema Content - Larger width */}
           <div className="col-span-12 lg:col-span-8">
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm h-full flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+              <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-slate-900 flex items-center">
                     <FileText className="w-4 h-4 mr-2 text-slate-500" />
@@ -545,17 +618,107 @@ export default function SchemaBrowserPage() {
                   </div>
                 </div>
               </div>
-              <div 
-                ref={schemaViewRef}
-                className="flex-1 overflow-y-auto bg-slate-50/30"
-                style={{ fontFamily: 'Menlo, Monaco, "Courier New", monospace' }}
-              >
-                <div className="p-4">
-                  <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                    <div className="divide-y divide-slate-100">
-                      {highlightSchemaContent(currentSchema.content)}
-                    </div>
-                  </div>
+              <div className="flex-1 overflow-hidden" style={{ maxHeight: 'calc(100vh - 360px)' }}>
+                <div className="h-full" style={{ 
+                  maxHeight: 'calc(100vh - 360px)',
+                  overflow: 'hidden'
+                }}>
+                  <CodeMirror
+                    value={currentSchema.content}
+                    height="calc(100vh - 360px)"
+                    extensions={[
+                      graphql(),
+                      syntaxHighlighting(HighlightStyle.define([
+                        { tag: t.keyword, color: '#0969da', fontWeight: 'bold' }, // type, enum, input, etc.
+                        { tag: t.typeName, color: '#953800', cursor: 'pointer' }, // User-defined types (clickable)
+                        { tag: t.propertyName, color: '#1f883d' }, // Field names
+                        { tag: t.string, color: '#0a3069' }, // String literals
+                        { tag: t.number, color: '#0550ae' }, // Numbers
+                        { tag: t.bool, color: '#8250df' }, // Booleans
+                        { tag: t.null, color: '#656d76' }, // null
+                        { tag: t.comment, color: '#656d76', fontStyle: 'italic' }, // Comments
+                        { tag: t.punctuation, color: '#24292f' }, // Punctuation
+                        { tag: t.bracket, color: '#24292f' }, // Brackets
+                        { tag: t.brace, color: '#24292f' }, // Braces
+                        { tag: t.paren, color: '#24292f' }, // Parentheses
+                        { tag: t.operator, color: '#cf222e' }, // Operators
+                        { tag: t.variableName, color: '#8250df' }, // Variables
+                      ])),
+                      EditorView.theme({
+                        '&': {
+                          fontSize: '14px',
+                          height: '100%',
+                        },
+                        '.cm-content': {
+                          padding: '16px',
+                          minHeight: '100%',
+                        },
+                        '.cm-focused': {
+                          outline: 'none',
+                        },
+                        '.cm-scroller': {
+                          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                          maxHeight: '100%',
+                          overflow: 'auto',
+                          // Force visible scrollbars
+                          scrollbarWidth: 'auto',
+                          scrollbarColor: '#cbd5e1 #f1f5f9',
+                          '&::-webkit-scrollbar': {
+                            width: '12px',
+                            height: '12px',
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            background: '#f1f5f9',
+                            borderRadius: '6px',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            background: '#cbd5e1',
+                            borderRadius: '6px',
+                            border: '2px solid #f1f5f9',
+                          },
+                          '&::-webkit-scrollbar-thumb:hover': {
+                            background: '#94a3b8',
+                          },
+                          '&::-webkit-scrollbar-corner': {
+                            background: '#f1f5f9',
+                          }
+                        },
+                        '.cm-editor': {
+                          height: '100%',
+                        },
+                        '.cm-editor.cm-focused': {
+                          outline: 'none',
+                        },
+                        // Make type names look more clickable
+                        '.cm-typeName': {
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'rgba(149, 56, 0, 0.1)',
+                            borderRadius: '2px',
+                          }
+                        }
+                      }),
+                      EditorView.domEventHandlers({
+                        click: handleEditorClick
+                      })
+                    ]}
+                    readOnly={true}
+                    onCreateEditor={(view) => {
+                      setCodeMirrorView(view);
+                    }}
+                    basicSetup={{
+                      lineNumbers: true,
+                      foldGutter: true,
+                      dropCursor: false,
+                      allowMultipleSelections: false,
+                      indentOnInput: true,
+                      bracketMatching: true,
+                      closeBrackets: true,
+                      autocompletion: false,
+                      highlightSelectionMatches: false,
+                      searchKeymap: true,
+                    }}
+                  />
                 </div>
               </div>
             </div>
