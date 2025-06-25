@@ -568,18 +568,38 @@ export default function MOGSComponentPage() {
 
       {/* Environment Selector */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-4">
-          <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
-          <select
-            id="environment"
-            value={selectedEnvironment}
-            onChange={(e) => setSelectedEnvironment(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="mogs-gql-dev">MOGS Development</option>
-            <option value="mogs-gql-local">MOGS Local</option>
-            <option value="mogs-gql-prod">MOGS Production</option>
-          </select>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label htmlFor="environment" className="text-sm font-medium text-gray-700">Environment:</label>
+            <select
+              id="environment"
+              value={selectedEnvironment}
+              onChange={(e) => setSelectedEnvironment(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="mogs-gql-dev">MOGS Development</option>
+              <option value="mogs-gql-local">MOGS Local</option>
+              <option value="mogs-gql-prod">MOGS Production</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="quick-select-component" className="text-sm font-medium text-gray-700">Quick Select:</label>
+            <select
+              id="quick-select-component"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setComponentId(e.target.value);
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select Component ID --</option>
+              <option value="61666">61666</option>
+            </select>
+          </div>
+          
           {apiClient ? (
             <span className="text-sm text-green-600 flex items-center gap-1">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
