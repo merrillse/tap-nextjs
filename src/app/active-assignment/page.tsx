@@ -4,6 +4,18 @@ import { useState, useEffect } from 'react';
 import { ApiClient } from '@/lib/api-client';
 import { ENVIRONMENTS } from '@/lib/environments';
 
+interface Language {
+  missionaryLanguageId?: number;
+  churchLanguageId?: number;
+  languageName?: string;
+  languageAbbreviation?: string;
+  iso3Code?: string;
+  ianaLanguageSubtag?: string;
+  loadDate?: string;
+  approved?: boolean;
+  trueNorthAssessmentName?: string;
+}
+
 interface Option {
   value: string;
   label: string;
@@ -31,6 +43,19 @@ interface Missionary {
 
 interface AssignmentLocationComponent {
   id: number;
+  unitNumber?: number;
+  parentUnitNumber?: number;
+  subUnitNumber?: number;
+  missionaryType?: Option;
+  status?: string;
+  assignmentLanguage?: Language;
+  missionLanguage?: Language;
+  description?: string;
+  assignmentMeetingName?: string;
+  assignmentMeetingShortName?: string;
+  positionAbbreviation?: string;
+  positionName?: string;
+  responsibleOrganizationName?: string;
 }
 
 interface Assignment {
@@ -189,6 +214,30 @@ export default function ActiveAssignmentPage() {
             positionId
             component {
               id
+              unitNumber
+              parentUnitNumber
+              subUnitNumber
+              missionaryType {
+                value
+                label
+              }
+              status
+              assignmentLanguage {
+                languageName
+                languageAbbreviation
+                iso3Code
+              }
+              missionLanguage {
+                languageName
+                languageAbbreviation
+                iso3Code
+              }
+              description
+              assignmentMeetingName
+              assignmentMeetingShortName
+              positionAbbreviation
+              positionName
+              responsibleOrganizationName
             }
             mission {
               id
@@ -248,6 +297,26 @@ export default function ActiveAssignmentPage() {
     } catch {
       return dateString;
     }
+  };
+
+  const formatLanguage = (language?: Language) => {
+    if (!language) return 'Not specified';
+    
+    // Primary display: language name
+    if (language.languageName) {
+      return language.languageName;
+    }
+    
+    // Fallback to abbreviation or ISO code
+    if (language.languageAbbreviation) {
+      return language.languageAbbreviation;
+    }
+    
+    if (language.iso3Code) {
+      return language.iso3Code;
+    }
+    
+    return 'Unknown Language';
   };
 
   const handleClear = () => {
@@ -482,8 +551,145 @@ export default function ActiveAssignmentPage() {
             {assignment.component && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Assignment Location Component</h3>
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <div className="text-sm text-gray-600">Component ID: {assignment.component.id}</div>
+                <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+                  {/* Basic Component Information */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Basic Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Component ID:</span>
+                        <span className="font-mono">{assignment.component.id}</span>
+                      </div>
+                      {assignment.component.unitNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Unit Number:</span>
+                          <span>{assignment.component.unitNumber}</span>
+                        </div>
+                      )}
+                      {assignment.component.parentUnitNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Parent Unit:</span>
+                          <span>{assignment.component.parentUnitNumber}</span>
+                        </div>
+                      )}
+                      {assignment.component.subUnitNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Sub Unit:</span>
+                          <span>{assignment.component.subUnitNumber}</span>
+                        </div>
+                      )}
+                      {assignment.component.status && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Status:</span>
+                          <span className={`px-2 py-1 text-xs rounded ${
+                            assignment.component.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
+                            assignment.component.status === 'INACTIVE' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {assignment.component.status}
+                          </span>
+                        </div>
+                      )}
+                      {assignment.component.description && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <span className="text-gray-600">Description:</span>
+                          <div className="mt-1 text-sm bg-white p-2 rounded">
+                            {assignment.component.description}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Position and Meeting Information */}
+                  {(assignment.component.positionName || assignment.component.positionAbbreviation || 
+                    assignment.component.assignmentMeetingName || assignment.component.assignmentMeetingShortName) && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Position & Meeting Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {assignment.component.positionName && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Position Name:</span>
+                            <span>{assignment.component.positionName}</span>
+                          </div>
+                        )}
+                        {assignment.component.positionAbbreviation && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Position Abbreviation:</span>
+                            <span className="font-mono text-sm">{assignment.component.positionAbbreviation}</span>
+                          </div>
+                        )}
+                        {assignment.component.assignmentMeetingName && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Meeting Name:</span>
+                            <span>{assignment.component.assignmentMeetingName}</span>
+                          </div>
+                        )}
+                        {assignment.component.assignmentMeetingShortName && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Meeting Short Name:</span>
+                            <span>{assignment.component.assignmentMeetingShortName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Type and Language Information */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Type & Language Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {assignment.component.missionaryType && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Missionary Type:</span>
+                          <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+                            {assignment.component.missionaryType.label || assignment.component.missionaryType.value}
+                          </span>
+                        </div>
+                      )}
+                      {assignment.component.assignmentLanguage && (
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 mb-1">Assignment Language:</span>
+                          <div className="px-2 py-1 text-xs rounded bg-indigo-100 text-indigo-800">
+                            {formatLanguage(assignment.component.assignmentLanguage)}
+                            {assignment.component.assignmentLanguage.languageAbbreviation && 
+                             assignment.component.assignmentLanguage.languageAbbreviation !== assignment.component.assignmentLanguage.languageName && (
+                              <span className="ml-1 text-indigo-600">({assignment.component.assignmentLanguage.languageAbbreviation})</span>
+                            )}
+                          </div>
+                          {assignment.component.assignmentLanguage.iso3Code && (
+                            <span className="text-xs text-gray-500 mt-1">ISO: {assignment.component.assignmentLanguage.iso3Code}</span>
+                          )}
+                        </div>
+                      )}
+                      {assignment.component.missionLanguage && (
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 mb-1">Mission Language:</span>
+                          <div className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
+                            {formatLanguage(assignment.component.missionLanguage)}
+                            {assignment.component.missionLanguage.languageAbbreviation && 
+                             assignment.component.missionLanguage.languageAbbreviation !== assignment.component.missionLanguage.languageName && (
+                              <span className="ml-1 text-purple-600">({assignment.component.missionLanguage.languageAbbreviation})</span>
+                            )}
+                          </div>
+                          {assignment.component.missionLanguage.iso3Code && (
+                            <span className="text-xs text-gray-500 mt-1">ISO: {assignment.component.missionLanguage.iso3Code}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Organization Information */}
+                  {assignment.component.responsibleOrganizationName && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Organization</h4>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Responsible Organization:</span>
+                        <span className="font-medium">{assignment.component.responsibleOrganizationName}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
