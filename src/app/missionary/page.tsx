@@ -38,6 +38,38 @@ interface MissionaryData {
     };
     preferredLanguage: boolean;
   }>;
+  relations?: Array<{
+    relationId: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    suffix?: string;
+    name?: string;
+    parentalRelationshipLabel?: string;
+    emergencyContractualRelationship?: string;
+    email?: string;
+    phone?: string;
+    occupation?: string;
+    doNotContact?: boolean;
+    isDeceased?: boolean;
+    isMember?: boolean;
+    canReceiveTextMessages?: boolean;
+    birthPlace?: string;
+    address?: {
+      addressLine1?: string;
+      addressLine2?: string;
+      addressLine3?: string;
+      city?: string;
+      stateProvince?: string;
+      zipcode?: string;
+      country?: {
+        commonName?: string;
+        officialName?: string;
+        concatenatedName?: string;
+      };
+      countryCode?: string;
+    };
+  }>;
 }
 
 // Sample data to demonstrate the layout
@@ -84,6 +116,68 @@ const sampleMissionaryData: MissionaryData = {
         languageAbbreviation: "ES"
       },
       preferredLanguage: false
+    }
+  ],
+  relations: [
+    {
+      relationId: "1",
+      firstName: "Michael",
+      lastName: "Smith",
+      parentalRelationshipLabel: "Father",
+      email: "michael.smith@example.com",
+      phone: "+1-555-0456",
+      occupation: "Engineer",
+      doNotContact: false,
+      isDeceased: false,
+      isMember: true,
+      canReceiveTextMessages: true,
+      address: {
+        addressLine1: "123 Main Street",
+        city: "Provo",
+        stateProvince: "Utah",
+        zipcode: "84604",
+        countryCode: "US",
+        country: {
+          commonName: "United States",
+          officialName: "United States of America"
+        }
+      }
+    },
+    {
+      relationId: "2",
+      firstName: "Sarah",
+      lastName: "Smith",
+      parentalRelationshipLabel: "Mother",
+      email: "sarah.smith@example.com",
+      phone: "+1-555-0789",
+      occupation: "Teacher",
+      doNotContact: false,
+      isDeceased: false,
+      isMember: true,
+      canReceiveTextMessages: true,
+      address: {
+        addressLine1: "123 Main Street",
+        city: "Provo",
+        stateProvince: "Utah",
+        zipcode: "84604",
+        countryCode: "US",
+        country: {
+          commonName: "United States",
+          officialName: "United States of America"
+        }
+      }
+    },
+    {
+      relationId: "3",
+      firstName: "Emma",
+      lastName: "Johnson",
+      emergencyContractualRelationship: "Emergency Contact",
+      email: "emma.johnson@example.com",
+      phone: "+1-555-0321",
+      doNotContact: false,
+      isDeceased: false,
+      isMember: false,
+      canReceiveTextMessages: true
     }
   ]
 };
@@ -194,7 +288,57 @@ export default function MissionaryPage() {
       value
       label
     }
-    # ... (additional fields as shown in your query)
+    assignments {
+      assignmentId
+      componentName
+      assignmentStartDate
+      assignmentEndDate
+      mission {
+        name
+      }
+      location {
+        assignmentName
+      }
+    }
+    languages {
+      languageDetail {
+        languageName
+        languageAbbreviation
+      }
+      preferredLanguage
+    }
+    relations {
+      relationId
+      firstName
+      middleName
+      lastName
+      suffix
+      name
+      parentalRelationshipLabel
+      emergencyContractualRelationship
+      email
+      phone
+      occupation
+      doNotContact
+      isDeceased
+      isMember
+      canReceiveTextMessages
+      birthPlace
+      address {
+        addressLine1
+        addressLine2
+        addressLine3
+        city
+        stateProvince
+        zipcode
+        country {
+          commonName
+          officialName
+          concatenatedName
+        }
+        countryCode
+      }
+    }
   }
 }`;
 
@@ -467,6 +611,117 @@ export default function MissionaryPage() {
                           Preferred
                         </span>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Relations Card */}
+            {missionaryData.relations && missionaryData.relations.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Relations ({missionaryData.relations.length})</h2>
+                <div className="space-y-4">
+                  {missionaryData.relations.map((relation, index) => (
+                    <div key={relation.relationId || index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Basic Information */}
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-500">Name</label>
+                            <p className="font-medium text-gray-900">
+                              {relation.name || `${relation.firstName || ''} ${relation.middleName || ''} ${relation.lastName || ''}`.trim() || 'Unknown'}
+                              {relation.suffix && ` ${relation.suffix}`}
+                            </p>
+                          </div>
+                          
+                          {(relation.parentalRelationshipLabel || relation.emergencyContractualRelationship) && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Relationship</label>
+                              <p className="font-medium text-gray-900">
+                                {relation.parentalRelationshipLabel || relation.emergencyContractualRelationship}
+                              </p>
+                            </div>
+                          )}
+
+                          {relation.occupation && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Occupation</label>
+                              <p className="font-medium text-gray-900">{relation.occupation}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Contact Information */}
+                        <div className="space-y-2">
+                          {relation.email && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Email</label>
+                              <p className="font-medium text-gray-900">{relation.email}</p>
+                            </div>
+                          )}
+                          
+                          {relation.phone && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Phone</label>
+                              <p className="font-medium text-gray-900">{relation.phone}</p>
+                            </div>
+                          )}
+
+                          {relation.birthPlace && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Birth Place</label>
+                              <p className="font-medium text-gray-900">{relation.birthPlace}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Address & Status */}
+                        <div className="space-y-2">
+                          {relation.address && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-500">Address</label>
+                              <div className="text-sm text-gray-900">
+                                {relation.address.addressLine1 && <p>{relation.address.addressLine1}</p>}
+                                {relation.address.addressLine2 && <p>{relation.address.addressLine2}</p>}
+                                {relation.address.addressLine3 && <p>{relation.address.addressLine3}</p>}
+                                <p>
+                                  {relation.address.city}
+                                  {relation.address.stateProvince && `, ${relation.address.stateProvince}`}
+                                  {relation.address.zipcode && ` ${relation.address.zipcode}`}
+                                </p>
+                                {(relation.address.country?.commonName || relation.address.country?.officialName || relation.address.country?.concatenatedName) && (
+                                  <p>{relation.address.country.commonName || relation.address.country.officialName || relation.address.country.concatenatedName}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Status Indicators */}
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {relation.isMember && (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                Member
+                              </span>
+                            )}
+                            {relation.canReceiveTextMessages && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                Can Text
+                              </span>
+                            )}
+                            {relation.doNotContact && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                                Do Not Contact
+                              </span>
+                            )}
+                            {relation.isDeceased && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                Deceased
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
