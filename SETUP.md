@@ -181,13 +181,81 @@ If you don't have repository access, you'll need the project files provided to y
    added 1234 packages, and audited 1235 packages in 2m
    ```
 
-3. **Set up environment variables**:
+3. **Set up environment variables (SECURE METHOD - RECOMMENDED)**:
+   
+   🔒 **For security reasons, we recommend setting client secrets as system environment variables instead of storing them in `.env.local` files. This prevents secrets from being exposed to AI tools, backups, or accidental sharing.**
+
+   ### macOS/Linux Setup:
+
+   **Step 3a: Add to your shell profile**
+   ```bash
+   # Open your shell profile file
+   nano ~/.zshrc        # if using zsh (default on newer macOS)
+   # OR
+   nano ~/.bash_profile # if using bash
+   ```
+
+   **Step 3b: Add your environment variables**
+   ```bash
+   # Add these lines to your shell profile:
+   export MIS_GQL_DEV_CLIENT_SECRET="your_actual_dev_secret_here"
+   export MIS_GQL_STAGE_CLIENT_SECRET="your_actual_stage_secret_here"
+   export MIS_GQL_PROD_CLIENT_SECRET="your_actual_prod_secret_here"
+   export MOGS_LOCAL_CLIENT_SECRET="your_actual_mogs_local_secret_here"
+   export MOGS_DEV_CLIENT_SECRET="your_actual_mogs_dev_secret_here"
+   export MOGS_PROD_CLIENT_SECRET="your_actual_mogs_prod_secret_here"
+   ```
+
+   **Step 3c: Reload your shell**
+   ```bash
+   source ~/.zshrc        # or source ~/.bash_profile
+   ```
+
+   **Step 3d: Verify the variables are set**
+   ```bash
+   echo $MIS_GQL_DEV_CLIENT_SECRET
+   ```
+
+   ### Windows Setup:
+
+   **Option A: Using System Properties (GUI)**
+   1. Press `Win + R`, type `sysdm.cpl`, press Enter
+   2. Click "Environment Variables"
+   3. Under "User variables", click "New"
+   4. Add each variable:
+      - Variable name: `MIS_GQL_DEV_CLIENT_SECRET`
+      - Variable value: `your_actual_dev_secret_here`
+   5. Repeat for all 6 environment variables
+   6. Click OK and restart any open terminals/IDEs
+
+   **Option B: Using PowerShell**
+   ```powershell
+   # Set user environment variables
+   [Environment]::SetEnvironmentVariable("MIS_GQL_DEV_CLIENT_SECRET", "your_actual_dev_secret_here", "User")
+   [Environment]::SetEnvironmentVariable("MIS_GQL_STAGE_CLIENT_SECRET", "your_actual_stage_secret_here", "User")
+   [Environment]::SetEnvironmentVariable("MIS_GQL_PROD_CLIENT_SECRET", "your_actual_prod_secret_here", "User")
+   [Environment]::SetEnvironmentVariable("MOGS_LOCAL_CLIENT_SECRET", "your_actual_mogs_local_secret_here", "User")
+   [Environment]::SetEnvironmentVariable("MOGS_DEV_CLIENT_SECRET", "your_actual_mogs_dev_secret_here", "User")
+   [Environment]::SetEnvironmentVariable("MOGS_PROD_CLIENT_SECRET", "your_actual_mogs_prod_secret_here", "User")
+   ```
+
+   **Verify on Windows:**
+   ```powershell
+   $env:MIS_GQL_DEV_CLIENT_SECRET
+   ```
+
+4. **Alternative: .env.local file (LESS SECURE)**:
+   
+   ⚠️ **Only use this method if you cannot set system environment variables**
+   
    ```bash
    # Copy the example environment file
    cp .env.example .env.local
    ```
 
-4. **Edit the environment file**:
+4. **Edit the environment file (if using .env.local method)**:
+   
+   **Only follow this step if you chose the .env.local method above**
    
    **On macOS/Linux:**
    ```bash
@@ -204,7 +272,9 @@ If you don't have repository access, you'll need the project files provided to y
    notepad .env.local
    ```
 
-5. **Configure your environment variables**:
+5. **Configure your environment variables (if using .env.local method)**:
+   
+   **Only follow this step if you chose the .env.local method above**
    
    Replace the placeholder values with your actual client secrets:
    
@@ -232,6 +302,7 @@ If you don't have repository access, you'll need the project files provided to y
    - Replace `your_actual_*_secret_here` with the real client secrets
    - Never commit this file to version control
    - If you don't have all secrets, comment out the lines with `#`
+   - **Consider switching to system environment variables for better security**
 
 ## 🏗️ Step 5: Build and Test
 
@@ -317,11 +388,34 @@ npm run dev -- -p 3001
 
 ### Issue: Environment variables not working
 
-**Check:**
+**If using system environment variables (recommended):**
+1. **Verify variables are set**:
+   ```bash
+   # macOS/Linux
+   echo $MIS_GQL_DEV_CLIENT_SECRET
+   
+   # Windows PowerShell
+   $env:MIS_GQL_DEV_CLIENT_SECRET
+   
+   # Windows Command Prompt
+   echo %MIS_GQL_DEV_CLIENT_SECRET%
+   ```
+2. **Restart your terminal and development server** after setting environment variables
+3. **Check shell profile syntax** (macOS/Linux) - ensure no syntax errors in `~/.zshrc` or `~/.bash_profile`
+
+**If using .env.local method:**
 1. File is named `.env.local` (not `.env.local.txt`)
 2. No spaces around the `=` sign
 3. No quotes around values unless they contain spaces
 4. File is in the root directory (same level as `package.json`)
+5. **Security reminder**: Consider switching to system environment variables
+
+**Troubleshooting steps:**
+```bash
+# Check if Next.js can see your environment variables
+npm run dev
+# Then visit http://localhost:3000/debug to see environment status
+```
 
 ### Issue: Build fails with TypeScript errors
 
@@ -334,7 +428,39 @@ npm run type-check
 npm run lint
 ```
 
-## 📚 Next Steps
+## � Security Best Practices
+
+### Environment Variables & Secrets Management
+
+✅ **RECOMMENDED: System Environment Variables**
+- Secrets are not stored in project files
+- Protected from AI/LLM exposure
+- Not included in backups or file sharing
+- Environment-specific configuration
+
+❌ **AVOID: .env.local files (especially in production)**
+- Files can be accidentally shared
+- Exposed to AI tools and code analysis
+- Risk of being included in backups
+- Visible in project directory
+
+### Additional Security Tips
+
+1. **Never commit secrets to git**:
+   ```bash
+   # .env.local is already in .gitignore, but double-check:
+   git status  # Should not show .env.local
+   ```
+
+2. **Rotate secrets regularly**: Change client secrets periodically
+
+3. **Use different secrets per environment**: Don't reuse production secrets in development
+
+4. **Monitor access**: Keep track of who has access to which environment secrets
+
+5. **Use secure storage**: For production deployments, use platform-specific secret management (AWS Secrets Manager, Azure Key Vault, etc.)
+
+## �📚 Next Steps
 
 Once you have the application running:
 
