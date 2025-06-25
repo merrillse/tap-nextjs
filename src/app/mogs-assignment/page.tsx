@@ -410,6 +410,25 @@ export default function MOGSAssignmentPage() {
       {/* Search Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search Assignment by ID</h2>
+        
+        {/* Quick Select Dropdown */}
+        <div className="mb-4">
+          <label htmlFor="quick-select" className="block text-sm font-medium text-gray-700 mb-1">Quick Select Assignment ID</label>
+          <select
+            id="quick-select"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                setAssignmentId(e.target.value);
+              }
+            }}
+            className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">-- Select a common Assignment ID --</option>
+            <option value="1185514">1185514</option>
+          </select>
+        </div>
+
         <div className="flex gap-4 items-end">
           <div className="flex-1">
             <label htmlFor="assignment-id" className="block text-sm font-medium text-gray-700 mb-1">Assignment ID</label>
