@@ -10,7 +10,9 @@ interface LeaderCitizenship {
 }
 
 interface LeaderImage {
-  // Define image fields if needed
+  id?: string;
+  cmisId?: string;
+  photo?: string;
 }
 
 interface Leader {
@@ -126,6 +128,11 @@ export default function LeaderPage() {
           preferredSurname
           preferredGivenName
           leaderUnitNumber
+          leaderImage {
+            id
+            cmisId
+            photo
+          } 
           startDate
           endDate
           ldsEmail
@@ -177,6 +184,14 @@ export default function LeaderPage() {
       const data = response.data as { leader: Leader };
       setLeader(data.leader || null);
       
+      // Debug logging for photo data
+      if (data.leader?.leaderImage) {
+        console.log('Leader image data:', data.leader.leaderImage);
+        console.log('Photo URL:', data.leader.leaderImage.photo);
+      } else {
+        console.log('No leader image data found');
+      }
+      
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while searching');
@@ -197,6 +212,25 @@ export default function LeaderPage() {
       cmisId: 'CMIS ID'
     };
     return labels[fieldName] || fieldName;
+  };
+
+  // Helper function to format photo URL for display
+  const formatPhotoUrl = (photoData?: string) => {
+    if (!photoData) return null;
+    
+    // If it's already a data URL, use as-is
+    if (photoData.startsWith('data:')) {
+      return photoData;
+    }
+    
+    // If it's base64 data without the data URL prefix, add it
+    // Most leader photos from the GraphQL API are JPEG format
+    if (photoData.match(/^[A-Za-z0-9+/]+=*$/)) {
+      return `data:image/jpeg;base64,${photoData}`;
+    }
+    
+    // If it's a regular URL, use as-is
+    return photoData;
   };
 
   const getDisplayName = (leader: Leader) => {
@@ -432,19 +466,86 @@ export default function LeaderPage() {
           <div className="space-y-6">
             {/* Leader Header */}
             <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">👤</span>
+              <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-lg">
+                {leader.leaderImage?.photo && formatPhotoUrl(leader.leaderImage.photo) ? (
+                  <img
+                    src={formatPhotoUrl(leader.leaderImage.photo) || ''}
+                    alt={`${getDisplayName(leader)} photo`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Failed to load leader image:', leader.leaderImage?.photo);
+                      console.error('Formatted URL:', formatPhotoUrl(leader.leaderImage?.photo));
+                      // Replace with fallback
+                      const target = e.target as HTMLImageElement;
+                      target.outerHTML = `
+                        <div class="w-full h-full bg-blue-600 flex items-center justify-center">
+                          <span class="text-white text-xl">👤</span>
+                        </div>
+                      `;
+                    }}
+                    onLoad={() => {
+                      console.log('Leader photo loaded successfully');
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+                    <span className="text-white text-xl">👤</span>
+                  </div>
+                )}
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-xl font-semibold text-gray-900">{getDisplayName(leader)}</h3>
                 {leader.cmisId && (
                   <p className="text-gray-600">CMIS ID: {leader.cmisId}</p>
+                )}
+                {leader.leaderImage?.photo && (
+                  <p className="text-xs text-gray-500 mt-1">📷 Photo loaded ({leader.leaderImage.photo.length} chars)</p>
                 )}
               </div>
             </div>
 
             {/* Basic Information Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Leader Photo (if available) */}
+              {leader.leaderImage?.photo && formatPhotoUrl(leader.leaderImage.photo) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Leader Photo</h3>
+                  <div className="flex justify-center">
+                    <div className="w-48 h-48 rounded-lg overflow-hidden border-2 border-gray-200 shadow-md">
+                      <img
+                        src={formatPhotoUrl(leader.leaderImage.photo) || ''}
+                        alt={`${getDisplayName(leader)} photo`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Failed to load leader image:', leader.leaderImage?.photo);
+                          console.error('Formatted URL:', formatPhotoUrl(leader.leaderImage?.photo));
+                          const target = e.target as HTMLImageElement;
+                          target.outerHTML = `
+                            <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <div class="text-center">
+                                <span class="text-gray-400 text-4xl block">👤</span>
+                                <span class="text-gray-500 text-sm">Photo unavailable</span>
+                              </div>
+                            </div>
+                          `;
+                        }}
+                        onLoad={() => {
+                          console.log('Large leader photo loaded successfully');
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-center space-y-1">
+                    {leader.leaderImage.id && (
+                      <p className="text-xs text-gray-500">Image ID: {leader.leaderImage.id}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Base64 data: {leader.leaderImage.photo.substring(0, 50)}...
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
