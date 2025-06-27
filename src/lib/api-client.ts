@@ -177,10 +177,15 @@ export class ApiClient {
     query: string, 
     variables: Record<string, unknown> = {},
     customHeaders: Record<string, string> = {},
-    proxyClient?: string
+    proxyClient?: string,
+    operationName?: string
   ): Promise<GraphQLResponse> {
     const accessToken = await this.getAccessToken();
-    const requestBody = JSON.stringify({ query, variables });
+    const requestBody = JSON.stringify({ 
+      query, 
+      variables,
+      ...(operationName && { operationName })
+    });
     const selectedProxyClient = proxyClient || getSelectedProxyClient();
 
     // Enhanced debugging information
@@ -194,6 +199,10 @@ export class ApiClient {
     console.log('  • Request Timestamp:', new Date().toISOString());
     console.log('  • Request Body Size:', requestBody.length, 'bytes');
     console.log('  • Query Preview:', query.substring(0, 200) + (query.length > 200 ? '...' : ''));
+    
+    if (operationName) {
+      console.log('  • Operation Name:', operationName);
+    }
     
     if (Object.keys(variables).length > 0) {
       console.log('  • Variables:', JSON.stringify(variables, null, 2));
@@ -232,7 +241,7 @@ export class ApiClient {
         query,
         variables,
         access_token: accessToken,
-        // customHeaders are now part of the fetch headers, not body to proxy
+        ...(operationName && { operationName }),
       }),
     });
 

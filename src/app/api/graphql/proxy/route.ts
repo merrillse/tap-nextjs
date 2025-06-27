@@ -4,7 +4,7 @@ import { getEnvironmentConfig } from '@/lib/environments';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, variables = {}, access_token } = body;
+    const { query, variables = {}, access_token, operationName } = body;
 
     if (!query) {
       return NextResponse.json(
@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     // Prepare GraphQL request
     const requestBody = JSON.stringify({ 
       query,
-      ...(Object.keys(variables).length > 0 && { variables })
+      ...(Object.keys(variables).length > 0 && { variables }),
+      ...(operationName && { operationName })
     });
     
     // Enhanced server-side debugging
@@ -51,9 +52,15 @@ export async function POST(request: NextRequest) {
     console.log('  • Query Preview:', query.substring(0, 150) + (query.length > 150 ? '...' : ''));
     console.log('  • Token Preview:', access_token.substring(0, 30) + '...');
     
+    if (operationName) {
+      console.log('  • Operation Name:', operationName);
+    }
+    
     if (Object.keys(variables).length > 0) {
       console.log('  • Variables:', JSON.stringify(variables, null, 2));
     }
+    
+    console.log('  • Request Body to GraphQL Server:', requestBody);
     console.groupEnd();
     
     // Make the GraphQL request

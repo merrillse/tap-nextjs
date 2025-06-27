@@ -117,6 +117,32 @@ export default function APITestingPage() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
 
+  // Multiple operations support
+  const [operationName, setOperationName] = useState<string>('');
+  const [availableOperations, setAvailableOperations] = useState<string[]>([]);
+
+  // Function to parse operation names from GraphQL query
+  const parseOperations = (query: string): string[] => {
+    if (!query.trim()) return [];
+    
+    try {
+      // Simple regex to find operation names
+      // Matches: query OperationName, mutation OperationName, subscription OperationName
+      const operationRegex = /(?:query|mutation|subscription)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g;
+      const operations: string[] = [];
+      let match;
+      
+      while ((match = operationRegex.exec(query)) !== null) {
+        operations.push(match[1]);
+      }
+      
+      return operations;
+    } catch (error) {
+      console.warn('Error parsing operations:', error);
+      return [];
+    }
+  };
+
   // State for sent request details
   const [sentRequestBody, setSentRequestBody] = useState<string | null>(null);
   const [sentRequestHeaders, setSentRequestHeaders] = useState<Record<string, string> | null>(null);
@@ -367,6 +393,22 @@ query ThirdQuery {
     }
   }, [queryInput]);
 
+  // Update available operations when query changes
+  useEffect(() => {
+    const operations = parseOperations(queryInput);
+    setAvailableOperations(operations);
+    
+    // Reset operation name if it's no longer available
+    if (operationName && !operations.includes(operationName)) {
+      setOperationName('');
+    }
+    
+    // Auto-select first operation if operations exist and no operation is selected
+    if (operations.length > 0 && !operationName) {
+      setOperationName(operations[0]);
+    }
+  }, [queryInput, operationName]);
+
   // Save variables and headers to local storage
   useEffect(() => {
     localStorage.setItem('graphqlVariables', graphqlVariables);
@@ -492,6 +534,43 @@ query ThirdQuery {
         console.log(`[Apex Debug] Executing GraphQL query for endpoint: ${selectedEndpoint}`);
         console.log(`[Apex Debug] Query: ${queryInput}`);
         
+        // Check if multiple operations exist and an operation name is required
+        const currentOperations = parseOperations(queryInput);
+        console.log(`[Apex Debug] Current operations:`, currentOperations);
+        console.log(`[Apex Debug] Available operations state:`, availableOperations);
+        console.log(`[Apex Debug] Operation name state:`, operationName);
+        
+        // If multiple operations but no operationName, try to auto-select
+        if (currentOperations.length > 1 && (!operationName || operationName.trim() === '')) {
+          console.log('[Apex Debug] Multiple operations detected but no operation selected, attempting auto-select');
+          if (currentOperations.length > 0) {
+            const autoSelectedOperation = currentOperations[0];
+            console.log('[Apex Debug] Auto-selecting operation:', autoSelectedOperation);
+            setOperationName(autoSelectedOperation);
+            // Use the auto-selected operation for this request
+            console.log('[Apex Debug] Using auto-selected operation for this request:', autoSelectedOperation);
+          } else {
+            console.error('[Apex Debug] No operations available for auto-selection');
+            setError('Multiple operations detected. Please select an operation to execute.');
+            setLoading(false);
+            setResponse({
+              status: 400,
+              error: 'Multiple operations detected. Please select an operation to execute.',
+              executionTime: `${Date.now() - startTime}ms`,
+              timestamp: new Date().toISOString(),
+              headers: {},
+            });
+            setResponseTabValue(2); // Switch to error tab
+            return;
+          }
+        }
+        
+        // Use the current operationName or the auto-selected one
+        const finalOperationName = operationName && operationName.trim() !== '' ? operationName : (currentOperations.length > 0 ? currentOperations[0] : '');
+        console.log(`[Apex Debug] Final operation name to use:`, finalOperationName);
+        
+        console.log(`[Apex Debug] Selected operation: ${finalOperationName || 'none (single operation)'}`);
+        
         // Capture request details before sending - include ALL headers that will be sent
         const requestDetailsToStore = {
           query: queryInput,
@@ -514,6 +593,7 @@ query ThirdQuery {
         const completeRequestDetails = {
           query: queryInput,
           variables: parsedVariables,
+          ...(finalOperationName && { operationName: finalOperationName }),
           access_token: apiClient.getCurrentToken() ? `${apiClient.getCurrentToken()!.access_token.substring(0, 20)}...` : null,
           note: "Access token is sent in request body and converted to 'Authorization: Bearer <token>' header by the Next.js proxy"
         };
@@ -521,7 +601,13 @@ query ThirdQuery {
         setSentRequestBody(safeStringify(completeRequestDetails));
         setSentRequestHeaders(completeHeaders);
 
-        const result = await apiClient.executeGraphQLQuery(queryInput, parsedVariables, parsedHeaders as Record<string, string>, selectedProxyClient);
+        const result = await apiClient.executeGraphQLQuery(
+          queryInput, 
+          parsedVariables, 
+          parsedHeaders as Record<string, string>, 
+          selectedProxyClient,
+          finalOperationName || undefined
+        );
         console.log('[Apex Debug] GraphQL execution result:', result);
         const executionTime = Date.now() - startTime;
         
@@ -870,6 +956,25 @@ ${fields}
                         {editingQuery?.name || 'Unnamed Query'}
                       </span>
                     </div>
+
+                    {/* Operation Name Selector */}
+                    {availableOperations.length > 1 && (
+                      <div className="flex items-center space-x-1.5 px-2 py-1 bg-white rounded-md shadow-sm border border-gray-200">
+                        <span className="text-xs text-gray-500 font-medium">Op:</span>
+                        <select
+                          value={operationName}
+                          onChange={(e) => setOperationName(e.target.value)}
+                          className="text-xs border-0 bg-transparent text-gray-700 focus:outline-none focus:ring-0 pr-6"
+                          style={{ backgroundImage: 'url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMUw2IDZMMTEgMSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '12px' }}
+                        >
+                          {availableOperations.map((operation) => (
+                            <option key={operation} value={operation}>
+                              {operation}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Action Toolbar */}
