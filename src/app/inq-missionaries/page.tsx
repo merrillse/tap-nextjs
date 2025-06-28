@@ -169,16 +169,24 @@ export default function INQMissionariesPage() {
     setResponse('');
     
     try {
-      const hasSecret = getClientSecretStatus();
+      // Check secret status in real-time
+      const hasSecret = await checkSecretStatus(selectedEnvironment);
+      
       if (!hasSecret) {
-        setResponse('❌ Error: Client secret not found in environment variables.\n\nPlease set the environment variable: ' + `INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}` + '\n\nSee the Environment Setup section below for details.\n\nNote: Environment variables must be set outside the project (not in .env.local) for security.');
+        setResponse('❌ Error: Client secret not found in environment variables.\n\nPlease set the environment variable: ' + `INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}` + '\n\nSee the Environment Setup section below for details.\n\nNote: Environment variables must be set outside the project (not in .env.local) for security.\n\nFor testing purposes, you can set a dummy value like:\nexport INQ_CLIENT_SECRET_' + selectedEnvironment.envVarSuffix + '="test_secret_value"\n\nThen restart your development server.');
         return;
       }
 
+      // Update cached status
+      setSecretStatus(prev => ({
+        ...prev,
+        [selectedEnvironment.envVarSuffix]: hasSecret
+      }));
+
       // This would be the actual OAuth2 flow implementation via API endpoint
-      setResponse('⚠️ Ready for authentication! Client secret configured in environment.\n\nTo execute this query:\n1. Call /api/inq/auth to get an access token (server-side)\n2. Use the token to make OData requests via /api/inq/query\n3. All secrets remain server-side for security\n\nExample response structure is shown in the sample data below.');
+      setResponse('✅ Ready for authentication! Client secret configured in environment.\n\nTo execute this query:\n1. Call /api/inq/auth to get an access token (server-side)\n2. Use the token to make OData requests via /api/inq/query\n3. All secrets remain server-side for security\n\nExample response structure is shown in the sample data below.\n\nFull URL: ' + buildFullUrl());
     } catch (error) {
-      setResponse(`Error: ${error}`);
+      setResponse(`❌ Error checking secret status: ${error}`);
     } finally {
       setIsLoading(false);
     }
