@@ -93,6 +93,13 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       ]
     },
     {
+      name: 'INQ',
+      icon: '📊',
+      items: [
+        { name: 'Missionaries', href: '/inq-missionaries', icon: '👥', description: 'Query INQ Dataverse missionaries using OData Web API' },
+      ]
+    },
+    {
       name: 'Testing Tools',
       icon: '🧪',
       items: [
@@ -168,7 +175,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-lg blur-sm opacity-30 -z-10"></div>
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">MQGL/MOGS</h1>
+                <h1 className="text-lg font-semibold text-gray-900">MQGL/MOGS/INQ</h1>
                 <p className="text-xs text-gray-500">Test Application</p>
               </div>
             </div>
