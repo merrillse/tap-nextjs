@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlayIcon, DocumentDuplicateIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 interface Environment {
@@ -9,7 +9,15 @@ interface Environment {
   clientId: string;
   scope: string;
   description: string;
+  envVarSuffix: string;
 }
+
+// OAuth2 Configuration
+const OAUTH_CONFIG = {
+  tenantId: '61e6eeb3-5fd7-4aaa-ae3c-61e8deb09b79',
+  grantType: 'client_credentials',
+  tokenUrl: 'https://login.microsoftonline.com/61e6eeb3-5fd7-4aaa-ae3c-61e8deb09b79/oauth2/v2.0/token'
+};
 
 const INQ_ENVIRONMENTS: Environment[] = [
   {
@@ -17,28 +25,32 @@ const INQ_ENVIRONMENTS: Environment[] = [
     baseUrl: 'https://inq-dev.api.crm.dynamics.com/api/data/v9.2',
     clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
     scope: 'https://inq-dev.crm.dynamics.com/.default',
-    description: 'Development environment for testing and integration'
+    description: 'Development environment for testing and integration',
+    envVarSuffix: 'DEV'
   },
   {
     name: 'Test',
     baseUrl: 'https://inq-test.api.crm.dynamics.com/api/data/v9.2',
     clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
     scope: 'https://inq-test.crm.dynamics.com/.default',
-    description: 'Test environment for validation and QA'
+    description: 'Test environment for validation and QA',
+    envVarSuffix: 'TEST'
   },
   {
     name: 'Stage',
     baseUrl: 'https://inq-stage.api.crm.dynamics.com/api/data/v9.2',
     clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
     scope: 'https://inq-stage.crm.dynamics.com/.default',
-    description: 'Staging environment for pre-production testing'
+    description: 'Staging environment for pre-production testing',
+    envVarSuffix: 'STAGE'
   },
   {
     name: 'Prod',
     baseUrl: 'https://inq.api.crm.dynamics.com/api/data/v9.2',
     clientId: '5e6b7d0b-7247-429b-b8c1-d911d8f13d40',
     scope: 'https://inq.crm.dynamics.com/.default',
-    description: 'Production environment for live data'
+    description: 'Production environment for live data',
+    envVarSuffix: 'PROD'
   }
 ];
 
@@ -47,241 +59,45 @@ const SAMPLE_MISSIONARY = {
   "value": [
     {
       "@odata.etag": "W/\"775947911\"",
-      "inq_vehiclefeeholder": null,
-      "inq_estimatedtravelcost": null,
-      "inq_assaultsurvivor": false,
-      "inq_latinmiddlename": "Robert",
-      "inq_doctorsevaluation": "2025-02-28",
-      "inq_recommendnamesuffix": null,
-      "inq_purge": false,
-      "_ownerid_value": "7527262e-a0b9-ee11-a569-002248090557",
-      "inq_nationalidconfirmationsecond": null,
-      "inq_airportofmissionandhomeunit": null,
-      "inq_recommendedatheadquarters": "2025-04-28",
-      "importsequencenumber": null,
-      "inq_subsidyname": null,
-      "utcconversiontimezonecode": null,
-      "inq_comp": "English SerMis Eld",
-      "inq_anniversarydate": "2027-06-20T09:43:55Z",
-      "overriddencreatedon": "2025-06-20T15:49:24Z",
-      "inq_releasedate": null,
-      "inq_callviewed": null,
-      "inq_personalemail": "williamgracia2106@gmail.com",
-      "inq_otherfunding": null,
-      "inq_secondcandidateaccesstomedicalcare": null,
-      "inq_homeaddressstreet3": null,
-      "inq_officialmiddlename": "Robert",
-      "_inq_assignmentlocation_value": "a34c8f79-cfa0-ec11-b400-000d3a3597b5",
-      "inq_calculatedtaxyearstartdate": null,
-      "_inq_gvmmissionary_value": null,
-      "inq_gvmadditionalcomments": null,
-      "inq_newamount": null,
-      "_transactioncurrencyid_value": "5cfa3364-619f-eb11-b1ac-002248047e97",
-      "inq_totalunreversedchargesamount_base": 0.0000000000,
-      "inq_emailprovisioningstatus": null,
-      "_inq_recommend_value": "cb05c3df-ed4d-f011-8779-6045bd018176",
-      "inq_equalizedyn1": "Yes",
-      "inq_daysuntilstart": 48.0000000000,
-      "inq_certificatename": "William Robert Gracia",
-      "inq_outboundtravelpaidby": true,
-      "inq_imageid": "2661615d-ee4d-f011-8779-000d3a35ea08",
-      "inq_nationalidconfirmationfirst": null,
-      "emailaddress": null,
-      "inq_requestedby": null,
-      "inq_birthplace": "Torrance, CA",
-      "inq_primarylanguage": 0,
-      "inq_cantextmobilephone": true,
-      "inq_insurancecost_base": null,
-      "inq_callaccepted": null,
-      "inq_certificaterequested": false,
-      "inq_calllettercountry": null,
-      "inq_calculatedreleasedate_state": 1,
-      "inq_totalunreversedchargesamount_date": "2025-06-28T05:30:25Z",
-      "inq_homeaddressstreet2": null,
-      "_owninguser_value": null,
-      "inq_gvmtraveldatetomission": null,
-      "inq_leadersignature": null,
-      "inq_monthlychargecalc_base": null,
-      "inq_callsentdate": "2025-06-20T15:58:07Z",
-      "inq_psychreviewdate": null,
-      "_inq_submittingunit_value": "db789ed5-bfda-ec11-a7b6-0022480b6e52",
-      "inq_workforceenabled": false,
-      "inq_futurestatusreason": null,
-      "inq_mentalhealthreview": false,
-      "inq_calculatedreleasedate": "2027-08-15",
-      "inq_totalunreversedcharges_state": 1,
-      "inq_gvmdelaycreatedate": null,
-      "inq_lastfourdigits": null,
-      "inq_homeunitname": "Redondo  2nd Ward (20877)",
-      "inq_preferrednamesuffix": null,
-      "inq_callletterdistrict": null,
-      "inq_legacycmisid": "18589018551",
-      "inq_sourceofdata": 447160001,
-      "_createdby_value": "23f3d7b4-649e-ec11-b400-000d3a3592b9",
-      "inq_calllength": 24,
-      "inq_localizedname": null,
-      "inq_housingsubsidypercent": null,
-      "inq_cmislatingivennames": "William Robert",
-      "inq_housingchargecommitment_base": null,
-      "inq_executivesummary": null,
-      "inq_missionarynumber": "202139",
-      "inq_homeaddressstreet1": "20560 Anza Ave. apt 1",
-      "inq_preferredmiddlename": "Robert",
-      "inq_calculatedmembershipunit": null,
-      "inq_imageurl": null,
-      "_inq_stakeordistrict_value": "b4789ed5-bfda-ec11-a7b6-0022480b6e52",
-      "inq_returntravelpaidby": false,
-      "_modifiedby_value": "06e38bc7-63d1-ec11-a7b5-6045bd0118c4",
-      "inq_medicallycleared": 121640002,
-      "inq_totalunreversedcharges_date": "2025-06-28T05:30:25Z",
-      "timezoneruleversionnumber": 0,
-      "inq_mobilephone": "(310) 818-1732",
-      "inq_clearedfortravelnote": null,
-      "inq_missionarytype": 1,
-      "inq_totalfunding": 400.0000,
-      "inq_cmislatinsurname": "Gracia",
-      "_owningteam_value": "7527262e-a0b9-ee11-a569-002248090557",
-      "inq_preferredfirstname": "William",
-      "inq_estimatedpersonalcost_base": null,
-      "inq_subsidyid": null,
-      "_inq_calllettercountryid_value": "d79ac263-0c55-e711-80f1-c4346bac4304",
-      "inq_calllettercity": "Torrance",
-      "inq_image_timestamp": 638860314640984689,
-      "inq_minimumcontributionamountid": null,
-      "inq_callletterstateprovence": "CA",
-      "inq_dentistsevaluation": "2025-03-05",
-      "_modifiedonbehalfby_value": null,
-      "inq_recommendfirstname": "William",
-      "inq_medicalid": null,
-      "inq_image": "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",
-      "inq_callletteracceptancetext": null,
-      "inq_firstcandidateaccesstomedicalcare": null,
-      "inq_calculatedstatus": "In-field",
-      "inq_callnotificationscheduleddate": null,
-      "inq_calltypecode": null,
-      "inq_missionarytravelitinerary": null,
-      "_owningbusinessunit_value": "5a7420b2-2d9f-eb11-b1ac-002248047e97",
-      "inq_delaytype": null,
-      "inq_recommendnumber": "1413486",
-      "_createdonbehalfby_value": null,
-      "inq_uuid": "75cd6928-08c2-4d7c-aa94-ab5dd4a24e60",
-      "modifiedon": "2025-06-20T15:58:12Z",
-      "inq_passportnumber": null,
-      "inq_donotpurge": false,
-      "inq_latinlastname": "Gracia",
-      "inq_homeaddresscity": "Torrance",
-      "inq_callletterzippostalcode": "90503",
-      "inq_parentunitname": "Torrance California North Stake (502391)",
-      "statuscode": 447160013,
-      "inq_callletteraddressstreet3": null,
-      "_inq_membershipunit_value": "db789ed5-bfda-ec11-a7b6-0022480b6e52",
-      "inq_wardbranchfunding": null,
-      "inq_nationalid": null,
-      "inq_wardbranchfunding_base": null,
-      "inq_membershipmission": "California Los Angeles Mission (2011107)",
-      "inq_age": "19y, 4m",
-      "versionnumber": 775947911,
-      "inq_refreshfromcmis": false,
-      "inq_homeaddressdistrict": null,
-      "inq_cmissurname": "Gracia",
-      "_inq_permanentassignment_value": "3d3d6b41-ee4d-f011-877a-0022480c68a3",
-      "inq_travelsubsidypercent": null,
-      "inq_ldsaccountid": "3788468155195441",
-      "inq_recommendlastname": "Gracia",
-      "inq_vehiclefee_base": null,
-      "inq_housingcharge_base": null,
-      "inq_equalizedyn": true,
-      "inq_otherreviewdate": null,
-      "inq_gvmdelaycanceleddate": null,
-      "inq_callletteraddressstreet2": null,
-      "inq_assignedchurchownedvehicle": null,
-      "inq_originalreleasedate": "2027-08-15",
-      "inq_newamount_base": null,
-      "_inq_missionaryadvocate_value": null,
-      "statecode": 0,
-      "inq_insurancesubsidypercent": null,
-      "inq_gender": 447160000,
-      "inq_readytotravel": false,
-      "inq_housingchargeholder_base": null,
-      "inq_concatfundingunitfinanceinfo": "Equalized/MSF/400/USD",
-      "inq_insurancecost": null,
-      "inq_recommendmiddlename": "Robert",
-      "inq_preferredlastname": "Gracia",
-      "inq_personalsubsidypercent": null,
-      "inq_officialfirstname": "William",
-      "inq_selffunding_base": 0.0000,
-      "inq_homephone": "(310) 291-8404",
-      "inq_modifiedbyimos": null,
-      "inq_startdate": "2025-08-15",
-      "inq_hushenddate": "2025-07-05",
-      "_inq_homewardbranchstake_value": "db789ed5-bfda-ec11-a7b6-0022480b6e52",
-      "inq_msswid": null,
-      "exchangerate": 1.0000000000,
-      "inq_reasonforchange": null,
-      "inq_homeaddressstateprovence": "CA",
-      "inq_calculatedreleasedate_date": "2025-06-28T05:30:25Z",
-      "inq_vehiclefeeholder_base": null,
-      "inq_medicalreviewdate": null,
-      "inq_cmisgivennames": "William Robert",
-      "inq_housingsweepparticipation": null,
-      "inq_equalizedmaxamount": 400.0000000000,
-      "inq_housingchargecommitment": null,
-      "_inq_funding_value": "db789ed5-bfda-ec11-a7b6-0022480b6e52",
-      "inq_familyfunding": 400.0000,
-      "inq_callletterphone": "(310) 291-8404",
-      "inq_monthlychargecalc": null,
-      "inq_officialnamesuffix": null,
-      "inq_callletterlanguage": 0,
-      "inq_needsgvmchange": false,
-      "inq_callletteraddressstreet1": "20560 Anza Ave. apt 1",
-      "inq_totalfunding_base": 400.0000,
-      "inq_latinfirstname": "William",
-      "inq_birthdate": "2006-02-01T00:00:00Z",
-      "inq_calculatedfullgivenname": "William Robert Gracia",
-      "inq_costsasofdate": "2025-06-20",
-      "inq_totalunreversedchargesamount_state": 1,
-      "inq_name": "Gracia, William Robert (202139)",
-      "_inq_homeaddresscountryid_value": "d79ac263-0c55-e711-80f1-c4346bac4304",
-      "inq_otherfunding_base": null,
       "inq_missionaryid": "a106e921-ee4d-f011-8779-000d3a3113ca",
-      "_inq_birthcountry_value": "d79ac263-0c55-e711-80f1-c4346bac4304",
-      "inq_vehiclefee": null,
-      "inq_availabledate": "2025-05-20",
-      "inq_assignmentdetailsreporturl": null,
-      "inq_calllettertype": false,
-      "_inq_reasonforrelease_value": null,
-      "inq_selffunding": 0.0000,
-      "inq_homeunitparentleaderemail": "kentccarter@gmail.com",
-      "inq_isonetimecommitmentenabled": true,
-      "inq_monthlycharge": null,
-      "inq_assignmentdetailsreport_name": null,
-      "inq_homeaddresszippostalcode": "90503",
-      "inq_estimatedtravelcost_base": null,
-      "inq_maxequalizedamount": null,
-      "inq_otherreview": false,
-      "inq_missionaryportalpin": "531939",
-      "inq_primarymissionary": true,
-      "inq_confirmationdate": "2014-03-15",
-      "inq_estimatedpersonalcost": null,
-      "inq_immunizationstatus": 121640002,
-      "createdon": "2025-06-20T15:43:53Z",
-      "inq_companionsapp": null,
-      "inq_monthlycharge_base": null,
+      "inq_name": "Gracia, William Robert (202139)",
+      "inq_missionarynumber": "202139",
+      "inq_calculatedstatus": "In-field",
+      "inq_startdate": "2025-08-15",
+      "inq_calculatedreleasedate": "2027-08-15",
       "inq_officiallastname": "Gracia",
-      "inq_familyfunding_base": 400.0000,
-      "inq_infielddate": "2025-08-15",
-      "inq_medicalreview": false,
-      "inq_latinnamesuffix": null,
-      "inq_totalunreversedchargesamount": 0.0000000000,
-      "inq_housingcharge": null,
-      "inq_image_url": "/Image/download.aspx?Entity=inq_missionary&Attribute=inq_image&Id=a106e921-ee4d-f011-8779-000d3a3113ca&Timestamp=638860314640984689",
-      "inq_totalunreversedcharges": 0,
-      "inq_callletterlanguage1": null,
-      "inq_calculatedtaxyearenddate": "2025-05-31",
-      "_inq_spouseid_value": null,
-      "inq_assignmentdetailsreport": null,
-      "inq_housingchargeholder": null,
-      "inq_homeaddresscountry": null
+      "inq_officialfirstname": "William",
+      "inq_officialmiddlename": "Robert",
+      "inq_personalemail": "williamgracia2106@gmail.com",
+      "inq_mobilephone": "(310) 818-1732",
+      "inq_homephone": "(310) 291-8404",
+      "inq_birthdate": "2006-02-01T00:00:00Z",
+      "inq_age": "19y, 4m",
+      "inq_gender": 447160000,
+      "inq_primarylanguage": 0,
+      "inq_comp": "English SerMis Eld",
+      "inq_calllength": 24,
+      "inq_missionarytype": 1,
+      "_inq_assignmentlocation_value": "a34c8f79-cfa0-ec11-b400-000d3a3597b5",
+      "inq_homeunitname": "Redondo  2nd Ward (20877)",
+      "inq_parentunitname": "Torrance California North Stake (502391)",
+      "inq_membershipmission": "California Los Angeles Mission (2011107)",
+      "inq_homeaddressstreet1": "20560 Anza Ave. apt 1",
+      "inq_homeaddresscity": "Torrance",
+      "inq_homeaddressstateprovence": "CA",
+      "inq_homeaddresszippostalcode": "90503",
+      "inq_totalfunding": 400.0000,
+      "inq_familyfunding": 400.0000,
+      "inq_equalizedyn": true,
+      "inq_concatfundingunitfinanceinfo": "Equalized/MSF/400/USD",
+      "inq_legacycmisid": "18589018551",
+      "inq_ldsaccountid": "3788468155195441",
+      "inq_medicallycleared": 121640002,
+      "inq_immunizationstatus": 121640002,
+      "statuscode": 447160013,
+      "statecode": 0,
+      "createdon": "2025-06-20T15:43:53Z",
+      "modifiedon": "2025-06-20T15:58:12Z"
     }
   ]
 };
@@ -292,6 +108,46 @@ export default function INQMissionariesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<string>('');
   const [showSample, setShowSample] = useState(false);
+  const [showTokenDetails, setShowTokenDetails] = useState(false);
+  const [secretStatus, setSecretStatus] = useState<{ [key: string]: boolean }>({});
+
+  // Check secret status via API endpoint (server-side only)
+  const checkSecretStatus = async (environment: Environment) => {
+    try {
+      const response = await fetch(`/api/inq-secret-status?env=${environment.envVarSuffix}`);
+      const data = await response.json();
+      return data.hasSecret;
+    } catch (error) {
+      console.error('Error checking secret status:', error);
+      return false;
+    }
+  };
+
+  // Load secret status when environment changes
+  const loadSecretStatus = async () => {
+    const hasSecret = await checkSecretStatus(selectedEnvironment);
+    setSecretStatus(prev => ({
+      ...prev,
+      [selectedEnvironment.envVarSuffix]: hasSecret
+    }));
+  };
+
+  // Effect to load secret status when environment changes
+  useEffect(() => {
+    const loadStatus = async () => {
+      const hasSecret = await checkSecretStatus(selectedEnvironment);
+      setSecretStatus(prev => ({
+        ...prev,
+        [selectedEnvironment.envVarSuffix]: hasSecret
+      }));
+    };
+    loadStatus();
+  }, [selectedEnvironment]);
+
+  // Check if client secret is available (without exposing the actual value)
+  const getClientSecretStatus = () => {
+    return secretStatus[selectedEnvironment.envVarSuffix] || false;
+  };
 
   const buildFullUrl = () => {
     return `${selectedEnvironment.baseUrl}/${queryUrl}`;
@@ -301,14 +157,26 @@ export default function INQMissionariesPage() {
     navigator.clipboard.writeText(text);
   };
 
+  const generateBasicAuthHeader = () => {
+    const hasSecret = getClientSecretStatus();
+    if (!hasSecret) return 'Basic <base64(clientId:clientSecret)>';
+    // In production, this would be generated server-side to avoid exposing secrets
+    return 'Basic <base64(clientId:clientSecret)>';
+  };
+
   const executeQuery = async () => {
     setIsLoading(true);
     setResponse('');
     
     try {
-      // Note: This is a mock implementation since we don't have actual OAuth2 flow for INQ
-      // In a real implementation, you would need to authenticate with the Dataverse API
-      setResponse('⚠️ Query execution requires proper OAuth2 authentication with Microsoft Dataverse.\n\nTo execute this query, you would need to:\n1. Authenticate using the client credentials above\n2. Obtain an access token from Azure AD\n3. Include the token in the Authorization header\n4. Make the HTTP request to the OData endpoint\n\nExample response structure is shown in the sample data below.');
+      const hasSecret = getClientSecretStatus();
+      if (!hasSecret) {
+        setResponse('❌ Error: Client secret not found in environment variables.\n\nPlease set the environment variable: ' + `INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}` + '\n\nSee the Environment Setup section below for details.\n\nNote: Environment variables must be set outside the project (not in .env.local) for security.');
+        return;
+      }
+
+      // This would be the actual OAuth2 flow implementation via API endpoint
+      setResponse('⚠️ Ready for authentication! Client secret configured in environment.\n\nTo execute this query:\n1. Call /api/inq/auth to get an access token (server-side)\n2. Use the token to make OData requests via /api/inq/query\n3. All secrets remain server-side for security\n\nExample response structure is shown in the sample data below.');
     } catch (error) {
       setResponse(`Error: ${error}`);
     } finally {
@@ -348,7 +216,7 @@ export default function INQMissionariesPage() {
 
         {/* Selected Environment Details */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">Authentication Configuration</h3>
+          <h3 className="font-semibold text-gray-900 mb-3">Environment Configuration</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <label className="block text-gray-600 font-medium">Base URL:</label>
@@ -371,8 +239,174 @@ export default function INQMissionariesPage() {
               <div className="font-mono bg-white p-2 rounded border">{selectedEnvironment.scope}</div>
             </div>
             <div>
-              <label className="block text-gray-600 font-medium">Client Secret:</label>
-              <div className="font-mono bg-white p-2 rounded border text-gray-400">my-secret (hidden)</div>
+              <label className="block text-gray-600 font-medium">Environment Variable:</label>
+              <div className="bg-blue-50 border border-blue-200 p-2 rounded text-blue-800 font-mono text-xs">
+                INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Access Token Authorization */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">🔐 Access Token Authorization</h2>
+          <button
+            onClick={() => setShowTokenDetails(!showTokenDetails)}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            {showTokenDetails ? 'Hide Details' : 'Show Details'}
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* OAuth2 Configuration */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900">OAuth 2.0 Configuration</h3>
+            
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Grant Type:</div>
+                <div className="col-span-2 font-mono">{OAUTH_CONFIG.grantType}</div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Tenant ID:</div>
+                <div className="col-span-2 font-mono text-xs">{OAUTH_CONFIG.tenantId}</div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Token URL:</div>
+                <div className="col-span-2 font-mono text-xs break-all">{OAUTH_CONFIG.tokenUrl}</div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Client ID:</div>
+                <div className="col-span-2 font-mono text-xs flex items-center justify-between">
+                  <span>{selectedEnvironment.clientId}</span>
+                  <button
+                    onClick={() => copyToClipboard(selectedEnvironment.clientId)}
+                    className="ml-2 text-gray-400 hover:text-gray-600"
+                    title="Copy Client ID"
+                  >
+                    <DocumentDuplicateIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Scope:</div>
+                <div className="col-span-2 font-mono text-xs">{selectedEnvironment.scope}</div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="font-medium text-gray-600">Client Secret:</div>
+                <div className="col-span-2">
+                  {getClientSecretStatus() ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 text-sm">✓ Configured in environment</span>
+                      <code className="text-xs bg-gray-200 px-1 rounded">INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}</code>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-600 text-sm">❌ Not configured</span>
+                      <code className="text-xs bg-red-100 px-1 rounded">INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}</code>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Authentication Headers */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900">Authentication Headers</h3>
+            
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+              <div>
+                <div className="font-medium text-gray-600 mb-1">Basic Auth Header:</div>
+                <div className="font-mono text-xs bg-white p-2 rounded border break-all">
+                  Authorization: {generateBasicAuthHeader()}
+                </div>
+              </div>
+              
+              <div>
+                <div className="font-medium text-gray-600 mb-1">Content-Type:</div>
+                <div className="font-mono text-xs bg-white p-2 rounded border">
+                  application/x-www-form-urlencoded
+                </div>
+              </div>
+            </div>
+
+            {showTokenDetails && (
+              <div className="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+                <div className="mb-2 text-gray-400"># Get OAuth2 access token</div>
+                <div className="mb-2">curl -X POST \</div>
+                <div className="mb-2 ml-2">'{OAUTH_CONFIG.tokenUrl}' \</div>
+                <div className="mb-2 ml-2">-H 'Content-Type: application/x-www-form-urlencoded' \</div>
+                <div className="mb-2 ml-2">-H 'Authorization: {generateBasicAuthHeader()}' \</div>
+                <div className="mb-2 ml-2">-d 'grant_type={OAUTH_CONFIG.grantType}' \</div>
+                <div className="ml-2">-d 'scope={selectedEnvironment.scope}'</div>
+                
+                <div className="mt-4 mb-2 text-gray-400"># Expected response:</div>
+                <div className="ml-2">{"{"}</div>
+                <div className="ml-4">"access_token": "&lt;jwt-token&gt;",</div>
+                <div className="ml-4">"token_type": "Bearer",</div>
+                <div className="ml-4">"expires_in": 3599</div>
+                <div className="ml-2">{"}"}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Environment Setup Guide */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-yellow-900 mb-3">🛠️ Environment Setup Guide</h2>
+        <div className="space-y-4 text-yellow-800 text-sm">
+          <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+            <div className="font-semibold text-red-900 mb-1">🚨 Security Notice</div>
+            <div className="text-red-800 text-xs">
+              Do NOT store client secrets in .env.local or any project files! 
+              This prevents accidental commits and protects secrets from AI coding assistants.
+            </div>
+          </div>
+          
+          <p><strong>Required Environment Variables:</strong></p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {INQ_ENVIRONMENTS.map((env) => (
+              <div key={env.name} className="bg-yellow-100 rounded p-3">
+                <div className="font-semibold mb-1">{env.name} Environment:</div>
+                <code className="text-xs bg-yellow-200 px-2 py-1 rounded block">
+                  INQ_CLIENT_SECRET_{env.envVarSuffix}=your_secret_here
+                </code>
+              </div>
+            ))}
+          </div>
+          
+          <div className="bg-yellow-100 rounded p-3">
+            <div className="font-semibold mb-2">Setup Methods:</div>
+            <div className="space-y-2 text-xs">
+              <div><strong>Local Development (Terminal):</strong></div>
+              <div className="ml-2">
+                <code className="bg-yellow-200 px-1 rounded">export INQ_CLIENT_SECRET_DEV="your_actual_secret"</code>
+              </div>
+              <div className="ml-2">
+                <code className="bg-yellow-200 px-1 rounded">npm run dev</code>
+              </div>
+              
+              <div className="mt-3"><strong>Production Deployment:</strong></div>
+              <div className="ml-2">• AWS: Use Systems Manager Parameter Store or Secrets Manager</div>
+              <div className="ml-2">• Azure: Use Key Vault or App Configuration</div>
+              <div className="ml-2">• Vercel: Set in Project Settings → Environment Variables</div>
+              <div className="ml-2">• Docker: Use --env-file or -e flags</div>
+              
+              <div className="mt-3"><strong>CI/CD:</strong></div>
+              <div className="ml-2">• Set as encrypted environment variables in your CI/CD system</div>
+              <div className="ml-2">• GitHub Actions: Use repository secrets</div>
+              <div className="ml-2">• Azure DevOps: Use variable groups with secret variables</div>
             </div>
           </div>
         </div>
