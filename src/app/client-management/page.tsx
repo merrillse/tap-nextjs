@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { useClientSelection } from '@/contexts/ClientSelectionContext';
 
 interface Client {
   id: string;
@@ -85,6 +86,9 @@ export default function ClientManagementPage() {
     tenant: 'production'
   });
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Get client selection context
+  const { selectedClient, setSelectedClient } = useClientSelection();
 
   // Load clients from localStorage on component mount
   useEffect(() => {
@@ -169,6 +173,20 @@ export default function ClientManagementPage() {
     if (confirm('Are you sure you want to delete this client?')) {
       setClients(prev => prev.filter(client => client.id !== clientId));
     }
+  };
+
+  const handleUseClient = (client: Client) => {
+    // Convert the client to the format expected by ClientSelectionContext
+    const clientInfo = {
+      id: client.id,
+      name: client.name,
+      clientId: client.clientId,
+      description: client.description,
+      environment: client.environment,
+      tenant: client.tenant
+    };
+    setSelectedClient(clientInfo);
+    alert(`Now using client: ${client.name} (${client.clientId})`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -274,6 +292,29 @@ export default function ClientManagementPage() {
         <span className="text-2xl">🏢</span>
         <h1 className="text-2xl font-bold">Client Management</h1>
         <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Production & Development Okta Tenants</span>
+      </div>
+
+      {/* Current Client Display */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-green-800">Currently Selected Client</h3>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-lg font-semibold text-green-900">{selectedClient.name}</span>
+              <span className="text-sm text-green-700">({selectedClient.clientId})</span>
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                selectedClient.tenant === 'production' 
+                  ? 'bg-red-100 text-red-800' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
+                {selectedClient.tenant === 'production' ? 'PROD Okta' : 'DEV Okta'}
+              </span>
+            </div>
+          </div>
+          <div className="text-sm text-green-600">
+            ✓ This client will be used for all API calls
+          </div>
+        </div>
       </div>
 
       {/* Controls */}
@@ -433,14 +474,27 @@ export default function ClientManagementPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       <button
+                        onClick={() => handleUseClient(client)}
+                        className={`p-1 rounded ${
+                          selectedClient.clientId === client.clientId
+                            ? 'text-green-600 bg-green-50 border border-green-200'
+                            : 'text-blue-600 hover:text-blue-900 hover:bg-blue-50'
+                        }`}
+                        title={selectedClient.clientId === client.clientId ? 'Currently selected' : 'Use this client'}
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleEdit(client)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                        title="Edit client"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(client.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                        title="Delete client"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -567,6 +621,8 @@ export default function ClientManagementPage() {
         <h2 className="text-lg font-semibold text-blue-900 mb-3">💡 Client Management Guide</h2>
         <ul className="text-blue-800 space-y-1 text-sm">
           <li>• Use this page to manage OAuth client configurations for different Church services</li>
+          <li>• <strong>✓ Use Client:</strong> Click the check icon to select a client as the current active client for API calls</li>
+          <li>• <strong>Current Client:</strong> The selected client appears in the green box above and in the top-right corner of the application</li>
           <li>• <strong>Production Okta Tenant:</strong> Live Church services and applications</li>
           <li>• <strong>Development Okta Tenant:</strong> Development and testing environments (<a href="https://dev-73389086-admin.okta.com/" target="_blank" className="underline">dev-73389086-admin.okta.com</a>)</li>
           <li>• All data is stored locally in your browser's localStorage</li>
