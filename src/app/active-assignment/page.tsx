@@ -95,12 +95,12 @@ export default function ActiveAssignmentPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
   const [apiClient, setApiClient] = useState<ApiClient | null>(null);
 
-  // Get only MGQL/MIS environments (no MOGS)
-  const mgqlEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
+  // Get only MIS/MGQL environments (no MOGS) - 4 lanes: local, dev, stage, prod
+  const misEnvironments = Object.entries(ENVIRONMENTS).filter(([key]) => 
     key.startsWith('mis-gql-')
   );
 
-  // Initialize API client with default MIS development environment
+  // Initialize API client with saved MIS environment or default to MIS development
   useEffect(() => {
     const savedEnvironment = localStorage.getItem('selectedEnvironment');
     const environmentToUse = (savedEnvironment && ENVIRONMENTS[savedEnvironment] && savedEnvironment.startsWith('mis-gql-')) 
@@ -365,7 +365,7 @@ export default function ActiveAssignmentPage() {
             onChange={(e) => setSelectedEnvironment(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {mgqlEnvironments.map(([key, env]) => (
+            {misEnvironments.map(([key, env]) => (
               <option key={key} value={key}>
                 {env.name}
               </option>

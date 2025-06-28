@@ -20,6 +20,7 @@
     "@codemirror/view": "^6.37.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
     "@okta/okta-auth-js": "^7.12.1",

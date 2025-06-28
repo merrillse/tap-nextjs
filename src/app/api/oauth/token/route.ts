@@ -33,25 +33,29 @@ export async function POST(request: NextRequest) {
     let actualClientSecret = client_secret;
     
     if (client_id === '0oa82h6j45rN8G1he5d7') {
-      // Single test client - use appropriate secret based on environment
-      if (environment === 'mis-gql-dev') {
-        actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
-        console.log('  • Using MIS_GQL_DEV_CLIENT_SECRET for MIS dev environment');
-      } else if (environment === 'mogs-gql-dev') {
-        actualClientSecret = process.env.MOGS_DEV_CLIENT_SECRET;
-        console.log('  • Using MOGS_DEV_CLIENT_SECRET for MOGS dev environment');
-      } else {
-        console.error('  ❌ Unsupported environment:', environment);
-        return NextResponse.json(
-          { error: 'Unsupported environment', details: `Only 'mis-gql-dev' and 'mogs-gql-dev' environments are supported. Received: ${environment}` },
-          { status: 400 }
-        );
-      }
+      // Environment-specific client secret mapping
+      const environmentSecretMap: Record<string, string | undefined> = {
+        'mis-gql-local': process.env.MIS_GQL_LOCAL_CLIENT_SECRET,
+        'mis-gql-dev': process.env.MIS_GQL_DEV_CLIENT_SECRET,
+        'mis-gql-stage': process.env.MIS_GQL_STAGE_CLIENT_SECRET,
+        'mis-gql-prod': process.env.MIS_GQL_PROD_CLIENT_SECRET,
+        'mogs-gql-local': process.env.MOGS_LOCAL_CLIENT_SECRET,
+        'mogs-gql-dev': process.env.MOGS_DEV_CLIENT_SECRET,
+        'mogs-gql-prod': process.env.MOGS_PROD_CLIENT_SECRET,
+      };
+
+      actualClientSecret = environmentSecretMap[environment];
       
-      if (!actualClientSecret) {
-        console.error('  ❌ Client secret not found in environment variables for environment:', environment);
+      if (actualClientSecret) {
+        console.log(`  • Using ${environment.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET for ${environment} environment`);
+      } else {
+        const supportedEnvs = Object.keys(environmentSecretMap).join(', ');
+        console.error('  ❌ Unsupported environment or missing secret:', environment);
         return NextResponse.json(
-          { error: 'Missing required parameters', details: `Client secret not configured for environment: ${environment}` },
+          { 
+            error: 'Unsupported environment or missing client secret', 
+            details: `Environment '${environment}' is not supported or client secret not configured. Supported environments: ${supportedEnvs}` 
+          },
           { status: 400 }
         );
       }

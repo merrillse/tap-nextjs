@@ -116,6 +116,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       icon: '⚙️',
       items: [
         { name: 'Settings', href: '/settings', icon: '⚙️', description: 'Environment & app settings' },
+        { name: 'Client Management', href: '/client-management', icon: '🔑', description: 'Manage OAuth client names and IDs' },
         { name: 'Architecture', href: '/architecture', icon: '🏗️', description: 'Three-tiered system architecture overview' },
         { name: 'Documentation', href: '/documentation', icon: '📖', description: 'MIS GraphQL integration guide' },
       ]
