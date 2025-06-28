@@ -92,7 +92,25 @@ export default function ClientManagementPage() {
     if (savedClients) {
       try {
         const parsed = JSON.parse(savedClients);
-        setClients(parsed);
+        
+        // Migration: Add tenant field to existing clients if missing
+        const migratedClients = parsed.map((client: any) => {
+          if (!client.tenant) {
+            // Default to production for existing clients
+            return { ...client, tenant: 'production' };
+          }
+          return client;
+        });
+        
+        // Check if we need to add the new dev tenant clients
+        const hasDevClients = migratedClients.some((client: Client) => client.tenant === 'development');
+        if (!hasDevClients) {
+          // Add dev tenant clients
+          const devClients = DEFAULT_CLIENTS.filter(client => client.tenant === 'development');
+          migratedClients.push(...devClients);
+        }
+        
+        setClients(migratedClients);
       } catch (e) {
         console.error('Error parsing saved clients:', e);
         setClients(DEFAULT_CLIENTS);
@@ -224,6 +242,14 @@ export default function ClientManagementPage() {
   const resetToDefaults = () => {
     if (confirm('Are you sure you want to reset to default clients? This will overwrite all current data.')) {
       setClients(DEFAULT_CLIENTS);
+    }
+  };
+
+  const forceReset = () => {
+    if (confirm('This will clear localStorage and reset to defaults. All custom data will be lost. Continue?')) {
+      localStorage.removeItem('clientManagement');
+      setClients(DEFAULT_CLIENTS);
+      alert('Successfully reset to defaults with fresh data!');
     }
   };
 
