@@ -173,7 +173,27 @@ export default function INQMissionariesPage() {
       const hasSecret = await checkSecretStatus(selectedEnvironment);
       
       if (!hasSecret) {
-        setResponse('❌ Error: Client secret not found in environment variables.\n\nPlease set the environment variable: ' + `INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}` + '\n\nSee the Environment Setup section below for details.\n\nNote: Environment variables must be set outside the project (not in .env.local) for security.\n\nFor testing purposes, you can set a dummy value like:\nexport INQ_CLIENT_SECRET_' + selectedEnvironment.envVarSuffix + '="test_secret_value"\n\nThen restart your development server.');
+        setResponse(`❌ ERROR: Client Secret Not Found
+
+Environment Variable Missing: INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}
+
+🔧 SETUP INSTRUCTIONS:
+To test this functionality, set the environment variable:
+
+1. Stop the development server (Ctrl+C)
+2. Set the environment variable:
+   export INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}="test_secret_value"
+3. Restart the server:
+   npm run dev
+
+📋 ALTERNATIVE: Create .env.local (for testing only):
+Add this line to .env.local:
+INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}=test_secret_value
+
+⚠️  REMEMBER: Remove .env.local after testing for security!
+
+🌐 CURRENT ENVIRONMENT: ${selectedEnvironment.name}
+🔗 TARGET URL: ${buildFullUrl()}`);
         return;
       }
 
@@ -183,10 +203,53 @@ export default function INQMissionariesPage() {
         [selectedEnvironment.envVarSuffix]: hasSecret
       }));
 
-      // This would be the actual OAuth2 flow implementation via API endpoint
-      setResponse('✅ Ready for authentication! Client secret configured in environment.\n\nTo execute this query:\n1. Call /api/inq/auth to get an access token (server-side)\n2. Use the token to make OData requests via /api/inq/query\n3. All secrets remain server-side for security\n\nExample response structure is shown in the sample data below.\n\nFull URL: ' + buildFullUrl());
+      // Simulate a successful response with formatted data
+      const mockResponse = {
+        status: "SUCCESS",
+        environment: selectedEnvironment.name,
+        query_url: buildFullUrl(),
+        timestamp: new Date().toISOString(),
+        authentication: {
+          method: "OAuth2 Client Credentials",
+          client_id: selectedEnvironment.clientId,
+          scope: selectedEnvironment.scope,
+          secret_status: "✅ Configured"
+        },
+        data_preview: SAMPLE_MISSIONARY.value[0],
+        metadata: {
+          total_records: "10+ (limited by $top parameter)",
+          api_version: "v9.2",
+          entity_set: "inq_missionaries"
+        },
+        next_steps: [
+          "1. Use this configuration to implement OAuth2 token acquisition",
+          "2. Include Bearer token in Authorization header",
+          "3. Make authenticated requests to the OData endpoint",
+          "4. Handle pagination with @odata.nextLink"
+        ]
+      };
+
+      setResponse(`✅ QUERY EXECUTION SIMULATION
+
+${JSON.stringify(mockResponse, null, 2)}
+
+📊 This shows what a successful API response would look like.
+🔐 Client secret is properly configured for ${selectedEnvironment.name} environment.
+🚀 Ready to implement actual OAuth2 authentication flow!`);
+
     } catch (error) {
-      setResponse(`❌ Error checking secret status: ${error}`);
+      setResponse(`❌ ERROR EXECUTING QUERY
+
+Error Details: ${error}
+
+🔧 Troubleshooting:
+- Check that the API endpoint /api/inq-secret-status is accessible
+- Verify environment variables are set correctly
+- Ensure development server was restarted after setting variables
+- Check browser console for additional error details
+
+🌐 Current Environment: ${selectedEnvironment.name}
+🔗 Target URL: ${buildFullUrl()}`);
     } finally {
       setIsLoading(false);
     }
@@ -493,6 +556,27 @@ export default function INQMissionariesPage() {
               <EyeIcon className="h-4 w-4" />
               {showSample ? 'Hide' : 'Show'} Sample Data
             </button>
+
+            <button
+              onClick={() => {
+                const status = getClientSecretStatus() ? '✅ Configured' : '❌ Not Set';
+                setResponse(`🔍 SECRET STATUS CHECK
+
+Environment: ${selectedEnvironment.name}
+Variable: INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}
+Status: ${status}
+
+Current Time: ${new Date().toLocaleString()}
+Query URL: ${buildFullUrl()}
+
+${status.includes('✅') ? 
+  '✅ Ready to execute queries!' : 
+  '⚠️  Set the environment variable and restart the server to enable query execution.'}`);
+              }}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
+            >
+              🔍 Check Status
+            </button>
           </div>
         </div>
       </div>
@@ -500,10 +584,45 @@ export default function INQMissionariesPage() {
       {/* Response */}
       {response && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Response</h2>
-          <pre className="bg-gray-50 rounded-lg p-4 text-sm overflow-auto whitespace-pre-wrap">
-            {response}
-          </pre>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Query Response</h2>
+            <button
+              onClick={() => copyToClipboard(response)}
+              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded px-2 py-1"
+              title="Copy response to clipboard"
+            >
+              <DocumentDuplicateIcon className="h-4 w-4" />
+              Copy
+            </button>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 border">
+            <pre className="text-sm overflow-auto whitespace-pre-wrap max-h-96 font-mono">
+              {response}
+            </pre>
+          </div>
+          {response.includes('"status": "SUCCESS"') && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <span className="text-lg">✅</span>
+                <span className="font-semibold">Simulation Complete!</span>
+              </div>
+              <p className="text-green-700 text-sm mt-1">
+                This demonstrates what a successful API response would look like. 
+                The actual implementation would make real OAuth2 calls to get live data.
+              </p>
+            </div>
+          )}
+          {response.includes('❌ ERROR') && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-800">
+                <span className="text-lg">❌</span>
+                <span className="font-semibold">Setup Required</span>
+              </div>
+              <p className="text-red-700 text-sm mt-1">
+                Environment variable needs to be configured. Follow the instructions above to set up authentication.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
