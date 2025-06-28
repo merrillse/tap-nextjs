@@ -12,15 +12,12 @@ import {
   ArrowPathIcon,
   EyeIcon
 } from '@heroicons/react/24/outline';
-
-interface Environment {
-  name: string;
-  baseUrl: string;
-  clientId: string;
-  scope: string;
-  description: string;
-  envVarSuffix: string;
-}
+import { Environment } from '../../types/inq';
+import EnvironmentSelector from '../../components/EnvironmentSelector';
+import QuickControls from '../../components/QuickControls';
+import AdvancedFilters from '../../components/AdvancedFilters';
+import ErrorDisplay from '../../components/ErrorDisplay';
+import ResultsTable from '../../components/ResultsTable';
 
 interface PaginationData {
   success: boolean;
@@ -103,7 +100,7 @@ const ORDER_BY_OPTIONS = [
 export default function INQDataExplorerPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment>(INQ_ENVIRONMENTS[0]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(5);
   const [filter, setFilter] = useState('');
   const [customFilter, setCustomFilter] = useState('');
   const [select, setSelect] = useState('');
@@ -119,6 +116,10 @@ export default function INQDataExplorerPage() {
   // Track skipTokens for Dataverse pagination
   const [skipTokenHistory, setSkipTokenHistory] = useState<string[]>([]);
   const [currentSkipToken, setCurrentSkipToken] = useState<string | undefined>(undefined);
+  
+  // Preserve total count across pages (only available on first page)
+  const [totalRecordCount, setTotalRecordCount] = useState<number | undefined>(undefined);
+  const [totalPageCount, setTotalPageCount] = useState<number | undefined>(undefined);
 
   // Check secret status
   const checkSecretStatus = async (environment: Environment) => {
@@ -218,15 +219,67 @@ export default function INQDataExplorerPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(`Query failed: ${result.error}. ${JSON.stringify(result.details, null, 2)}`);
+        let detailsString = '';
+        try {
+          detailsString = typeof result.details === 'object'
+            ? JSON.stringify(result.details, null, 2)
+            : String(result.details);
+        } catch {
+          detailsString = 'Unserializable error details';
+        }
+        setError(`Query failed: ${result.error}. ${detailsString}`);
         return;
       }
 
-      setPaginationData(result);
+      console.log('Pagination Data Received:', {
+        currentPage: result.currentPage,
+        pageSize: result.pageSize,
+        totalRecords: result.totalRecords,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
+        nextSkipToken: result.nextSkipToken,
+        dataLength: result.data?.value?.length
+      });
+
+      // Preserve total counts from first page
+      if (result.totalRecords !== undefined && result.totalRecords !== null) {
+        setTotalRecordCount(result.totalRecords);
+        setTotalPageCount(result.totalPages);
+      }
+
+      // Enhance result with preserved totals - use state values if backend doesn't provide them
+      const enhancedResult = {
+        ...result,
+        totalRecords: result.totalRecords !== undefined ? result.totalRecords : totalRecordCount,
+        totalPages: result.totalPages !== undefined ? result.totalPages : totalPageCount
+      };
+
+      // Debug: Enhanced result with preserved totals
+      console.log('Enhanced Result:', {
+        totalRecords: enhancedResult.totalRecords,
+        totalPages: enhancedResult.totalPages,
+        preservedTotalRecords: totalRecordCount,
+        preservedTotalPages: totalPageCount
+      });
+
+      setPaginationData(enhancedResult);
       setCurrentSkipToken(skipToken);
       
     } catch (err) {
-      setError(`Error: ${err}`);
+      let errorMsg = 'Unknown error';
+      if (err instanceof Error) {
+        errorMsg = err.message;
+      } else if (typeof err === 'string') {
+        errorMsg = err;
+      } else {
+        try {
+          errorMsg = JSON.stringify(err);
+        } catch {
+          errorMsg = 'Unserializable error object';
+        }
+      }
+      setError(`Error: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -274,9 +327,11 @@ export default function INQDataExplorerPage() {
       setCurrentPage(1);
       setSkipTokenHistory([]);
       setCurrentSkipToken(undefined);
+      setTotalRecordCount(undefined);
+      setTotalPageCount(undefined);
       fetchData();
     }
-  }, [pageSize, filter, customFilter, select, customSelect, orderBy, selectedEnvironment, isDemoMode]);
+  }, [pageSize, filter, customFilter, select, customSelect, orderBy, selectedEnvironment, isDemoMode, secretStatus]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -297,404 +352,73 @@ export default function INQDataExplorerPage() {
       {/* Environment Selection */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Environment & Configuration</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {INQ_ENVIRONMENTS.map((env) => (
-            <button
-              key={env.name}
-              onClick={() => {
-                setSelectedEnvironment(env);
-                setCurrentPage(1); // Reset to first page when switching environments
-              }}
-              className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${
-                selectedEnvironment.name === env.name
-                  ? 'border-purple-500 bg-purple-50 text-purple-900'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <div className="font-semibold text-lg">{env.name}</div>
-              <div className="text-sm text-gray-600 mt-1">{env.description}</div>
-              <div className="mt-2">
-                {isDemoMode ? (
-                  <span className="text-blue-600 text-xs">🎭 Demo Mode Active</span>
-                ) : getClientSecretStatus() ? (
-                  <span className="text-green-600 text-xs">✓ Secret configured</span>
-                ) : (
-                  <span className="text-red-600 text-xs">❌ Secret missing</span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-
+        <EnvironmentSelector
+          environments={INQ_ENVIRONMENTS}
+          selectedEnvironment={selectedEnvironment}
+          setSelectedEnvironment={setSelectedEnvironment}
+          setCurrentPage={setCurrentPage}
+          isDemoMode={isDemoMode}
+          getClientSecretStatus={getClientSecretStatus}
+        />
         {/* Quick Controls */}
-        <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Page Size:</label>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
-              title="Recommended: 25-100 for good performance"
-            >
-              {PAGE_SIZE_OPTIONS.map(size => (
-                <option key={size} value={size}>
-                  {size} {size <= 10 ? '(demo)' : size >= 200 ? '(large)' : '(recommended)'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Order By:</label>
-            <select
-              value={orderBy}
-              onChange={(e) => setOrderBy(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
-            >
-              {ORDER_BY_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{option.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1 px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50"
-          >
-            <AdjustmentsHorizontalIcon className="h-4 w-4" />
-            {showAdvanced ? 'Hide' : 'Show'} Advanced
-          </button>
-
-          <button
-            onClick={() => fetchData()}
-            disabled={isLoading || (!getClientSecretStatus() && !isDemoMode)}
-            className="flex items-center gap-1 px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
-          >
-            <ArrowPathIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Loading...' : 'Refresh'}
-          </button>
-
-          <button
-            onClick={() => setIsDemoMode(!isDemoMode)}
-            className={`flex items-center gap-1 px-3 py-1 border rounded text-sm ${
-              isDemoMode 
-                ? 'border-green-500 bg-green-50 text-green-700' 
-                : 'border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <EyeIcon className="h-4 w-4" />
-            {isDemoMode ? 'Demo Mode' : 'Real Mode'}
-          </button>
-
-          {!isDemoMode && (
-            <button
-              onClick={async () => {
-                const hasSecret = await checkSecretStatus(selectedEnvironment);
-                if (hasSecret) {
-                  setError('');
-                  fetchData();
-                } else {
-                  setError(`Secret check failed: INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix} is not configured. Please set this environment variable and restart the server.`);
-                }
-              }}
-              className="flex items-center gap-1 px-3 py-1 border border-blue-300 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100"
-            >
-              <MagnifyingGlassIcon className="h-4 w-4" />
-              Check Status
-            </button>
-          )}
-        </div>
+        <QuickControls
+          pageSize={pageSize}
+          setPageSize={n => { setPageSize(n); setCurrentPage(1); }}
+          orderBy={orderBy}
+          setOrderBy={setOrderBy}
+          showAdvanced={showAdvanced}
+          setShowAdvanced={setShowAdvanced}
+          fetchData={fetchData}
+          isLoading={isLoading}
+          getClientSecretStatus={getClientSecretStatus}
+          isDemoMode={isDemoMode}
+          setIsDemoMode={setIsDemoMode}
+          checkSecretStatus={() => checkSecretStatus(selectedEnvironment)}
+          setError={setError}
+          selectedEnvironment={selectedEnvironment}
+          PAGE_SIZE_OPTIONS={PAGE_SIZE_OPTIONS}
+          ORDER_BY_OPTIONS={ORDER_BY_OPTIONS}
+        />
       </div>
 
       {/* Advanced Filters */}
       {showAdvanced && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Advanced Query Options</h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Filters */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter ($filter)</label>
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  {COMMON_FILTERS.map(f => (
-                    <button
-                      key={f.name}
-                      onClick={() => {
-                        setFilter(f.filter);
-                        setCustomFilter('');
-                        setCurrentPage(1);
-                      }}
-                      className={`text-left p-2 rounded border text-xs ${
-                        filter === f.filter && !customFilter
-                          ? 'border-purple-500 bg-purple-50 text-purple-900'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      {f.name}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Custom filter (e.g., inq_name eq 'Smith')"
-                  value={customFilter}
-                  onChange={(e) => {
-                    setCustomFilter(e.target.value);
-                    setFilter('');
-                  }}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Select Fields */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fields ($select)</label>
-              <div className="space-y-2">
-                <div className="grid grid-cols-1 gap-2">
-                  {COMMON_SELECTS.map(s => (
-                    <button
-                      key={s.name}
-                      onClick={() => {
-                        setSelect(s.select);
-                        setCustomSelect('');
-                      }}
-                      className={`text-left p-2 rounded border text-xs ${
-                        select === s.select && !customSelect
-                          ? 'border-purple-500 bg-purple-50 text-purple-900'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Custom select (e.g., inq_name,inq_missionarynumber)"
-                  value={customSelect}
-                  onChange={(e) => {
-                    setCustomSelect(e.target.value);
-                    setSelect('');
-                  }}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdvancedFilters
+          COMMON_FILTERS={COMMON_FILTERS}
+          COMMON_SELECTS={COMMON_SELECTS}
+          filter={filter}
+          setFilter={setFilter}
+          customFilter={customFilter}
+          setCustomFilter={setCustomFilter}
+          select={select}
+          setSelect={setSelect}
+          customSelect={customSelect}
+          setCustomSelect={setCustomSelect}
+          setCurrentPage={setCurrentPage}
+        />
       )}
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center gap-2 text-red-800 mb-2">
-            <span className="text-lg">❌</span>
-            <span className="font-semibold">Query Error</span>
-          </div>
-          <pre className="text-red-700 text-sm whitespace-pre-wrap">{error}</pre>
-          {!getClientSecretStatus() && !isDemoMode && (
-            <div className="mt-3 p-4 bg-yellow-100 border border-yellow-300 rounded">
-              <div className="text-yellow-800 text-sm">
-                <strong>Real Mode Setup Required:</strong>
-                <br />
-                1. Set environment variable: <code className="bg-yellow-200 px-1 rounded">INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}</code>
-                <br />
-                2. Restart the development server: <code className="bg-yellow-200 px-1 rounded">npm run dev</code>
-                <br />
-                3. Or switch to <strong>Demo Mode</strong> to test pagination with mock data
-                <br />
-                <br />
-                📖 <strong>Full setup instructions:</strong> See <code>INQ_INTEGRATION.md</code> in the project root
-              </div>
-            </div>
-          )}
-        </div>
+        <ErrorDisplay
+          error={error}
+          getClientSecretStatus={getClientSecretStatus}
+          isDemoMode={isDemoMode}
+          selectedEnvironment={selectedEnvironment}
+        />
       )}
 
       {/* Results */}
       {paginationData && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          {/* Results Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Query Results 
-                {isDemoMode && <span className="ml-2 text-blue-600 text-sm">(Demo Data)</span>}
-                {!isDemoMode && <span className="ml-2 text-green-600 text-sm">(Live Data)</span>}
-              </h2>
-              <p className="text-sm text-gray-600">
-                Showing {((paginationData.currentPage - 1) * paginationData.pageSize) + 1} to{' '}
-                {Math.min(paginationData.currentPage * paginationData.pageSize, paginationData.totalRecords || 0)} 
-                {paginationData.totalRecords ? ` of ${paginationData.totalRecords}` : ''} records
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => copyToClipboard(JSON.stringify(paginationData.data, null, 2))}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded px-2 py-1"
-              >
-                <DocumentDuplicateIcon className="h-4 w-4" />
-                Copy JSON
-              </button>
-            </div>
-          </div>
-
-          {/* Pagination Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="text-purple-800 text-sm font-medium">Current Page</div>
-              <div className="text-purple-900 text-xl font-bold">{paginationData.currentPage}</div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="text-blue-800 text-sm font-medium">Total Pages</div>
-              <div className="text-blue-900 text-xl font-bold">{paginationData.totalPages || '?'}</div>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="text-green-800 text-sm font-medium">Total Records</div>
-              <div className="text-green-900 text-xl font-bold">{paginationData.totalRecords || '?'}</div>
-            </div>
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <div className="text-orange-800 text-sm font-medium">Page Size</div>
-              <div className="text-orange-900 text-xl font-bold">{paginationData.pageSize}</div>
-            </div>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={goToFirstPage}
-                disabled={!paginationData.hasPreviousPage}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="First page"
-              >
-                <ChevronDoubleLeftIcon className="h-4 w-4" />
-              </button>
-              <button
-                onClick={goToPreviousPage}
-                disabled={!paginationData.hasPreviousPage}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Previous page"
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
-                Page {paginationData.currentPage}
-                {paginationData.totalPages ? ` of ${paginationData.totalPages}` : ''}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={goToNextPage}
-                disabled={!paginationData.hasNextPage}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Next page"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </button>
-              <button
-                onClick={goToLastPage}
-                disabled={!paginationData.hasNextPage || !paginationData.totalPages}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Last page (not supported with skiptoken pagination)"
-              >
-                <ChevronDoubleRightIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Data Table */}
-          {paginationData.data.value && paginationData.data.value.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Number</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {paginationData.data.value.map((missionary: any, index: number) => (
-                    <tr key={missionary.inq_missionaryid || index} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">
-                        <div className="font-medium text-gray-900">
-                          {missionary.inq_name || `${missionary.inq_officialfirstname || ''} ${missionary.inq_officiallastname || ''}`.trim() || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-mono">
-                        {missionary.inq_missionarynumber || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          missionary.inq_calculatedstatus === 'In-field' 
-                            ? 'bg-green-100 text-green-800'
-                            : missionary.inq_calculatedstatus === 'Released'
-                            ? 'bg-gray-100 text-gray-800'
-                            : missionary.inq_calculatedstatus === 'Preparing'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {missionary.inq_calculatedstatus || 'Unknown'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {missionary.inq_startdate ? new Date(missionary.inq_startdate).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {missionary.inq_personalemail ? (
-                          <a href={`mailto:${missionary.inq_personalemail}`} className="text-purple-600 hover:text-purple-800">
-                            {missionary.inq_personalemail}
-                          </a>
-                        ) : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <button
-                          onClick={() => copyToClipboard(JSON.stringify(missionary, null, 2))}
-                          className="text-gray-400 hover:text-gray-600"
-                          title="Copy record"
-                        >
-                          <DocumentDuplicateIcon className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">📭</div>
-              <div className="text-lg font-medium">No Records Found</div>
-              <div className="text-sm">Try adjusting your filters or search criteria.</div>
-            </div>
-          )}
-
-          {/* Query Info */}
-          <details className="mt-6 bg-gray-50 rounded-lg p-4">
-            <summary className="cursor-pointer font-medium text-gray-900 hover:text-gray-700">
-              View Query Details
-            </summary>
-            <div className="mt-3 space-y-2 text-sm">
-              <div><strong>Query URL:</strong> <code className="bg-white px-1 rounded">{paginationData.queryUrl}</code></div>
-              <div><strong>Environment:</strong> {paginationData.environment}</div>
-              <div><strong>Timestamp:</strong> {new Date(paginationData.timestamp).toLocaleString()}</div>
-            </div>
-          </details>
-        </div>
+        <ResultsTable
+          paginationData={paginationData}
+          isDemoMode={isDemoMode}
+          copyToClipboard={copyToClipboard}
+          goToFirstPage={goToFirstPage}
+          goToPreviousPage={goToPreviousPage}
+          goToNextPage={goToNextPage}
+          goToLastPage={goToLastPage}
+        />
       )}
     </div>
   );

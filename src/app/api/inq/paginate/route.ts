@@ -76,12 +76,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Build OData query with Dataverse pagination
-    // Note: Dataverse doesn't support $skip, uses $skiptoken instead
+    // Since Dataverse doesn't support $skip, we'll use cursor-based pagination
     let queryParts = [`$top=${pageSize}`];
     
-    // Add skiptoken for pagination (Dataverse cookie-based pagination)
-    if (skipToken) {
-      queryParts.push(`$skiptoken=${encodeURIComponent(skipToken)}`);
+    // Handle cursor-based pagination using skiptoken
+    if (skipToken && skipToken.startsWith('cursor_')) {
+      // Extract the cursor value (last record's sort field value)
+      const cursorValue = skipToken.replace('cursor_', '');
+      // Add filter to get records after this cursor
+      const cursorFilter = `${orderBy.replace(' desc', '')} gt '${cursorValue}'`;
+      queryParts.push(`$filter=${encodeURIComponent(cursorFilter)}`);
+    } else if (skipToken && skipToken.startsWith('skip_')) {
+      // This is our synthetic skip token - extract the skip value
+      const skipValue = parseInt(skipToken.replace('skip_', ''));
+      // We can't use $skip in Dataverse, so we'll need an alternative approach
+      // For now, we'll use the cursor approach
     }
     
     if (orderBy) {
@@ -93,10 +102,19 @@ export async function POST(request: NextRequest) {
     }
     
     if (filter) {
-      queryParts.push(`$filter=${encodeURIComponent(filter)}`);
+      // If we have both a filter and a cursor filter, combine them
+      const existingFilter = queryParts.find(part => part.startsWith('$filter='));
+      if (existingFilter) {
+        const existingFilterValue = decodeURIComponent(existingFilter.split('=')[1]);
+        const combinedFilter = `(${filter}) and (${existingFilterValue})`;
+        queryParts = queryParts.filter(part => !part.startsWith('$filter='));
+        queryParts.push(`$filter=${encodeURIComponent(combinedFilter)}`);
+      } else {
+        queryParts.push(`$filter=${encodeURIComponent(filter)}`);
+      }
     }
     
-    // Add count for total records (when not using skiptoken)
+    // Add count for total records (only on first page)
     if (!skipToken) {
       queryParts.push('$count=true');
     }
@@ -112,7 +130,7 @@ export async function POST(request: NextRequest) {
         'Accept': 'application/json',
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
-        'Prefer': 'odata.include-annotations="*"'
+        'Prefer': `odata.include-annotations="*",odata.maxpagesize=${pageSize}`
       }
     });
 
@@ -136,10 +154,34 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     
+    // Debug: Log the response structure
+    console.log('OData Response Debug:', {
+      totalCount: data["@odata.count"],
+      hasNextLink: !!data["@odata.nextLink"],
+      nextLink: data["@odata.nextLink"],
+      valueLength: data.value?.length,
+      pageSize: pageSize,
+      currentPage: currentPage,
+      skipToken: skipToken
+    });
+    
     // Extract pagination information from Dataverse response
     const totalRecords = data["@odata.count"] || undefined;
     const nextLink = data["@odata.nextLink"];
-    const hasNextPage = !!nextLink;
+    
+    // Calculate if there should be more pages based on math
+    let hasNextPage = false;
+    if (totalRecords && totalRecords > (currentPage * pageSize)) {
+      // Math says there should be more pages
+      hasNextPage = true;
+    } else if (nextLink) {
+      // OData API says there's a next link
+      hasNextPage = true;
+    } else if (data.value && data.value.length === pageSize) {
+      // If we got exactly the requested page size, assume there might be more
+      hasNextPage = true;
+    }
+    
     const hasPreviousPage = currentPage > 1;
     
     // Extract skiptoken from nextLink if available
@@ -150,8 +192,24 @@ export async function POST(request: NextRequest) {
       nextSkipToken = token || undefined;
     }
     
+    // For Dataverse cursor-based pagination, create cursor from last record
+    if (hasNextPage && !nextSkipToken && data.value && data.value.length > 0) {
+      const lastRecord = data.value[data.value.length - 1];
+      const sortField = orderBy.replace(' desc', '').replace(' asc', '');
+      
+      // Get the value of the sort field from the last record
+      let cursorValue = lastRecord[sortField];
+      if (cursorValue) {
+        // Handle different data types
+        if (typeof cursorValue === 'string') {
+          cursorValue = cursorValue.replace(/'/g, "''"); // Escape single quotes
+        }
+        nextSkipToken = `cursor_${cursorValue}`;
+      }
+    }
+    
     // For Dataverse, we can't reliably calculate total pages with skiptoken
-    // So we'll estimate or leave undefined
+    // But we can estimate on the first page when we have total count
     const totalPages = totalRecords ? Math.ceil(totalRecords / pageSize) : undefined;
     
     const paginationResponse: PaginationResponse = {
