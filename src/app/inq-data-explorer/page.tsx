@@ -72,7 +72,7 @@ const INQ_ENVIRONMENTS: Environment[] = [
   }
 ];
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250];
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100, 200, 500];
 
 const COMMON_FILTERS = [
   { name: 'All Records', filter: '' },
@@ -258,6 +258,15 @@ export default function INQDataExplorerPage() {
     fetchData();
   };
 
+  const goToLastPage = () => {
+    // For Dataverse, we can't directly jump to last page due to skiptoken pagination
+    // This button will be disabled unless we have totalPages info
+    if (paginationData?.totalPages) {
+      // This is a simplified implementation - would need multiple API calls to truly reach last page
+      setError('Direct navigation to last page is not supported with Dataverse pagination. Use Next/Previous buttons to navigate.');
+    }
+  };
+
   // Trigger fetch when pagination parameters change
   useEffect(() => {
     if (getClientSecretStatus() || isDemoMode) {
@@ -280,6 +289,9 @@ export default function INQDataExplorerPage() {
         <span className="text-2xl">📄</span>
         <h1 className="text-2xl font-bold">INQ Data Explorer</h1>
         <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Advanced Pagination</span>
+        {isDemoMode && (
+          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">🎭 Demo Mode</span>
+        )}
       </div>
 
       {/* Environment Selection */}
@@ -326,9 +338,12 @@ export default function INQDataExplorerPage() {
                 setCurrentPage(1);
               }}
               className="border border-gray-300 rounded px-2 py-1 text-sm"
+              title="Recommended: 25-100 for good performance"
             >
               {PAGE_SIZE_OPTIONS.map(size => (
-                <option key={size} value={size}>{size}</option>
+                <option key={size} value={size}>
+                  {size} {size <= 10 ? '(demo)' : size >= 200 ? '(large)' : '(recommended)'}
+                </option>
               ))}
             </select>
           </div>
@@ -557,10 +572,10 @@ export default function INQDataExplorerPage() {
                 <ChevronRightIcon className="h-4 w-4" />
               </button>
               <button
-                onClick={goToFirstPage}
+                onClick={goToLastPage}
                 disabled={!paginationData.hasNextPage || !paginationData.totalPages}
                 className="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Last page (approximation)"
+                title="Last page (not supported with skiptoken pagination)"
               >
                 <ChevronDoubleRightIcon className="h-4 w-4" />
               </button>
