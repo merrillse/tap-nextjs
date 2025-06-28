@@ -97,6 +97,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       icon: '📊',
       items: [
         { name: 'Missionaries', href: '/inq-missionaries', icon: '👥', description: 'Query INQ Dataverse missionaries using OData Web API' },
+        { name: 'Data Explorer', href: '/inq-data-explorer', icon: '📄', description: 'Advanced pagination and data exploration with sliding window interface' },
       ]
     },
     {

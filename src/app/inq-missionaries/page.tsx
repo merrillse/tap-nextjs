@@ -110,6 +110,8 @@ export default function INQMissionariesPage() {
   const [showSample, setShowSample] = useState(false);
   const [showTokenDetails, setShowTokenDetails] = useState(false);
   const [secretStatus, setSecretStatus] = useState<{ [key: string]: boolean }>({});
+  const [realData, setRealData] = useState<any>(null);
+  const [showDataVisualization, setShowDataVisualization] = useState(false);
 
   // Check secret status via API endpoint (server-side only)
   const checkSecretStatus = async (environment: Environment) => {
@@ -178,17 +180,17 @@ export default function INQMissionariesPage() {
 Environment Variable Missing: INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}
 
 🔧 SETUP INSTRUCTIONS:
-To test this functionality, set the environment variable:
+To execute real queries, set the environment variable:
 
 1. Stop the development server (Ctrl+C)
 2. Set the environment variable:
-   export INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}="test_secret_value"
+   export INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}="your_actual_secret"
 3. Restart the server:
    npm run dev
 
 📋 ALTERNATIVE: Create .env.local (for testing only):
 Add this line to .env.local:
-INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}=test_secret_value
+INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}=your_actual_secret
 
 ⚠️  REMEMBER: Remove .env.local after testing for security!
 
@@ -203,53 +205,95 @@ INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix}=test_secret_value
         [selectedEnvironment.envVarSuffix]: hasSecret
       }));
 
-      // Simulate a successful response with formatted data
-      const mockResponse = {
-        status: "SUCCESS",
-        environment: selectedEnvironment.name,
-        query_url: buildFullUrl(),
-        timestamp: new Date().toISOString(),
-        authentication: {
-          method: "OAuth2 Client Credentials",
-          client_id: selectedEnvironment.clientId,
-          scope: selectedEnvironment.scope,
-          secret_status: "✅ Configured"
+      // Execute real OData query
+      setResponse('🔄 Authenticating and executing query...\n\nStep 1: Getting OAuth2 access token...');
+      
+      const queryResponse = await fetch('/api/inq/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        data_preview: SAMPLE_MISSIONARY.value[0],
-        metadata: {
-          total_records: "10+ (limited by $top parameter)",
-          api_version: "v9.2",
-          entity_set: "inq_missionaries"
-        },
-        next_steps: [
-          "1. Use this configuration to implement OAuth2 token acquisition",
-          "2. Include Bearer token in Authorization header",
-          "3. Make authenticated requests to the OData endpoint",
-          "4. Handle pagination with @odata.nextLink"
-        ]
-      };
+        body: JSON.stringify({
+          environment: selectedEnvironment.envVarSuffix,
+          query: queryUrl
+        })
+      });
 
-      setResponse(`✅ QUERY EXECUTION SIMULATION
+      const result = await queryResponse.json();
 
-${JSON.stringify(mockResponse, null, 2)}
+      if (!queryResponse.ok) {
+        setResponse(`❌ QUERY EXECUTION FAILED
 
-📊 This shows what a successful API response would look like.
-🔐 Client secret is properly configured for ${selectedEnvironment.name} environment.
-🚀 Ready to implement actual OAuth2 authentication flow!`);
+Error: ${result.error}
+Status: ${result.status || queryResponse.status}
+Details: ${JSON.stringify(result.details, null, 2)}
+
+🔧 Troubleshooting:
+- Verify client secret is correct for ${selectedEnvironment.name} environment
+- Check that the OData query syntax is valid
+- Ensure the API endpoint is accessible
+- Verify network connectivity
+
+🌐 Environment: ${selectedEnvironment.name}
+🔗 Query URL: ${result.query || buildFullUrl()}
+📅 Timestamp: ${new Date().toLocaleString()}`);
+        return;
+      }
+
+      // Format successful response
+      const formattedResponse = `✅ REAL QUERY EXECUTION SUCCESSFUL
+
+🌐 Environment: ${result.environment} (${selectedEnvironment.name})
+📊 Records Retrieved: ${result.recordCount}
+${result.totalCount ? `📈 Total Available: ${result.totalCount}` : ''}
+${result.hasNextPage ? '📄 Has More Pages: Yes' : '📄 Has More Pages: No'}
+🕐 Executed At: ${new Date(result.timestamp).toLocaleString()}
+🔗 Query URL: ${result.queryUrl}
+
+📋 RESPONSE METADATA:
+${JSON.stringify({
+  success: result.success,
+  environment: result.environment,
+  recordCount: result.recordCount,
+  totalCount: result.totalCount,
+  hasNextPage: result.hasNextPage,
+  timestamp: result.timestamp
+}, null, 2)}
+
+📊 SAMPLE DATA (First Record):
+${result.data.value && result.data.value.length > 0 ? 
+  JSON.stringify(result.data.value[0], null, 2) : 
+  'No records found'}
+
+${result.data.value && result.data.value.length > 1 ? 
+  `\n... and ${result.data.value.length - 1} more record(s)` : ''}
+
+${result.hasNextPage ? 
+  `\n� Next Page URL: ${result.nextLink}` : ''}
+
+🎉 Query completed successfully! Real data retrieved from ${selectedEnvironment.name} environment.`;
+
+      setResponse(formattedResponse);
+      
+      // Store real data for visualization
+      setRealData(result);
+      setShowDataVisualization(true);
 
     } catch (error) {
-      setResponse(`❌ ERROR EXECUTING QUERY
+      setResponse(`❌ UNEXPECTED ERROR
 
 Error Details: ${error}
 
 🔧 Troubleshooting:
-- Check that the API endpoint /api/inq-secret-status is accessible
+- Check that the API endpoints are accessible
 - Verify environment variables are set correctly
 - Ensure development server was restarted after setting variables
 - Check browser console for additional error details
+- Verify network connectivity
 
 🌐 Current Environment: ${selectedEnvironment.name}
-🔗 Target URL: ${buildFullUrl()}`);
+🔗 Target URL: ${buildFullUrl()}
+📅 Timestamp: ${new Date().toLocaleString()}`);
     } finally {
       setIsLoading(false);
     }
@@ -577,6 +621,46 @@ ${status.includes('✅') ?
             >
               🔍 Check Status
             </button>
+
+            <button
+              onClick={async () => {
+                setIsLoading(true);
+                try {
+                  const response = await fetch('/api/inq/test-query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      environment: selectedEnvironment.envVarSuffix,
+                      query: queryUrl
+                    })
+                  });
+                  
+                  const result = await response.json();
+                  setRealData(result);
+                  setShowDataVisualization(true);
+                  setResponse(`🎭 DEMO MODE - Mock Data Visualization
+
+This demonstrates the beautiful data visualization with sample data.
+
+🌐 Environment: ${result.environment} (${selectedEnvironment.name})
+📊 Records: ${result.recordCount}
+📈 Total Available: ${result.totalCount}
+🕐 Generated: ${new Date(result.timestamp).toLocaleString()}
+
+✨ The table below shows how real data would be displayed!
+🔗 Query: ${result.queryUrl}
+
+Note: This is sample data for demonstration. Use a real client secret for live data.`);
+                } catch (error) {
+                  setResponse(`❌ Demo mode error: ${error}`);
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+            >
+              🎭 Demo Mode
+            </button>
           </div>
         </div>
       </div>
@@ -600,15 +684,19 @@ ${status.includes('✅') ?
               {response}
             </pre>
           </div>
-          {response.includes('"status": "SUCCESS"') && (
+          {(response.includes('"status": "SUCCESS"') || response.includes('✅ REAL QUERY EXECUTION SUCCESSFUL')) && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2 text-green-800">
                 <span className="text-lg">✅</span>
-                <span className="font-semibold">Simulation Complete!</span>
+                <span className="font-semibold">
+                  {response.includes('✅ REAL QUERY EXECUTION SUCCESSFUL') ? 'Live Data Retrieved!' : 'Simulation Complete!'}
+                </span>
               </div>
               <p className="text-green-700 text-sm mt-1">
-                This demonstrates what a successful API response would look like. 
-                The actual implementation would make real OAuth2 calls to get live data.
+                {response.includes('✅ REAL QUERY EXECUTION SUCCESSFUL') 
+                  ? 'Successfully executed real query against the INQ Dataverse API and retrieved live data!'
+                  : 'This demonstrates what a successful API response would look like. The actual implementation would make real OAuth2 calls to get live data.'
+                }
               </p>
             </div>
           )}
@@ -621,6 +709,160 @@ ${status.includes('✅') ?
               <p className="text-red-700 text-sm mt-1">
                 Environment variable needs to be configured. Follow the instructions above to set up authentication.
               </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Real Data Visualization */}
+      {realData && showDataVisualization && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Live Data Results</h2>
+              <p className="text-sm text-gray-600">
+                {realData.recordCount} record(s) from {realData.environment} environment
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => copyToClipboard(JSON.stringify(realData.data, null, 2))}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded px-2 py-1"
+              >
+                <DocumentDuplicateIcon className="h-4 w-4" />
+                Copy JSON
+              </button>
+              <button
+                onClick={() => setShowDataVisualization(false)}
+                className="text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded px-2 py-1"
+              >
+                Hide
+              </button>
+            </div>
+          </div>
+
+          {realData.data.value && realData.data.value.length > 0 ? (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-blue-800 text-sm font-medium">Records Retrieved</div>
+                  <div className="text-blue-900 text-2xl font-bold">{realData.recordCount}</div>
+                </div>
+                {realData.totalCount && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="text-green-800 text-sm font-medium">Total Available</div>
+                    <div className="text-green-900 text-2xl font-bold">{realData.totalCount}</div>
+                  </div>
+                )}
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="text-purple-800 text-sm font-medium">Environment</div>
+                  <div className="text-purple-900 text-lg font-bold">{realData.environment}</div>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="text-orange-800 text-sm font-medium">More Pages</div>
+                  <div className="text-orange-900 text-lg font-bold">{realData.hasNextPage ? 'Yes' : 'No'}</div>
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="bg-gray-50 rounded-lg p-4 overflow-hidden">
+                <h3 className="font-semibold text-gray-900 mb-3">Missionary Records</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Number</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {realData.data.value.map((missionary: any, index: number) => (
+                        <tr key={missionary.inq_missionaryid || index} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm">
+                            <div className="font-medium text-gray-900">
+                              {missionary.inq_name || `${missionary.inq_officialfirstname || ''} ${missionary.inq_officiallastname || ''}`.trim() || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                            {missionary.inq_missionarynumber || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              missionary.inq_calculatedstatus === 'In-field' 
+                                ? 'bg-green-100 text-green-800'
+                                : missionary.inq_calculatedstatus === 'Released'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {missionary.inq_calculatedstatus || 'Unknown'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {missionary.inq_startdate ? new Date(missionary.inq_startdate).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {missionary.inq_personalemail ? (
+                              <a href={`mailto:${missionary.inq_personalemail}`} className="text-blue-600 hover:text-blue-800">
+                                {missionary.inq_personalemail}
+                              </a>
+                            ) : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {missionary.inq_mobilephone || missionary.inq_homephone || 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Pagination Info */}
+              {realData.hasNextPage && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-blue-900">More Data Available</h4>
+                      <p className="text-blue-700 text-sm">This query has additional pages of data.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (realData.nextLink) {
+                          const url = new URL(realData.nextLink);
+                          const pathAndQuery = url.pathname.split('/api/data/v9.2/')[1] + url.search;
+                          setQueryUrl(pathAndQuery);
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                    >
+                      Load Next Page
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Raw JSON Data (Collapsible) */}
+              <details className="bg-gray-50 rounded-lg p-4">
+                <summary className="cursor-pointer font-medium text-gray-900 hover:text-gray-700">
+                  View Raw JSON Data
+                </summary>
+                <div className="mt-3 bg-white rounded border p-3">
+                  <pre className="text-xs overflow-auto max-h-96 text-gray-700">
+                    {JSON.stringify(realData.data, null, 2)}
+                  </pre>
+                </div>
+              </details>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-4xl mb-2">📭</div>
+              <div className="text-lg font-medium">No Data Found</div>
+              <div className="text-sm">The query returned no results. Try adjusting your query parameters.</div>
             </div>
           )}
         </div>
