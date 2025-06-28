@@ -389,6 +389,24 @@ export default function INQDataExplorerPage() {
             <EyeIcon className="h-4 w-4" />
             {isDemoMode ? 'Demo Mode' : 'Real Mode'}
           </button>
+
+          {!isDemoMode && (
+            <button
+              onClick={async () => {
+                const hasSecret = await checkSecretStatus(selectedEnvironment);
+                if (hasSecret) {
+                  setError('');
+                  fetchData();
+                } else {
+                  setError(`Secret check failed: INQ_CLIENT_SECRET_${selectedEnvironment.envVarSuffix} is not configured. Please set this environment variable and restart the server.`);
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1 border border-blue-300 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100"
+            >
+              <MagnifyingGlassIcon className="h-4 w-4" />
+              Check Status
+            </button>
+          )}
         </div>
       </div>
 
@@ -481,9 +499,18 @@ export default function INQDataExplorerPage() {
           </div>
           <pre className="text-red-700 text-sm whitespace-pre-wrap">{error}</pre>
           {!getClientSecretStatus() && !isDemoMode && (
-            <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded">
+            <div className="mt-3 p-4 bg-yellow-100 border border-yellow-300 rounded">
               <div className="text-yellow-800 text-sm">
-                <strong>Setup Required:</strong> Set environment variable <code>INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}</code> and restart the server, or use Demo Mode for testing.
+                <strong>Real Mode Setup Required:</strong>
+                <br />
+                1. Set environment variable: <code className="bg-yellow-200 px-1 rounded">INQ_CLIENT_SECRET_{selectedEnvironment.envVarSuffix}</code>
+                <br />
+                2. Restart the development server: <code className="bg-yellow-200 px-1 rounded">npm run dev</code>
+                <br />
+                3. Or switch to <strong>Demo Mode</strong> to test pagination with mock data
+                <br />
+                <br />
+                📖 <strong>Full setup instructions:</strong> See <code>INQ_INTEGRATION.md</code> in the project root
               </div>
             </div>
           )}
@@ -496,7 +523,11 @@ export default function INQDataExplorerPage() {
           {/* Results Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Query Results</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Query Results 
+                {isDemoMode && <span className="ml-2 text-blue-600 text-sm">(Demo Data)</span>}
+                {!isDemoMode && <span className="ml-2 text-green-600 text-sm">(Live Data)</span>}
+              </h2>
               <p className="text-sm text-gray-600">
                 Showing {((paginationData.currentPage - 1) * paginationData.pageSize) + 1} to{' '}
                 {Math.min(paginationData.currentPage * paginationData.pageSize, paginationData.totalRecords || 0)} 
