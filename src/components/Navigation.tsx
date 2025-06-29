@@ -285,8 +285,8 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 {!isSidebarCollapsed && (
                   <button
                     onClick={() => toggleGroup(group.name)}
-                    className={`w-full flex items-center justify-between px-6 py-2 text-xs font-semibold uppercase tracking-wider transition-colors duration-200 rounded-lg
-                      ${expanded ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`w-full flex items-center justify-between px-6 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg
+                      ${expanded ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500'}`}
                     style={{outline:'none'}}
                   >
                     <div className="flex items-center space-x-2">
@@ -312,10 +312,10 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                       <Link
                         key={item.name}
                         href={item.href}
-                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium group
                           ${isActive(item.href)
                             ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-r-2 border-blue-700 shadow'
-                            : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'}
+                            : 'text-gray-700'}
                         `}
                         title={isSidebarCollapsed ? item.name : ''}
                       >
@@ -325,10 +325,10 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                             <div>{item.name}</div>
                             {item.description && (
                               <div
-                                className={`text-xs text-gray-400 transition-all duration-200
+                                className={`text-xs text-gray-400
                                   ${searchQuery
                                     ? 'block text-gray-500'
-                                    : 'hidden group-hover:block group-focus:block'}
+                                    : 'hidden'}
                               `}
                               >
                                 {item.description}
