@@ -22,6 +22,7 @@ interface NavGroup {
 export default function Navigation({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
 
   // Generate breadcrumbs from pathname
@@ -129,6 +130,15 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     }
   ];
 
+  // Filtered navGroups based on search
+  const filteredNavGroups = navGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+  })).filter(group => group.items.length > 0 || searchQuery === '');
+
   const toggleGroup = (groupName: string) => {
     setActiveGroup(activeGroup === groupName ? null : groupName);
   };
@@ -141,7 +151,6 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     <div className="flex h-screen bg-gray-50">
       {/* Token Cache Manager - Handles automatic cleanup of expired tokens */}
       <TokenCacheManager />
-      
       {/* Left Sidebar */}
       <div className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg border-r border-gray-200 transition-all duration-300 flex flex-col`}>
         {/* Sidebar Header */}
@@ -188,7 +197,18 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             </svg>
           </button>
         </div>
-
+        {/* Search Field */}
+        {!isSidebarCollapsed && (
+          <div className="px-4 py-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search pages..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+        )}
         {/* Navigation Groups */}
         <div className="flex-1 overflow-y-auto py-4">
           {/* Home Link */}
@@ -226,7 +246,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Navigation Groups */}
-          {navGroups.map((group) => (
+          {filteredNavGroups.map((group) => (
             <div key={group.name} className="mb-6">
               {!isSidebarCollapsed && (
                 <button
