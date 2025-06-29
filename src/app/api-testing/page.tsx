@@ -78,15 +78,9 @@ function a11yProps(index: number) {
   };
 }
 
-// Available proxy clients - only the single test client is supported
-const proxyClients = [
-  { name: 'Test-Client', clientId: '0oa82h6j45rN8G1he5d7' }
-];
-
 export default function APITestingPage() {
   const selectedEndpoint = 'graphql'; // Fixed to GraphQL only
   const [selectedEnvironment, setSelectedEnvironment] = useState('mis-gql-dev');
-  const [selectedProxyClient, setSelectedProxyClient] = useState('0oa82h6j45rN8G1he5d7'); // Default to test client
   const [queryInput, setQueryInput] = useState('');
   const [graphqlVariables, setGraphqlVariables] = useState('{}'); // Default to empty JSON object
   const [httpHeaders, setHttpHeaders] = useState('{}'); // Default to empty JSON object
@@ -100,7 +94,7 @@ export default function APITestingPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Use hook to get API client with selected clientId
+  // Use hook to get API client with selected environment only
   const apiClient = useApiClient(selectedEnvironment);
   const [generatingQuery, setGeneratingQuery] = useState(false);
   const [schemaLoading, setSchemaLoading] = useState(false);
@@ -158,11 +152,6 @@ export default function APITestingPage() {
 
   const handleEnvironmentChange = (event: SelectChangeEvent) => {
     setSelectedEnvironment(event.target.value);
-  };
-
-  const handleProxyClientChange = (clientId: string) => {
-    setSelectedProxyClient(clientId);
-    localStorage.setItem('selectedProxyClient', clientId);
   };
 
   const environmentOptions = getEnvironmentNames();
@@ -286,9 +275,6 @@ query ThirdQuery {
     const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-dev';
     setSelectedEnvironment(savedEnv);
 
-    const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oa82h6j45rN8G1he5d7';
-    setSelectedProxyClient(savedProxyClient);
-
     // Clean up expired tokens on page load
     cleanupExpiredTokens();
 
@@ -361,7 +347,6 @@ query ThirdQuery {
       // Set up editingQuery with proper name for the default query
       if (selectedEndpoint === 'graphql') {
         const savedEnv = localStorage.getItem('selectedEnvironment') || 'mis-gql-dev';
-        const savedProxyClient = localStorage.getItem('selectedProxyClient') || '0oa82h6j45rN8G1he5d7';
         
         console.log('[Query Init] Setting editingQuery with name "Sample Missionary Query"');
         setEditingQuery({
@@ -584,7 +569,6 @@ query ThirdQuery {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Cache-Control': 'no-cache',
-          'proxy-client': selectedProxyClient,
           'x-selected-environment': selectedEnvironment,
           ...parsedHeaders, // User's custom headers override defaults
         };
@@ -605,7 +589,7 @@ query ThirdQuery {
           queryInput, 
           parsedVariables, 
           parsedHeaders as Record<string, string>, 
-          selectedProxyClient,
+          undefined, // Remove selectedProxyClient
           finalOperationName || undefined
         );
         console.log('[Apex Debug] GraphQL execution result:', result);
@@ -1245,22 +1229,6 @@ ${fields}
                       {environmentOptions.map((env) => (
                         <option key={env.key} value={env.key}>
                           {env.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Proxy Client Selector */}
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500 font-medium">Proxy:</span>
-                    <select
-                      value={selectedProxyClient}
-                      onChange={(e) => setSelectedProxyClient(e.target.value)}
-                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      {proxyClients.map((client) => (
-                        <option key={client.clientId} value={client.clientId}>
-                          {client.name}
                         </option>
                       ))}
                     </select>

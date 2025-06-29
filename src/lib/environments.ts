@@ -12,21 +12,6 @@ export interface EnvironmentConfig {
   scope: string;
 }
 
-// Function to get environment config with dynamic client ID
-export function getEnvironmentConfigWithClient(envKey: string, clientId?: string): EnvironmentConfig | null {
-  const baseConfig = ENVIRONMENTS[envKey];
-  if (!baseConfig) return null;
-
-  // If no custom client ID provided, return the original config
-  if (!clientId) return baseConfig;
-
-  // Return config with overridden client_id
-  return {
-    ...baseConfig,
-    client_id: clientId
-  };
-}
-
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   // MIS (MGQL) Environments - 4 lanes: local, dev, stage, prod
   'mis-gql-local': {
