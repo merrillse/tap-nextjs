@@ -64,19 +64,21 @@ export class ApiClient {
   }
 
   private async requestTokenViaAPI(method: 'basic' | 'form'): Promise<string> {
+    const tokenRequestPayload = {
+      access_token_url: this.config.access_token_url,
+      client_id: this.config.client_id,
+      client_secret: this.config.client_secret,
+      scope: this.config.scope,
+      method: method,
+      environment: this.environmentKey,
+    };
+    console.log('[OAuth Token Request] Sending to backend:', tokenRequestPayload);
     const response = await fetch('/api/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        access_token_url: this.config.access_token_url,
-        client_id: this.config.client_id,
-        client_secret: this.config.client_secret,
-        scope: this.config.scope,
-        method: method,
-        environment: this.environmentKey,
-      }),
+      body: JSON.stringify(tokenRequestPayload),
     });
 
     if (!response.ok) {
@@ -199,7 +201,10 @@ export class ApiClient {
     console.log('  • Request Timestamp:', new Date().toISOString());
     console.log('  • Request Body Size:', requestBody.length, 'bytes');
     console.log('  • Query Preview:', query.substring(0, 200) + (query.length > 200 ? '...' : ''));
-    
+    // --- Explicit log for full GraphQL URL and query ---
+    console.log('[GraphQL URL]', this.config.graph_url);
+    console.log('[GraphQL Query]', query);
+    // ---------------------------------------------------
     if (operationName) {
       console.log('  • Operation Name:', operationName);
     }

@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import EnvironmentIndicator from './EnvironmentIndicator';
 import TokenCacheManager from './TokenCacheManager';
-import ClientSelector from './ClientSelector';
-import UserSwitchNotifications from './UserSwitchNotifications';
 
 interface NavItem {
   name: string;
@@ -314,11 +312,6 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 </div>
               ))}
             </nav>
-
-            {/* Header Actions */}
-            <div className="flex items-center space-x-4">
-              <ClientSelector />
-            </div>
           </div>
         </header>
 
@@ -327,9 +320,6 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
           {children}
         </main>
       </div>
-      
-      {/* User Switch Notifications */}
-      <UserSwitchNotifications />
     </div>
   );
 }

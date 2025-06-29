@@ -32,13 +32,13 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   'mis-gql-local': {
     name: 'MIS GraphQL Local',
     scheme: 'http',
-    domain: 'localhost:8080',
+    domain: 'localhost',
     path: 'graphql',
-    base_url: 'http://localhost:8080',
-    graph_url: 'http://localhost:8080/graphql',
-    health_url: 'http://localhost:8080/actuator/health',
+    base_url: 'http://localhost:6080',
+    graph_url: 'http://localhost:6080/graphql',
+    health_url: 'http://localhost:6080/actuator/health',
     access_token_url: 'https://dev-73389086.okta.com/oauth2/default/v1/token',
-    client_id: '0oa82h6j45rN8G1he5d7',
+    client_id: '0oa5uce4xpm2l7K8G5d7',
     client_secret: '', // Managed server-side via MIS_GQL_LOCAL_CLIENT_SECRET
     scope: 'mis:mgql.nonProd'
   },
@@ -51,7 +51,7 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     graph_url: 'https://mis-gql-dev.aws.churchofjesuschrist.org/graphql',
     health_url: 'https://mis-gql-dev.aws.churchofjesuschrist.org/actuator/health',
     access_token_url: 'https://dev-73389086.okta.com/oauth2/default/v1/token',
-    client_id: '0oa82h6j45rN8G1he5d7',
+    client_id: '0oa5uce4xpm2l7K8G5d7',
     client_secret: '', // Managed server-side via MIS_GQL_DEV_CLIENT_SECRET
     scope: 'mis:mgql.nonProd'
   },
@@ -64,7 +64,7 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     graph_url: 'https://mis-gql-stage.aws.churchofjesuschrist.org/graphql',
     health_url: 'https://mis-gql-stage.aws.churchofjesuschrist.org/actuator/health',
     access_token_url: 'https://stage-73389086.okta.com/oauth2/default/v1/token',
-    client_id: '0oa82h6j45rN8G1he5d7',
+    client_id: '0oak0jqakvevwjWrp357',
     client_secret: '', // Managed server-side via MIS_GQL_STAGE_CLIENT_SECRET
     scope: 'mis:mgql.nonProd'
   },
@@ -77,7 +77,7 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     graph_url: 'https://mis-gql.aws.churchofjesuschrist.org/graphql',
     health_url: 'https://mis-gql.aws.churchofjesuschrist.org/actuator/health',
     access_token_url: 'https://prod-73389086.okta.com/oauth2/default/v1/token',
-    client_id: '0oa82h6j45rN8G1he5d7',
+    client_id: '0oak0jqakvevwjWrp357',
     client_secret: '', // Managed server-side via MIS_GQL_PROD_CLIENT_SECRET
     scope: 'mis:mgql.prod'
   },

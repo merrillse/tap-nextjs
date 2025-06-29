@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ENVIRONMENTS } from '@/lib/environments';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,40 +19,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use environment variable for client secret based on environment
-    let actualClientSecret = client_secret;
-    
-    if (client_id === '0oa82h6j45rN8G1he5d7') {
-      // Single test client - use appropriate secret based on environment
-      if (environment === 'mis-gql-dev') {
-        actualClientSecret = process.env.MIS_GQL_DEV_CLIENT_SECRET;
-      } else if (environment === 'mogs-gql-dev') {
-        actualClientSecret = process.env.MOGS_DEV_CLIENT_SECRET;
-      } else {
-        return NextResponse.json(
-          { error: 'Unsupported environment', details: `Only 'mis-gql-dev' and 'mogs-gql-dev' environments are supported. Received: ${environment}` },
-          { status: 400 }
-        );
-      }
-      
-      if (!actualClientSecret) {
-        return NextResponse.json(
-          { error: 'Missing required parameters', details: `Client secret not configured for environment: ${environment}` },
-          { status: 400 }
-        );
-      }
-    } else {
+    // Find the environment config by environment key
+    const envConfig = ENVIRONMENTS[environment];
+    if (!envConfig) {
       return NextResponse.json(
-        { error: 'Unsupported client ID', details: `Only client ID '0oa82h6j45rN8G1he5d7' is supported. Received: ${client_id}` },
+        { error: 'Invalid environment', details: `No config found for environment: ${environment}` },
         { status: 400 }
       );
+    }
+
+    // Always use the client_id and client_secret from the environment config
+    const actualClientId = envConfig.client_id;
+    let actualClientSecret = envConfig.client_secret;
+    if (!actualClientSecret) {
+      // Try to get from environment variable
+      const envVar = `${environment.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET`;
+      actualClientSecret = process.env[envVar] || '';
+      if (!actualClientSecret) {
+        return NextResponse.json(
+          { error: 'Missing client secret', details: `Set ${envVar} in your environment.` },
+          { status: 400 }
+        );
+      }
     }
 
     const results = [];
 
     // Test Method 1: Basic Auth (Standard OAuth2)
     try {
-      const credentials = Buffer.from(`${client_id}:${actualClientSecret}`).toString('base64');
+      const credentials = Buffer.from(`${actualClientId}:${actualClientSecret}`).toString('base64');
       
       const response = await fetch(access_token_url, {
         method: 'POST',
@@ -98,7 +94,7 @@ export async function POST(request: NextRequest) {
         },
         body: new URLSearchParams({
           grant_type: 'client_credentials',
-          client_id: client_id,
+          client_id: actualClientId,
           client_secret: actualClientSecret,
           scope: scope,
         }),
@@ -126,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Test Method 3: Basic Auth with Church-specific headers
     try {
-      const credentials = Buffer.from(`${client_id}:${actualClientSecret}`).toString('base64');
+      const credentials = Buffer.from(`${actualClientId}:${actualClientSecret}`).toString('base64');
       
       const response = await fetch(access_token_url, {
         method: 'POST',
@@ -204,7 +200,7 @@ export async function POST(request: NextRequest) {
       results: results,
       config: {
         access_token_url,
-        client_id: client_id.substring(0, 8) + '...' + client_id.slice(-4),
+        client_id: actualClientId.substring(0, 8) + '...' + actualClientId.slice(-4),
         scope
       }
     });

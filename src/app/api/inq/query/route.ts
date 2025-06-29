@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getEnvironmentConfigWithClient } from '@/lib/environments';
 
 interface QueryParams {
   environment: string;
@@ -15,7 +16,7 @@ interface ODataResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { environment, query, accessToken }: QueryParams = await request.json();
+    const { environment, query, accessToken, clientId }: QueryParams & { clientId?: string } = await request.json();
     
     if (!environment || !query) {
       return NextResponse.json({ 
@@ -23,8 +24,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get environment configuration
-    const envConfig = getEnvironmentConfig(environment);
+    // Get environment configuration, using clientId if provided
+    const envConfig = getEnvironmentConfigWithClient(environment, clientId);
     if (!envConfig) {
       return NextResponse.json({ error: 'Invalid environment' }, { status: 400 });
     }
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       const tokenResponse = await fetch(`${request.nextUrl.origin}/api/inq/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ environment })
+        body: JSON.stringify({ environment, clientId })
       });
 
       if (!tokenResponse.ok) {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the full API URL
-    const apiUrl = `${envConfig.baseUrl}/${query}`;
+    const apiUrl = `${envConfig.base_url}/${query}`;
     
     // Make the OData request
     const response = await fetch(apiUrl, {
@@ -109,31 +110,4 @@ export async function POST(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
-
-function getEnvironmentConfig(environment: string) {
-  const configs = {
-    DEV: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-dev.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-dev.api.crm.dynamics.com/api/data/v9.2'
-    },
-    TEST: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-test.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-test.api.crm.dynamics.com/api/data/v9.2'
-    },
-    STAGE: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-stage.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-stage.api.crm.dynamics.com/api/data/v9.2'
-    },
-    PROD: {
-      clientId: '5e6b7d0b-7247-429b-b8c1-d911d8f13d40',
-      scope: 'https://inq.crm.dynamics.com/.default',
-      baseUrl: 'https://inq.api.crm.dynamics.com/api/data/v9.2'
-    }
-  };
-  
-  return configs[environment as keyof typeof configs];
 }

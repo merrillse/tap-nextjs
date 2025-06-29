@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getEnvironmentConfigWithClient } from '@/lib/environments';
 
 interface TokenResponse {
   access_token: string;
@@ -8,14 +9,14 @@ interface TokenResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { environment } = await request.json();
+    const { environment, clientId } = await request.json();
     
     if (!environment) {
       return NextResponse.json({ error: 'Environment parameter is required' }, { status: 400 });
     }
 
-    // Get environment-specific configuration
-    const envConfig = getEnvironmentConfig(environment);
+    // Get environment-specific configuration, using clientId if provided
+    const envConfig = getEnvironmentConfigWithClient(environment, clientId);
     if (!envConfig) {
       return NextResponse.json({ error: 'Invalid environment' }, { status: 400 });
     }
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     const tokenUrl = 'https://login.microsoftonline.com/61e6eeb3-5fd7-4aaa-ae3c-61e8deb09b79/oauth2/v2.0/token';
     
     // Prepare OAuth2 request
-    const authHeader = Buffer.from(`${envConfig.clientId}:${clientSecret}`).toString('base64');
+    const authHeader = Buffer.from(`${envConfig.client_id}:${clientSecret}`).toString('base64');
     const formData = new URLSearchParams({
       grant_type: 'client_credentials',
       scope: envConfig.scope
@@ -74,31 +75,4 @@ export async function POST(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
-
-function getEnvironmentConfig(environment: string) {
-  const configs = {
-    DEV: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-dev.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-dev.api.crm.dynamics.com/api/data/v9.2'
-    },
-    TEST: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-test.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-test.api.crm.dynamics.com/api/data/v9.2'
-    },
-    STAGE: {
-      clientId: '563efa39-c095-4882-a49d-3ecd0cca40e3',
-      scope: 'https://inq-stage.crm.dynamics.com/.default',
-      baseUrl: 'https://inq-stage.api.crm.dynamics.com/api/data/v9.2'
-    },
-    PROD: {
-      clientId: '5e6b7d0b-7247-429b-b8c1-d911d8f13d40',
-      scope: 'https://inq.crm.dynamics.com/.default',
-      baseUrl: 'https://inq.api.crm.dynamics.com/api/data/v9.2'
-    }
-  };
-  
-  return configs[environment as keyof typeof configs];
 }

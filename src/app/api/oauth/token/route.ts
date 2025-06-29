@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ENVIRONMENTS } from '@/lib/environments';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,49 +30,35 @@ export async function POST(request: NextRequest) {
     console.log('  • Method:', method);
     console.log('  • Timestamp:', new Date().toISOString());
 
-    // Use environment variable for client secret based on environment
-    let actualClientSecret = client_secret;
-    
-    if (client_id === '0oa82h6j45rN8G1he5d7') {
-      // Environment-specific client secret mapping
-      const environmentSecretMap: Record<string, string | undefined> = {
-        'mis-gql-local': process.env.MIS_GQL_LOCAL_CLIENT_SECRET,
-        'mis-gql-dev': process.env.MIS_GQL_DEV_CLIENT_SECRET,
-        'mis-gql-stage': process.env.MIS_GQL_STAGE_CLIENT_SECRET,
-        'mis-gql-prod': process.env.MIS_GQL_PROD_CLIENT_SECRET,
-        'mogs-gql-local': process.env.MOGS_LOCAL_CLIENT_SECRET,
-        'mogs-gql-dev': process.env.MOGS_DEV_CLIENT_SECRET,
-        'mogs-gql-prod': process.env.MOGS_PROD_CLIENT_SECRET,
-      };
+    // Find the environment config by environment key
+    const envConfig = ENVIRONMENTS[environment];
+    if (!envConfig) {
+      return NextResponse.json(
+        { error: 'Invalid environment', details: `No config found for environment: ${environment}` },
+        { status: 400 }
+      );
+    }
 
-      actualClientSecret = environmentSecretMap[environment];
-      
-      if (actualClientSecret) {
-        console.log(`  • Using ${environment.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET for ${environment} environment`);
-      } else {
-        const supportedEnvs = Object.keys(environmentSecretMap).join(', ');
-        console.error('  ❌ Unsupported environment or missing secret:', environment);
+    // Always use the client_id and client_secret from the environment config
+    const actualClientId = envConfig.client_id;
+    let actualClientSecret = envConfig.client_secret;
+    if (!actualClientSecret) {
+      // Try to get from environment variable
+      const envVar = `${environment.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET`;
+      actualClientSecret = process.env[envVar] || '';
+      if (!actualClientSecret) {
         return NextResponse.json(
-          { 
-            error: 'Unsupported environment or missing client secret', 
-            details: `Environment '${environment}' is not supported or client secret not configured. Supported environments: ${supportedEnvs}` 
-          },
+          { error: 'Missing client secret', details: `Set ${envVar} in your environment.` },
           { status: 400 }
         );
       }
-    } else {
-      console.error('  ❌ Unsupported client ID:', client_id);
-      return NextResponse.json(
-        { error: 'Unsupported client ID', details: `Only client ID '0oa82h6j45rN8G1he5d7' is supported. Received: ${client_id}` },
-        { status: 400 }
-      );
     }
 
     let tokenResponse: Response;
 
     if (method === 'basic') {
       // Basic Auth method - Church of Jesus Christ standard
-      const credentials = Buffer.from(`${client_id}:${actualClientSecret}`).toString('base64');
+      const credentials = Buffer.from(`${actualClientId}:${actualClientSecret}`).toString('base64');
       
       tokenResponse = await fetch(access_token_url, {
         method: 'POST',
@@ -101,7 +88,7 @@ export async function POST(request: NextRequest) {
         },
         body: new URLSearchParams({
           grant_type: 'client_credentials',
-          client_id: client_id,
+          client_id: actualClientId,
           client_secret: actualClientSecret,
           scope: scope,
         }),
@@ -119,7 +106,7 @@ export async function POST(request: NextRequest) {
         },
         body: new URLSearchParams({
           grant_type: 'client_credentials',
-          client_id: client_id,
+          client_id: actualClientId,
           client_secret: actualClientSecret,
           scope: scope,
           client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
@@ -141,7 +128,7 @@ export async function POST(request: NextRequest) {
       console.error('  • Status:', tokenResponse.status, tokenResponse.statusText);
       console.error('  • Method:', method);
       console.error('  • URL:', access_token_url);
-      console.error('  • Client ID:', client_id);
+      console.error('  • Client ID:', actualClientId);
       console.error('  • Environment:', environment);
       console.error('  • Response Body:', responseText);
       console.groupEnd();
