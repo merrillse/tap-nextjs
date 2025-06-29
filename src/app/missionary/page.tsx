@@ -605,8 +605,8 @@ export default function MissionaryPage() {
                   {missionaryData.languages.map((lang, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900">{lang.languageDetail.languageName}</p>
-                        <p className="text-sm text-gray-500">{lang.languageDetail.languageAbbreviation}</p>
+                        <p className="font-medium text-gray-900">{lang.languageDetail?.languageName || 'Unknown'}</p>
+                        <p className="text-sm text-gray-500">{lang.languageDetail?.languageAbbreviation || ''}</p>
                       </div>
                       {lang.preferredLanguage && (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
@@ -653,7 +653,6 @@ export default function MissionaryPage() {
                             </div>
                           )}
                         </div>
-
                         {/* Contact Information */}
                         <div className="space-y-2">
                           {relation.email && (
@@ -662,14 +661,12 @@ export default function MissionaryPage() {
                               <p className="font-medium text-gray-900">{relation.email}</p>
                             </div>
                           )}
-                          
                           {relation.phone && (
                             <div>
                               <label className="block text-sm font-medium text-gray-500">Phone</label>
                               <p className="font-medium text-gray-900">{relation.phone}</p>
                             </div>
                           )}
-
                           {relation.birthPlace && (
                             <div>
                               <label className="block text-sm font-medium text-gray-500">Birth Place</label>
@@ -677,7 +674,6 @@ export default function MissionaryPage() {
                             </div>
                           )}
                         </div>
-
                         {/* Address & Status */}
                         <div className="space-y-2">
                           {relation.address && (
@@ -688,17 +684,16 @@ export default function MissionaryPage() {
                                 {relation.address.addressLine2 && <p>{relation.address.addressLine2}</p>}
                                 {relation.address.addressLine3 && <p>{relation.address.addressLine3}</p>}
                                 <p>
-                                  {relation.address.city}
+                                  {relation.address.city || ''}
                                   {relation.address.stateProvince && `, ${relation.address.stateProvince}`}
                                   {relation.address.zipcode && ` ${relation.address.zipcode}`}
                                 </p>
                                 {(relation.address.country?.commonName || relation.address.country?.officialName || relation.address.country?.concatenatedName) && (
-                                  <p>{relation.address.country.commonName || relation.address.country.officialName || relation.address.country.concatenatedName}</p>
+                                  <p>{relation.address.country?.commonName || relation.address.country?.officialName || relation.address.country?.concatenatedName}</p>
                                 )}
                               </div>
                             </div>
                           )}
-
                           {/* Status Indicators */}
                           <div className="flex flex-wrap gap-2 mt-3">
                             {relation.isMember && (

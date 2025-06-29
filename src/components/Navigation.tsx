@@ -278,61 +278,71 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Navigation Groups */}
-          {filteredNavGroups.map((group) => (
-            <div key={group.name} className="mb-6">
-              {!isSidebarCollapsed && (
-                <button
-                  onClick={() => setActiveGroup(group.name)}
-                  className="w-full flex items-center justify-between px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors duration-200"
+          {filteredNavGroups.map((group) => {
+            const expanded = !isSidebarCollapsed && isGroupExpanded(group.name);
+            return (
+              <div key={group.name} className="mb-6">
+                {!isSidebarCollapsed && (
+                  <button
+                    onClick={() => toggleGroup(group.name)}
+                    className={`w-full flex items-center justify-between px-6 py-2 text-xs font-semibold uppercase tracking-wider transition-colors duration-200 rounded-lg
+                      ${expanded ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                    style={{outline:'none'}}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span>{group.icon}</span>
+                      <span>{group.name}</span>
+                    </div>
+                    <svg 
+                      className={`w-4 h-4 transition-transform duration-300 ${expanded ? 'rotate-90' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out px-3 ${expanded ? 'max-h-[1000px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'}`}
+                  style={{willChange:'max-height,opacity,transform'}}
                 >
-                  <div className="flex items-center space-x-2">
-                    <span>{group.icon}</span>
-                    <span>{group.name}</span>
-                  </div>
-                  <svg 
-                    className={`w-4 h-4 transition-transform duration-200 ${isGroupExpanded(group.name) ? 'rotate-90' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
-              <div className={`space-y-1 px-3 ${!isSidebarCollapsed && !isGroupExpanded(group.name) ? 'hidden' : ''}`}>
-                {group.items.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group ${
-                      isActive(item.href) 
-                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    title={isSidebarCollapsed ? item.name : ''}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    {!isSidebarCollapsed && (
-                      <div className="flex-1">
-                        <div>{item.name}</div>
-                        {item.description && (
-                          <div
-                            className={`text-xs text-gray-400 transition-all duration-200
-                              ${searchQuery
-                                ? 'block text-gray-500'
-                                : 'hidden group-hover:block group-focus:block'}
-                            `}
-                          >
-                            {item.description}
+                  <div className="space-y-1">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group
+                          ${isActive(item.href)
+                            ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-r-2 border-blue-700 shadow'
+                            : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'}
+                        `}
+                        title={isSidebarCollapsed ? item.name : ''}
+                      >
+                        <span className="text-lg">{item.icon}</span>
+                        {!isSidebarCollapsed && (
+                          <div className="flex-1">
+                            <div>{item.name}</div>
+                            {item.description && (
+                              <div
+                                className={`text-xs text-gray-400 transition-all duration-200
+                                  ${searchQuery
+                                    ? 'block text-gray-500'
+                                    : 'hidden group-hover:block group-focus:block'}
+                              `}
+                              >
+                                {item.description}
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
-                    )}
-                  </Link>
-                ))}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Sidebar Footer */}
