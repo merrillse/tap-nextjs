@@ -316,7 +316,15 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                       <div className="flex-1">
                         <div>{item.name}</div>
                         {item.description && (
-                          <div className="text-xs text-gray-500 group-hover:text-gray-600">{item.description}</div>
+                          <div
+                            className={`text-xs text-gray-400 transition-all duration-200
+                              ${searchQuery
+                                ? 'block text-gray-500'
+                                : 'hidden group-hover:block group-focus:block'}
+                            `}
+                          >
+                            {item.description}
+                          </div>
                         )}
                       </div>
                     )}
