@@ -1264,32 +1264,32 @@ ${fields}
               <div className="border-b border-gray-100">
                 <nav className="flex">
                   <button
+                    type="button"
                     onClick={() => setResponseTabValue(0)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                      responseTabValue === 0
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 focus:outline-none transition-colors
+                      ${responseTabValue === 0
+                        ? 'border-blue-500 text-blue-600 bg-white'
+                        : 'border-transparent text-gray-500 hover:text-blue-600 hover:bg-gray-50'}`}
                   >
                     Response
                   </button>
                   <button
+                    type="button"
                     onClick={() => setResponseTabValue(1)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                      responseTabValue === 1
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 focus:outline-none transition-colors
+                      ${responseTabValue === 1
+                        ? 'border-blue-500 text-blue-600 bg-white'
+                        : 'border-transparent text-gray-500 hover:text-blue-600 hover:bg-gray-50'}`}
                   >
                     Headers
                   </button>
                   <button
+                    type="button"
                     onClick={() => setResponseTabValue(2)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                      responseTabValue === 2
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 focus:outline-none transition-colors
+                      ${responseTabValue === 2
+                        ? 'border-blue-500 text-blue-600 bg-white'
+                        : 'border-transparent text-gray-500 hover:text-blue-600 hover:bg-gray-50'}`}
                   >
                     Errors
                   </button>
@@ -1457,138 +1457,105 @@ ${fields}
         )}
         
         {/* Keyboard Shortcuts Dialog */}
-        <Dialog 
-          open={showKeyboardShortcuts} 
-          onClose={() => setShowKeyboardShortcuts(false)}
-          maxWidth="md"
-          fullWidth
+        {showKeyboardShortcuts && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6 relative animate-fade-in">
+              <button
+                onClick={() => setShowKeyboardShortcuts(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Keyboard Shortcuts</h2>
+              <div className="space-y-8 max-h-[70vh] overflow-y-auto">
+                {/* Key Bindings Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Key Bindings</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><span className="font-medium">Run Query:</span> <kbd className="kbd">Ctrl+Enter</kbd> (Cmd+Enter on Mac)</li>
+                    <li><span className="font-medium">Format Query:</span> <kbd className="kbd">Shift+Alt+F</kbd></li>
+                    <li><span className="font-medium">Switch Focus (Editor ↔ Response):</span> <kbd className="kbd">Ctrl+X</kbd> then <kbd className="kbd">O</kbd></li>
+                    <li><span className="font-medium">Open Schema Browser:</span> <kbd className="kbd">Ctrl+Shift+S</kbd></li>
+                    <li><span className="font-medium">New Query:</span> <kbd className="kbd">Ctrl+N</kbd></li>
+                    <li><span className="font-medium">Save Query:</span> <kbd className="kbd">Ctrl+S</kbd></li>
+                    <li><span className="font-medium">Duplicate Query:</span> <kbd className="kbd">Ctrl+D</kbd></li>
+                    <li><span className="font-medium">Copy Query:</span> <kbd className="kbd">Ctrl+C</kbd></li>
+                    <li><span className="font-medium">Fullscreen Editor:</span> <kbd className="kbd">F11</kbd></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Search & Replace</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><span className="font-medium">Find:</span> <kbd className="kbd">Cmd+F</kbd> (Mac) / <kbd className="kbd">Ctrl+F</kbd> (Win/Linux)</li>
+                    <li><span className="font-medium">Find and Replace:</span> <kbd className="kbd">Cmd+Shift+H</kbd> / <kbd className="kbd">Ctrl+H</kbd></li>
+                    <li><span className="font-medium">Incremental Search (Emacs):</span> <kbd className="kbd">Ctrl+S</kbd> (forward), <kbd className="kbd">Ctrl+R</kbd> (back), <kbd className="kbd">Ctrl+G</kbd> or <kbd className="kbd">Esc</kbd> (exit)</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Navigation</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><span className="font-medium">Move cursor up/down:</span> <kbd className="kbd">Ctrl+P</kbd> / <kbd className="kbd">Ctrl+N</kbd> or arrow keys</li>
+                    <li><span className="font-medium">Beginning/End of line:</span> <kbd className="kbd">Ctrl+A</kbd> / <kbd className="kbd">Ctrl+E</kbd></li>
+                    <li><span className="font-medium">Beginning/End of document:</span> <kbd className="kbd">Cmd+Home</kbd> / <kbd className="kbd">Cmd+End</kbd> (Mac) or <kbd className="kbd">Ctrl+Home</kbd> / <kbd className="kbd">Ctrl+End</kbd></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Editing</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><span className="font-medium">Delete line:</span> <kbd className="kbd">Ctrl+K</kbd></li>
+                    <li><span className="font-medium">Backspace:</span> <kbd className="kbd">Backspace</kbd> or <kbd className="kbd">Ctrl+H</kbd></li>
+                    <li><span className="font-medium">Auto-complete:</span> <kbd className="kbd">Ctrl+Space</kbd></li>
+                    <li><span className="font-medium">Format GraphQL:</span> <kbd className="kbd">Shift+Alt+F</kbd></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Application</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><span className="font-medium">Execute Query:</span> <kbd className="kbd">Ctrl+Enter</kbd></li>
+                    <li><span className="font-medium">Switch Focus (Editor ↔ Response):</span> <kbd className="kbd">Ctrl+X</kbd> then <kbd className="kbd">O</kbd></li>
+                    <li><span className="font-medium">Schema Browser:</span> <kbd className="kbd">Ctrl+Shift+S</kbd></li>
+                    <li><span className="font-medium">Ace Jump (Quick Navigation):</span> <kbd className="kbd">Ctrl+;</kbd> then type</li>
+                    <li><span className="font-medium">Fullscreen Editor:</span> <kbd className="kbd">F11</kbd> or click fullscreen, <kbd className="kbd">Esc</kbd> to exit</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={() => setShowKeyboardShortcuts(false)}
+                  className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Snackbar/Toast Notification */}
+        <div
+          className={`fixed bottom-6 left-1/2 z-[4000] transform -translate-x-1/2 transition-all duration-300 ${copySnackbarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+          role="alert"
         >
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          <DialogContent>
-            <Box sx={{ mt: 1 }}>
-              <Typography variant="h6" gutterBottom>Search & Replace</Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText 
-                    primary="Find" 
-                    secondary={<><kbd>Cmd+F</kbd> (Mac) / <kbd>Ctrl+F</kbd> (Windows/Linux)</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Find and Replace" 
-                    secondary={<><kbd>Cmd+Shift+H</kbd> (Mac) / <kbd>Ctrl+H</kbd> (Windows/Linux)</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Incremental Search (Emacs-style)" 
-                    secondary={<><kbd>Ctrl+S</kbd> - type to search forward, <kbd>Ctrl+R</kbd> - search backward, <kbd>Ctrl+G</kbd> or <kbd>Esc</kbd> - exit</>}
-                  />
-                </ListItem>
-              </List>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Typography variant="h6" gutterBottom>Navigation</Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText 
-                    primary="Move cursor up/down" 
-                    secondary={<><kbd>Ctrl+P</kbd> / <kbd>Ctrl+N</kbd> (Emacs-style) or arrow keys</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Beginning/End of line" 
-                    secondary={<><kbd>Ctrl+A</kbd> / <kbd>Ctrl+E</kbd> (Emacs-style)</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Beginning/End of document" 
-                    secondary={<><kbd>Cmd+Home</kbd> / <kbd>Cmd+End</kbd> (Mac) or <kbd>Ctrl+Home</kbd> / <kbd>Ctrl+End</kbd></>}
-                  />
-                </ListItem>
-              </List>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Typography variant="h6" gutterBottom>Editing</Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText 
-                    primary="Delete line" 
-                    secondary={<><kbd>Ctrl+K</kbd> (Emacs-style)</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Backspace" 
-                    secondary={<><kbd>Backspace</kbd> or <kbd>Ctrl+H</kbd> (Emacs-style)</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Auto-complete" 
-                    secondary={<><kbd>Ctrl+Space</kbd></>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Format GraphQL" 
-                    secondary={<><kbd>Shift+Alt+F</kbd></>}
-                  />
-                </ListItem>
-              </List>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Typography variant="h6" gutterBottom>Application</Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText 
-                    primary="Execute Query" 
-                    secondary={<><kbd>Ctrl+Enter</kbd></>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Switch Focus (Editor ↔ Response)" 
-                    secondary={<><kbd>Ctrl+X</kbd> then <kbd>O</kbd></>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Schema Browser" 
-                    secondary={<><kbd>Ctrl+Shift+S</kbd></>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Ace Jump (Quick Navigation)" 
-                    secondary={<><kbd>Ctrl+;</kbd> then type characters to jump</>}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Fullscreen Editor" 
-                    secondary={<><kbd>F11</kbd> or click fullscreen button, <kbd>Esc</kbd> to exit</>}
-                  />
-                </ListItem>
-              </List>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowKeyboardShortcuts(false)}>Close</Button>
-          </DialogActions>
-        </Dialog>
-        
-        <Snackbar open={copySnackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar}>
-          <Alert onClose={handleCloseSnackbar} severity={copySnackbarMessage.startsWith('Failed') || copySnackbarMessage.startsWith('No content') ? "error" : "success"} sx={{ width: '100%' }}>
-            {copySnackbarMessage}
-          </Alert>
-        </Snackbar>
+          <div
+            className={`px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 text-sm font-medium
+              ${copySnackbarMessage.startsWith('Failed') || copySnackbarMessage.startsWith('No content')
+                ? 'bg-red-50 text-red-700 border border-red-200'
+                : 'bg-green-50 text-green-700 border border-green-200'}`}
+          >
+            <span>{copySnackbarMessage}</span>
+            <button
+              onClick={handleCloseSnackbar}
+              className="ml-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label="Close notification"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
       </div>
     </div>
