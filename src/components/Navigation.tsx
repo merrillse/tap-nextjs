@@ -139,6 +139,24 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     )
   })).filter(group => group.items.length > 0 || searchQuery === '');
 
+  // When searching, auto-expand all groups with matches
+  const isGroupExpanded = (groupName: string) => {
+    if (searchQuery) return true;
+    return activeGroup === groupName;
+  };
+
+  // Flatten all matching items for search results
+  const flatSearchResults = searchQuery
+    ? navGroups.flatMap(group =>
+        group.items
+          .filter(item =>
+            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+          )
+          .map(item => ({ ...item, group: group.name, groupIcon: group.icon }))
+      )
+    : [];
+
   const toggleGroup = (groupName: string) => {
     setActiveGroup(activeGroup === groupName ? null : groupName);
   };
@@ -250,7 +268,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             <div key={group.name} className="mb-6">
               {!isSidebarCollapsed && (
                 <button
-                  onClick={() => toggleGroup(group.name)}
+                  onClick={() => setActiveGroup(group.name)}
                   className="w-full flex items-center justify-between px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors duration-200"
                 >
                   <div className="flex items-center space-x-2">
@@ -258,7 +276,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                     <span>{group.name}</span>
                   </div>
                   <svg 
-                    className={`w-4 h-4 transition-transform duration-200 ${activeGroup === group.name ? 'rotate-90' : ''}`}
+                    className={`w-4 h-4 transition-transform duration-200 ${isGroupExpanded(group.name) ? 'rotate-90' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -267,8 +285,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                   </svg>
                 </button>
               )}
-              
-              <div className={`space-y-1 px-3 ${!isSidebarCollapsed && activeGroup !== group.name ? 'hidden' : ''}`}>
+              <div className={`space-y-1 px-3 ${!isSidebarCollapsed && !isGroupExpanded(group.name) ? 'hidden' : ''}`}>
                 {group.items.map((item) => (
                   <Link
                     key={item.name}
