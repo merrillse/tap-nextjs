@@ -1,8 +1,9 @@
 "use client";
 import "./prism-setup";
 import Prism from "prismjs";
-
 import React, { useEffect, useState, useCallback } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+
 import { useApiClient } from "@/hooks/useApiClient";
 import type {
   GraphQLType,
@@ -149,6 +150,16 @@ interface QueryState {
   result?: unknown;
   error?: string;
   metrics?: { duration: number; size: number };
+  loading?: boolean;
+}
+
+interface RunHistoryEntry {
+  queryName: string;
+  duration: number;
+  timestamp: number;
+  isBatch: boolean;
+  environment: string;
+  error?: boolean;
 }
 
 export default function ComprehensiveTestingPage() {
@@ -164,6 +175,15 @@ export default function ComprehensiveTestingPage() {
   const [error, setError] = useState<string | null>(null);
   const [queryStates, setQueryStates] = useState<Record<string, QueryState>>({});
   const [fullscreenIdx, setFullscreenIdx] = useState<number | null>(null);
+  const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>(() => {
+    if (typeof window !== "undefined") {
+      const persisted = localStorage.getItem("ctest-run-history");
+      return persisted ? JSON.parse(persisted) : [];
+    }
+    return [];
+  });
+  const [dashboardFullscreen, setDashboardFullscreen] = useState(false);
+  const [allLoading, setAllLoading] = useState(false);
 
   // Fetch schema on mount or environment change
   useEffect(() => {
@@ -219,9 +239,30 @@ export default function ComprehensiveTestingPage() {
     });
   }, [topLevelQueries.length]);
 
+  // Helper to add a run to history (max 10 per query/batch per environment)
+  const addRunToHistory = (entry: RunHistoryEntry) => {
+    setRunHistory(prev => {
+      const filtered = [...prev, entry]
+        .filter((e, i, arr) => {
+          // Keep only last 10 per queryName+isBatch+environment
+          const group = arr.filter(x => x.queryName === e.queryName && x.isBatch === e.isBatch && x.environment === e.environment);
+          return group.length <= 10 || group.indexOf(e) >= group.length - 10;
+        });
+      localStorage.setItem("ctest-run-history", JSON.stringify(filtered));
+      return filtered;
+    });
+  };
+
   // Execute a single query
   const executeQuery = async (queryField: GraphQLField): Promise<void> => {
     const queryName = queryField.name;
+    setQueryStates((prev) => ({
+      ...prev,
+      [queryName]: {
+        ...prev[queryName],
+        loading: true,
+      },
+    }));
     const args = queryStates[queryName]?.args || {};
     const query = buildQueryString(queryField, schema!.types);
     const variables = { ...args };
@@ -241,6 +282,7 @@ export default function ComprehensiveTestingPage() {
         result,
         error: errorMsg,
         metrics: { duration, size: result ? JSON.stringify(result).length : 0 },
+        loading: false,
       },
     }));
     // Persist result/metrics
@@ -248,11 +290,15 @@ export default function ComprehensiveTestingPage() {
       `ctest-metrics-${queryName}`,
       JSON.stringify({ duration, size: result ? JSON.stringify(result).length : 0 })
     );
+    // Add to run history
+    addRunToHistory({ queryName, duration, timestamp: Date.now(), isBatch: false, environment: selectedEnvironment, error: !!errorMsg });
   };
 
   // Execute all queries concurrently
   const executeAll = async (): Promise<void> => {
+    setAllLoading(true);
     await Promise.all(topLevelQueries.map(executeQuery));
+    setAllLoading(false);
   };
 
   // Save selected environment
@@ -265,6 +311,36 @@ export default function ComprehensiveTestingPage() {
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   const environmentOptions = getEnvironmentNames();
+
+  // Dashboard rendering
+  const envRunHistory = runHistory.filter(e => e.environment === selectedEnvironment);
+  const batchRuns = envRunHistory.filter(e => e.isBatch);
+  const perQueryRuns: Record<string, RunHistoryEntry[]> = {};
+  envRunHistory.forEach(e => {
+    if (!e.isBatch) {
+      if (!perQueryRuns[e.queryName]) perQueryRuns[e.queryName] = [];
+      perQueryRuns[e.queryName].push(e);
+    }
+  });
+
+  // Summary statistics helpers
+  function getStats(entries: RunHistoryEntry[]) {
+    if (!entries.length) return { avg: 0, min: 0, max: 0, median: 0, count: 0, success: 0, errors: 0 };
+    const times = entries.map(e => e.duration).sort((a, b) => a - b);
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    const min = times[0];
+    const max = times[times.length - 1];
+    const median = times.length % 2 === 0 ? (times[times.length/2-1] + times[times.length/2])/2 : times[Math.floor(times.length/2)];
+    const errors = entries.filter(e => e.error).length;
+    const success = entries.length - errors;
+    return { avg, min, max, median, count: entries.length, success, errors };
+  }
+
+  // Reset analytics
+  const resetAnalytics = () => {
+    setRunHistory([]);
+    localStorage.removeItem("ctest-run-history");
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -283,13 +359,17 @@ export default function ComprehensiveTestingPage() {
           ))}
         </select>
         <button
-          className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className={`ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 ${allLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
           onClick={executeAll}
+          disabled={allLoading}
         >
+          {allLoading && (
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          )}
           Run All Queries
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {topLevelQueries.map((query: GraphQLField, idx: number) => {
           const state = queryStates[query.name] || {};
           let queryStr = buildQueryString(query, schema!.types);
@@ -321,11 +401,15 @@ export default function ComprehensiveTestingPage() {
                   </div>
                   <div className="text-gray-500 text-sm">{query.description}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <button
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className={`px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 ${state.loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                     onClick={() => executeQuery(query)}
+                    disabled={!!state.loading}
                   >
+                    {state.loading && (
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                    )}
                     Run
                   </button>
                   <button
@@ -389,6 +473,102 @@ export default function ComprehensiveTestingPage() {
             </div>
           );
         })}
+      </div>
+      {/* Dashboard moved below queries */}
+      <div className="bg-white rounded-xl shadow p-4 mb-8 border border-gray-200 w-full max-w-full">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-xl font-bold">Analytics Dashboard</div>
+          <div className="flex gap-2">
+            <select
+              value={selectedEnvironment}
+              onChange={e => setSelectedEnvironment(e.target.value)}
+              className="border rounded px-2 py-1 text-sm bg-white"
+            >
+              {getEnvironmentNames().map((env) => (
+                <option key={env.key} value={env.key}>{env.name}</option>
+              ))}
+            </select>
+            <button
+              className="p-2 rounded hover:bg-red-100 text-red-600 border border-red-200 ml-2"
+              title="Reset Analytics"
+              onClick={resetAnalytics}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+        <div className="mb-6">
+          <div className="font-semibold mb-2">All Queries (Batch Runs)</div>
+          <div className="flex flex-wrap gap-6 items-end">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={batchRuns} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="timestamp" tick={{ fontSize: 10 }} tickFormatter={t => {
+                  const d = new Date(t);
+                  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+                }} />
+                <YAxis dataKey="duration" unit="ms" tick={{ fontSize: 10 }} />
+                <Tooltip labelFormatter={t => {
+                  const d = new Date(t);
+                  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+                }} />
+                <Legend />
+                <Line type="monotone" dataKey="duration" name="Batch Duration" stroke="#2563eb" dot />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="text-xs bg-gray-50 rounded p-3 border border-gray-200 min-w-[180px]">
+              {(() => { const s = getStats(batchRuns); return (
+                <>
+                  <div><b>Runs:</b> {s.count}</div>
+                  <div><b>Avg:</b> {s.avg.toFixed(1)}ms</div>
+                  <div><b>Min:</b> {s.min.toFixed(1)}ms</div>
+                  <div><b>Max:</b> {s.max.toFixed(1)}ms</div>
+                  <div><b>Median:</b> {s.median.toFixed(1)}ms</div>
+                  <div><b>Success:</b> {s.success}</div>
+                  <div><b>Errors:</b> {s.errors}</div>
+                </>
+              ); })()}
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {topLevelQueries.map((query) => (
+            <div key={query.name} className="mb-4">
+              <div className="font-semibold mb-2">{query.name} (Last 10 Runs)</div>
+              <div className="flex flex-wrap gap-4 items-end">
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={perQueryRuns[query.name] || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 10 }} tickFormatter={t => {
+                      const d = new Date(t);
+                      return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+                    }} />
+                    <YAxis dataKey="duration" unit="ms" tick={{ fontSize: 10 }} />
+                    <Tooltip labelFormatter={t => {
+                      const d = new Date(t);
+                      return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+                    }} />
+                    <Legend />
+                    <Line type="monotone" dataKey="duration" name="Duration" stroke="#10b981" dot />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="text-xs bg-gray-50 rounded p-3 border border-gray-200 min-w-[140px]">
+                  {(() => { const s = getStats(perQueryRuns[query.name] || []); return (
+                    <>
+                      <div><b>Runs:</b> {s.count}</div>
+                      <div><b>Avg:</b> {s.avg.toFixed(1)}ms</div>
+                      <div><b>Min:</b> {s.min.toFixed(1)}ms</div>
+                      <div><b>Max:</b> {s.max.toFixed(1)}ms</div>
+                      <div><b>Median:</b> {s.median.toFixed(1)}ms</div>
+                      <div><b>Success:</b> {s.success}</div>
+                      <div><b>Errors:</b> {s.errors}</div>
+                    </>
+                  ); })()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       {/* Fullscreen Modal */}
       {fullscreenIdx !== null && fullscreenIdx >= 0 && fullscreenIdx < topLevelQueries.length && (() => {
