@@ -108,40 +108,72 @@ function buildQueryFields(type: GraphQLType, types: GraphQLType[], visited: Set<
   const typeName = type.name || "";
   if (visited.has(typeName)) return ""; // Avoid cycles
   visited.add(typeName);
-  return type.fields
-    .map((field: GraphQLField) => {
-      const fieldTypeName = getTypeName(field.type);
-      const fieldType = getTypeByName(fieldTypeName, types);
-      if (fieldType && isObjectType(fieldType) && fieldType.name !== typeName) {
-        // Recursively include all subfields
-        const subFields = buildQueryFields(fieldType, types, new Set(visited));
-        return `${field.name} {\n${subFields}\n}`;
+  const fieldStrings: string[] = [];
+  for (const field of type.fields) {
+    const fieldTypeName = getTypeName(field.type);
+    const fieldType = getTypeByName(fieldTypeName, types);
+    if (fieldType && isObjectType(fieldType) && fieldType.name !== typeName) {
+      // Recursively include all subfields
+      const subFields = buildQueryFields(fieldType, types, new Set(visited));
+      if (subFields.trim()) {
+        fieldStrings.push(`${field.name} {\n${subFields}\n}`);
       }
+    } else if (isScalarOrEnum(fieldType || field.type)) {
       // For scalars/enums, just include the field name
-      return field.name;
-    })
-    .join("\n");
+      fieldStrings.push(field.name);
+    }
+  }
+  // If no fields were added, add __typename as a fallback
+  if (fieldStrings.length === 0) {
+    fieldStrings.push("__typename");
+  }
+  return fieldStrings.join("\n");
 }
 
 function getTypeByName(name: string, types: GraphQLType[]): GraphQLType | undefined {
   return types.find((t: GraphQLType) => t.name === name);
 }
 
+// Returns the full GraphQL type string, including non-null and list modifiers
+function getTypeString(type: GraphQLFieldType): string {
+  if (type.kind === "NON_NULL" && type.ofType) {
+    return getTypeString(type.ofType) + "!";
+  }
+  if (type.kind === "LIST" && type.ofType) {
+    return `[${getTypeString(type.ofType)}]`;
+  }
+  return type.name || "";
+}
+
 function buildQueryString(queryField: GraphQLField, types: GraphQLType[]): string {
   const args = (queryField.args || []).map((arg: GraphQLArgument) => `${arg.name}: $${arg.name}`).join(", ");
   const type = getTypeByName(getTypeName(queryField.type), types);
   const fields = type ? buildQueryFields(type, types) : "";
-  return `query ${queryField.name}(${(queryField.args || []).map((arg: GraphQLArgument) => `$${arg.name}: ${getTypeName(arg.type)}`).join(", ")}) {\n  ${queryField.name}${args ? `(${args})` : ""} {\n    ${fields}\n  }\n}`;
+  // Use getTypeString for variable definitions
+  const varDefs = (queryField.args || []).map((arg: GraphQLArgument) => `$${arg.name}: ${getTypeString(arg.type)}`).join(", ");
+  return `query ${queryField.name}(${varDefs}) {\n  ${queryField.name}${args ? `(${args})` : ""} {\n    ${fields}\n  }\n}`;
 }
 
+// Remove default value logic from getDefaultArgValue for input fields
 function getDefaultArgValue(arg: GraphQLArgument): string | number | boolean {
   if (arg.defaultValue !== null && arg.defaultValue !== undefined) return arg.defaultValue;
-  if (arg.type.kind === "NON_NULL") {
-    if (arg.type.ofType?.name === "Int") return 0;
-    if (arg.type.ofType?.name === "Float") return 0.0;
-    if (arg.type.ofType?.name === "Boolean") return false;
-    if (arg.type.ofType?.name === "ID" || arg.type.ofType?.name === "String") return "";
+  // Only use a default if the schema provides one; otherwise, leave blank for user input
+  return "";
+}
+
+function getArgExample(arg: GraphQLArgument): string {
+  if (arg.type.kind === "NON_NULL" && arg.type.ofType) {
+    if (arg.type.ofType.name === "Int") return "e.g. 123";
+    if (arg.type.ofType.name === "Float") return "e.g. 3.14";
+    if (arg.type.ofType.name === "Boolean") return "e.g. true";
+    if (arg.type.ofType.name === "ID") return "e.g. 1234-5678 or SAMPLE_ID";
+    if (arg.type.ofType.name === "String") return "e.g. example";
   }
+  if (arg.type.name === "Int") return "e.g. 123";
+  if (arg.type.name === "Float") return "e.g. 3.14";
+  if (arg.type.name === "Boolean") return "e.g. true";
+  if (arg.type.name === "ID") return "e.g. 1234-5678 or SAMPLE_ID";
+  if (arg.type.name === "String") return "e.g. example";
   return "";
 }
 
@@ -256,11 +288,15 @@ export default function ComprehensiveTestingPage() {
   // Execute a single query
   const executeQuery = async (queryField: GraphQLField): Promise<void> => {
     const queryName = queryField.name;
+    // Clear previous result, error, and metrics when starting a new run
     setQueryStates((prev) => ({
       ...prev,
       [queryName]: {
         ...prev[queryName],
         loading: true,
+        result: undefined,
+        error: undefined,
+        metrics: undefined,
       },
     }));
     const args = queryStates[queryName]?.args || {};
@@ -431,22 +467,24 @@ export default function ComprehensiveTestingPage() {
                       className="w-full border rounded px-2 py-1 text-sm"
                       type="text"
                       value={state.args?.[arg.name] ?? ""}
+                      placeholder={getArgExample(arg)}
                       onChange={e => handleArgChange(query.name, arg.name, e.target.value)}
                     />
                   </div>
                 ))}
               </div>
               <div className="bg-gray-50 rounded p-2 text-xs font-mono overflow-x-auto max-h-40 min-h-[60px] border border-gray-200">
-                {queryError ? (
-                  <span className="text-red-600">Invalid query: {queryError}</span>
-                ) : (
-                  <pre className="whitespace-pre-wrap" style={{margin:0}}>
-                    <code
-                      className="language-graphql"
-                      dangerouslySetInnerHTML={{ __html: highlightedQuery }}
-                    />
-                  </pre>
+                {queryError && (
+                  <div className="mb-2 p-2 bg-red-50 border border-red-300 text-red-700 rounded">
+                    <b>Invalid query:</b> {queryError}
+                  </div>
                 )}
+                <pre className="whitespace-pre-wrap" style={{margin:0}}>
+                  <code
+                    className="language-graphql"
+                    dangerouslySetInnerHTML={{ __html: highlightedQuery }}
+                  />
+                </pre>
               </div>
               {state.metrics && (
                 <div className="text-xs text-gray-600 mt-1">
