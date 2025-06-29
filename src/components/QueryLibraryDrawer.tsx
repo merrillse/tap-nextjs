@@ -599,9 +599,28 @@ export function QueryLibraryDrawer({
                   
                   {/* Metadata row */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap', width: '100%' }}>
-                    {query.tags?.map(tag => (
-                      <Chip key={tag} label={tag} size="small" variant="outlined" />
-                    ))}
+                    {query.tags?.map(tag => {
+                      if (tag && typeof tag === 'object' && !Array.isArray(tag)) {
+                        // Use type assertion to allow property access
+                        const label = (tag as any).label ?? String(tag);
+                        const onClick = (tag as any).onClick;
+                        // Remove onClick and label from props
+                        const { onClick: _oc, label: _lbl, ...chipProps } = tag as any;
+                        return (
+                          <Chip
+                            key={label}
+                            label={label}
+                            size="small"
+                            variant="outlined"
+                            {...chipProps}
+                            {...(typeof onClick === 'function' ? { onClick } : {})}
+                          />
+                        );
+                      }
+                      return (
+                        <Chip key={tag} label={tag} size="small" variant="outlined" />
+                      );
+                    })}
                   </Box>
                   
                   {/* Variables info */}
