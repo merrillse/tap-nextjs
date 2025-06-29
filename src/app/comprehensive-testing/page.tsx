@@ -289,7 +289,7 @@ export default function ComprehensiveTestingPage() {
   // Execute a single query
   const executeQuery = async (queryField: GraphQLField): Promise<void> => {
     const queryName = queryField.name;
-    // Clear previous result, error, and metrics when starting a new run
+    // Start spinner immediately (synchronously)
     setQueryStates((prev) => ({
       ...prev,
       [queryName]: {
@@ -300,6 +300,8 @@ export default function ComprehensiveTestingPage() {
         metrics: undefined,
       },
     }));
+    // Allow React to update the UI before heavy work
+    await new Promise((resolve) => setTimeout(resolve, 0));
     const args = queryStates[queryName]?.args || {};
     const query = buildQueryString(queryField, schema!.types);
     const variables = { ...args };
