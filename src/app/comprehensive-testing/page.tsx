@@ -3,6 +3,7 @@ import "./prism-setup";
 import Prism from "prismjs";
 import React, { useEffect, useState, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { FaChartBar, FaArrowUp } from "react-icons/fa";
 
 import { useApiClient } from "@/hooks/useApiClient";
 import type {
@@ -427,8 +428,13 @@ export default function ComprehensiveTestingPage() {
             const jsonStr = JSON.stringify(state.result, null, 2);
             highlightedResult = Prism.highlight(jsonStr, Prism.languages.json, "json");
           }
+          // --- Add scroll-to-dashboard icon ---
+          const scrollToDashboard = () => {
+            const el = document.getElementById(`dashboard-${query.name}`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          };
           return (
-            <div key={query.name} className="bg-white rounded-xl shadow p-4 flex flex-col gap-2 border border-gray-200">
+            <div key={query.name} id={`card-${query.name}`} className="bg-white rounded-xl shadow p-4 flex flex-col gap-2 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-semibold flex items-center gap-2">
@@ -454,6 +460,14 @@ export default function ComprehensiveTestingPage() {
                     onClick={() => setFullscreenIdx(idx)}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2" /></svg>
+                  </button>
+                  <button
+                    className="ml-1 p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-blue-500"
+                    style={{ fontSize: 16 }}
+                    title="Scroll to analytics for this query"
+                    onClick={scrollToDashboard}
+                  >
+                    <FaChartBar />
                   </button>
                 </div>
               </div>
@@ -571,8 +585,21 @@ export default function ComprehensiveTestingPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {topLevelQueries.map((query) => (
-            <div key={query.name} className="mb-4">
-              <div className="font-semibold mb-2">{query.name} (Last 10 Runs)</div>
+            <div key={query.name} id={`dashboard-${query.name}`} className="mb-4 relative">
+              <div className="font-semibold mb-2 flex items-center gap-2">
+                {query.name} (Last 10 Runs)
+                <button
+                  className="ml-1 p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-blue-500"
+                  style={{ fontSize: 14 }}
+                  title="Scroll to query card"
+                  onClick={() => {
+                    const el = document.getElementById(`card-${query.name}`);
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                >
+                  <FaArrowUp />
+                </button>
+              </div>
               <div className="flex flex-wrap gap-4 items-end">
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={perQueryRuns[query.name] || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
