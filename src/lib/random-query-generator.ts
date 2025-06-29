@@ -4,14 +4,14 @@
  */
 
 // GraphQL Schema Types
-interface GraphQLInputField {
+export interface GraphQLInputField {
   name: string;
   description?: string;
   type: GraphQLFieldType;
   defaultValue?: string;
 }
 
-interface GraphQLType {
+export interface GraphQLType {
   kind: string;
   name?: string;
   description?: string;
@@ -22,7 +22,7 @@ interface GraphQLType {
   possibleTypes?: GraphQLType[];
 }
 
-interface GraphQLField {
+export interface GraphQLField {
   name: string;
   description?: string;
   type: GraphQLFieldType;
@@ -31,26 +31,26 @@ interface GraphQLField {
   deprecationReason?: string;
 }
 
-interface GraphQLFieldType {
+export interface GraphQLFieldType {
   kind: string;
   name?: string;
   ofType?: GraphQLFieldType;
 }
 
-interface GraphQLArgument {
+export interface GraphQLArgument {
   name: string;
   description?: string;
   type: GraphQLFieldType;
   defaultValue?: string;
 }
 
-interface GraphQLEnumValue {
+export interface GraphQLEnumValue {
   name: string;
   description?: string;
   isDeprecated?: boolean;
 }
 
-interface GraphQLSchema {
+export interface GraphQLSchema {
   queryType?: { name: string };
   mutationType?: { name: string };
   subscriptionType?: { name: string };
