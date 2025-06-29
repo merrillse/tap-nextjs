@@ -1,9 +1,52 @@
 "use client";
 import "./prism-setup";
 import Prism from "prismjs";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { FaChartBar, FaArrowUp } from "react-icons/fa";
+
+// Utility to convert introspection schema to SDL (GraphQL Schema Definition Language)
+function introspectionToSDL(schema: GraphQLSchema): string {
+  // Only handle types, enums, queries, and mutations for now
+  const lines: string[] = [];
+  const types = schema.types.filter((t: any) => !t.name.startsWith("__"));
+  // Helper to get type string
+  function getTypeStr(type: any): string {
+    if (type.kind === "NON_NULL" && type.ofType) return getTypeStr(type.ofType) + "!";
+    if (type.kind === "LIST" && type.ofType) return `[${getTypeStr(type.ofType)}]`;
+    return type.name || "";
+  }
+  // Enums
+  types.filter(t => t.kind === "ENUM").forEach(enumType => {
+    lines.push(`enum ${enumType.name} {`);
+    (enumType.enumValues || []).forEach((v: any) => {
+      lines.push(`  ${v.name}`);
+    });
+    lines.push("}\n");
+  });
+  // Input types
+  types.filter(t => t.kind === "INPUT_OBJECT").forEach(inputType => {
+    lines.push(`input ${inputType.name} {`);
+    (inputType.inputFields || []).forEach((f: any) => {
+      lines.push(`  ${f.name}: ${getTypeStr(f.type)}`);
+    });
+    lines.push("}\n");
+  });
+  // Object types (including Query/Mutation)
+  types.filter(t => t.kind === "OBJECT").forEach(objType => {
+    lines.push(`type ${objType.name} {`);
+    (objType.fields || []).forEach((f: any) => {
+      const args = (f.args || []).map((a: any) => `${a.name}: ${getTypeStr(a.type)}`).join(", ");
+      lines.push(`  ${f.name}${args ? `(${args})` : ""}: ${getTypeStr(f.type)}`);
+    });
+    lines.push("}\n");
+  });
+  // Scalars
+  types.filter(t => t.kind === "SCALAR").forEach(scalarType => {
+    lines.push(`scalar ${scalarType.name}\n`);
+  });
+  return lines.join("\n");
+}
 
 import { useApiClient } from "@/hooks/useApiClient";
 import type {
@@ -217,6 +260,9 @@ export default function ComprehensiveTestingPage() {
   });
   const [dashboardFullscreen, setDashboardFullscreen] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
+  const [schemaModalOpen, setSchemaModalOpen] = useState(false);
+  const [schemaSearch, setSchemaSearch] = useState("");
+  const schemaModalRef = useRef<HTMLDivElement>(null);
 
   // Fetch schema on mount or environment change
   useEffect(() => {
@@ -287,7 +333,7 @@ export default function ComprehensiveTestingPage() {
   };
 
   // Execute a single query
-  const executeQuery = async (queryField: GraphQLField): Promise<void> => {
+  const executeQuery = (queryField: GraphQLField): void => {
     const queryName = queryField.name;
     // Start spinner immediately (synchronously)
     setQueryStates((prev) => ({
@@ -300,37 +346,38 @@ export default function ComprehensiveTestingPage() {
         metrics: undefined,
       },
     }));
-    // Allow React to update the UI before heavy work
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const args = queryStates[queryName]?.args || {};
-    const query = buildQueryString(queryField, schema!.types);
-    const variables = { ...args };
-    const start = performance.now();
-    let result: unknown = undefined;
-    let errorMsg: string | undefined = undefined;
-    try {
-      result = await apiClient.executeGraphQLQuery(query, variables);
-    } catch (e: any) {
-      errorMsg = e.message || "Error executing query";
-    }
-    const duration = performance.now() - start;
-    setQueryStates((prev) => ({
-      ...prev,
-      [queryName]: {
-        ...prev[queryName],
-        result,
-        error: errorMsg,
-        metrics: { duration, size: result ? JSON.stringify(result).length : 0 },
-        loading: false,
-      },
-    }));
-    // Persist result/metrics
-    localStorage.setItem(
-      `ctest-metrics-${queryName}`,
-      JSON.stringify({ duration, size: result ? JSON.stringify(result).length : 0 })
-    );
-    // Add to run history
-    addRunToHistory({ queryName, duration, timestamp: Date.now(), isBatch: false, environment: selectedEnvironment, error: !!errorMsg });
+    // Defer heavy work so React can paint the spinner
+    setTimeout(async () => {
+      const args = queryStates[queryName]?.args || {};
+      const query = buildQueryString(queryField, schema!.types);
+      const variables = { ...args };
+      const start = performance.now();
+      let result: unknown = undefined;
+      let errorMsg: string | undefined = undefined;
+      try {
+        result = await apiClient.executeGraphQLQuery(query, variables);
+      } catch (e: any) {
+        errorMsg = e.message || "Error executing query";
+      }
+      const duration = performance.now() - start;
+      setQueryStates((prev) => ({
+        ...prev,
+        [queryName]: {
+          ...prev[queryName],
+          result,
+          error: errorMsg,
+          metrics: { duration, size: result ? JSON.stringify(result).length : 0 },
+          loading: false,
+        },
+      }));
+      // Persist result/metrics
+      localStorage.setItem(
+        `ctest-metrics-${queryName}`,
+        JSON.stringify({ duration, size: result ? JSON.stringify(result).length : 0 })
+      );
+      // Add to run history
+      addRunToHistory({ queryName, duration, timestamp: Date.now(), isBatch: false, environment: selectedEnvironment, error: !!errorMsg });
+    }, 0);
   };
 
   // Execute all queries concurrently
@@ -344,6 +391,18 @@ export default function ComprehensiveTestingPage() {
   useEffect(() => {
     localStorage.setItem("selectedEnvironment", selectedEnvironment);
   }, [selectedEnvironment]);
+
+  // Generate SDL and filter if searching
+  let schemaSDL = schema ? introspectionToSDL(schema) : "";
+  if (schemaSearch.trim()) {
+    const search = schemaSearch.trim().toLowerCase();
+    schemaSDL = schemaSDL
+      .split(/\n(?=type |enum |input |scalar )/g)
+      .filter(block => block.toLowerCase().includes(search))
+      .join("\n");
+  }
+  // Prism highlight
+  const highlightedSDL = Prism.highlight(schemaSDL, Prism.languages.graphql, "graphql");
 
   // UI
   if (loading) return <div className="p-8 text-center text-lg">Loading schema...</div>;
@@ -383,7 +442,48 @@ export default function ComprehensiveTestingPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Comprehensive GraphQL Testing</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Comprehensive GraphQL Testing</h1>
+        <button
+          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center gap-2"
+          onClick={() => setSchemaModalOpen(true)}
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h2a4 4 0 014 4v2M7 17v-2a6 6 0 016-6h2a6 6 0 016 6v2" /></svg>
+          View Schema
+        </button>
+      </div>
+      {/* Schema Modal */}
+      {schemaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div ref={schemaModalRef} className="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-auto p-6 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl"
+              onClick={() => setSchemaModalOpen(false)}
+              title="Close"
+            >
+              &times;
+            </button>
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="text"
+                className="border rounded px-2 py-1 text-sm w-full"
+                placeholder="Search types, fields, enums..."
+                value={schemaSearch}
+                onChange={e => setSchemaSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="bg-gray-50 rounded p-4 text-sm font-mono overflow-x-auto border border-gray-200 max-h-[70vh]">
+              <pre className="whitespace-pre-wrap" style={{margin:0}}>
+                <code
+                  className="language-graphql"
+                  dangerouslySetInnerHTML={{ __html: highlightedSDL }}
+                />
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-6 flex items-center gap-4">
         <label className="text-sm font-medium text-gray-700">Environment:</label>
         <select
